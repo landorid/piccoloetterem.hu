@@ -1,0 +1,4 @@
+ci_piccolo/
+node_modules/
+.env
+.env.local
