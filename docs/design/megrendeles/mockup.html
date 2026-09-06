@@ -290,14 +290,15 @@
         z-index: 6;
         background: var(--brand-800);
         color: #fff;
-        padding: var(--s-3) var(--s-4);
+        height: 72px;
+        padding: 0 var(--s-4);
         display: flex;
         align-items: center;
         gap: var(--s-3);
       }
       .masthead svg {
-        width: 104px;
-        height: auto;
+        height: 42px;
+        width: auto;
         fill: currentColor;
         flex: none;
       }
@@ -347,7 +348,7 @@
       }
       .daybar {
         position: sticky;
-        top: 52px;
+        top: 72px;
         z-index: 5;
         background: var(--paper);
         border-bottom: 1px solid var(--line);
@@ -474,8 +475,9 @@
 
       .section-h {
         display: flex;
-        align-items: baseline;
-        gap: var(--s-2);
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
         margin-bottom: var(--s-2);
       }
       .section-h h2 {
@@ -497,6 +499,9 @@
       }
 
       /* --- dish list ----------------------------------------------------------- */
+      /* Card language adapted from market.gasty.io: a leading tile, the whole row
+         tappable, the price hard right. The tile carries a photo when there is one
+         and the dish's initial when there is not — the layout does not change. */
       .dishes {
         display: flex;
         flex-direction: column;
@@ -506,40 +511,69 @@
         overflow: hidden;
         box-shadow: var(--shadow-1);
       }
-      .dish {
+      .tile {
+        flex: none;
+        width: 48px;
+        height: 48px;
+        border-radius: 10px;
+        background: var(--brand-50);
+        border: 1px solid var(--brand-200);
         display: grid;
-        grid-template-columns: 1fr auto;
-        gap: var(--s-1) var(--s-3);
+        place-items: center;
+        font-family: var(--font-display);
+        font-size: 20px;
+        font-weight: 500;
+        color: var(--brand-500);
+        overflow: hidden;
+      }
+      .dish {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--s-3);
+        width: 100%;
+        min-height: 72px;
         padding: var(--s-3) var(--s-4);
+        border: 0;
         border-top: 1px solid var(--line);
-        align-items: start;
+        background: none;
+        font: inherit;
+        color: inherit;
+        text-align: left;
       }
       .dish:first-child {
         border-top: 0;
+      }
+      button.dish:hover {
+        background: var(--brand-50);
+      }
+      .dish-body {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
       }
       .dish-name {
         font-family: var(--font-display);
         font-size: var(--t-lg);
         font-weight: 500;
-        line-height: 1.25;
+        line-height: 1.2;
         letter-spacing: -0.01em;
       }
       .dish-desc {
-        grid-column: 1;
         font-size: var(--t-md);
         color: var(--ink-700);
       }
       .dish-meta {
-        grid-column: 1;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: var(--s-1) var(--s-2);
-        margin-top: var(--s-1);
+        margin-top: 2px;
       }
       .dish-price {
-        grid-row: 1;
-        grid-column: 2;
+        flex: none;
+        max-width: 92px;
         text-align: right;
         font-weight: 700;
         white-space: nowrap;
@@ -548,11 +582,18 @@
         display: block;
         font-size: var(--t-xs);
         font-weight: 500;
+        line-height: 1.3;
         color: var(--ink-500);
+        white-space: normal;
       }
-      .dish-action {
-        grid-column: 2;
-        align-self: end;
+      .dish-price .included {
+        display: block;
+        margin-top: 2px;
+        font-size: var(--t-xs);
+        font-weight: 600;
+        line-height: 1.25;
+        color: var(--ok-700);
+        white-space: normal;
       }
       .dish.is-soldout .dish-name,
       .dish.is-soldout .dish-desc,
@@ -563,11 +604,111 @@
         text-decoration: line-through;
         text-decoration-color: var(--line-strong);
       }
-      .included {
-        font-size: var(--t-sm);
+      .dish.is-soldout .tile {
+        opacity: 0.55;
+      }
+
+      /* Horizontal rails for the secondary, repeat-every-week sections. The daily
+         soups and mains stay a vertical list: hiding today's mains behind a swipe
+         is exactly the wrong trade at 07:40. */
+      .rail-scroll {
+        display: flex;
+        gap: var(--s-3);
+        overflow-x: auto;
+        scrollbar-width: none;
+        scroll-snap-type: x proximity;
+        margin-inline: calc(var(--s-4) * -1);
+        padding: 2px var(--s-4) var(--s-2);
+      }
+      .rail-scroll::-webkit-scrollbar {
+        display: none;
+      }
+      .rail-card {
+        flex: none;
+        width: 150px;
+        scroll-snap-align: start;
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-1);
+        padding: var(--s-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        box-shadow: var(--shadow-1);
+        font: inherit;
+        color: inherit;
+        text-align: left;
+      }
+      .rail-card .tile {
+        width: 100%;
+        height: 76px;
+        font-size: 28px;
+      }
+      .rail-card .rc-price {
+        font-weight: 700;
+        font-size: var(--t-md);
+      }
+      .rail-card .rc-name {
+        font-family: var(--font-display);
+        font-size: var(--t-md);
+        line-height: 1.2;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .rail-card .rc-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .rail-card.is-soldout .rc-name,
+      .rail-card.is-soldout .rc-price {
+        color: var(--ink-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--line-strong);
+      }
+
+      /* Category chips — jump to a section without scrolling past everything. */
+      .chiprail {
+        position: sticky;
+        top: 141px;
+        z-index: 4;
+        margin-inline: calc(var(--s-4) * -1);
+        padding: var(--s-2) 0;
+        background: var(--ground);
+        border-bottom: 1px solid var(--line);
+      }
+      .chiprail-scroll {
+        display: flex;
+        gap: var(--s-2);
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding-inline: var(--s-4);
+      }
+      .chiprail-scroll::-webkit-scrollbar {
+        display: none;
+      }
+      .chip {
+        flex: none;
+        min-height: 38px;
+        padding: 0 var(--s-4);
+        border-radius: 999px;
+        border: 1px solid var(--line-strong);
+        background: var(--paper);
+        font-size: var(--t-md);
         font-weight: 600;
-        color: var(--ok-700);
+        color: var(--ink-700);
         white-space: nowrap;
+      }
+      .chip[aria-pressed='true'] {
+        background: var(--brand-800);
+        border-color: var(--brand-800);
+        color: #fff;
+      }
+      section[data-sec] {
+        scroll-margin-top: 196px;
       }
 
       /* --- small parts --------------------------------------------------------- */
@@ -592,17 +733,23 @@
         background: var(--ok-100);
         color: var(--ok-700);
       }
-      .allergens {
+      .achips {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        font-size: var(--t-xs);
-        color: var(--ink-500);
+        gap: 3px;
       }
-      .allergens b {
+      .achip {
+        display: inline-grid;
+        place-items: center;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: var(--brand-100);
+        color: var(--brand-700);
+        font-size: 11px;
         font-weight: 700;
-        color: var(--ink-700);
-        letter-spacing: 0.03em;
+        font-variant-numeric: tabular-nums;
       }
       .allergen-note {
         display: flex;
@@ -973,6 +1120,9 @@
         flex-direction: column;
         gap: var(--s-4);
       }
+      .sheet-body > * {
+        flex: none;
+      }
       .sheet-foot {
         padding: var(--s-3) var(--s-4);
         background: var(--paper);
@@ -1110,6 +1260,110 @@
         text-decoration-color: var(--line-strong);
       }
 
+      .varcards {
+        display: flex;
+        gap: var(--s-2);
+        overflow-x: auto;
+        scrollbar-width: none;
+        padding: 2px 0 var(--s-1);
+      }
+      .varcards::-webkit-scrollbar {
+        display: none;
+      }
+      .varcard {
+        position: relative;
+        flex: none;
+        min-width: 122px;
+        padding: var(--s-3) 36px var(--s-3) var(--s-3);
+        border: 2px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+      .varcard[aria-checked='true'] {
+        border-color: var(--brand-600);
+        background: var(--brand-50);
+      }
+      .varcard .vname {
+        font-family: var(--font-display);
+        font-size: var(--t-base);
+        font-weight: 500;
+        line-height: 1.2;
+      }
+      .varcard .vprice {
+        font-size: var(--t-sm);
+        font-weight: 600;
+        color: var(--ink-500);
+      }
+      .varcard .vmark {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        border: 2px solid var(--line-strong);
+        background: var(--paper);
+        color: transparent;
+      }
+      .varcard[aria-checked='true'] .vmark {
+        display: grid;
+        place-items: center;
+        border-color: var(--brand-600);
+        background: var(--brand-600);
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+      }
+      .field-label {
+        font-size: var(--t-xs);
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--ink-500);
+        margin-bottom: var(--s-2);
+      }
+      .field-label.is-required {
+        color: var(--danger-700);
+      }
+
+      .foot-top {
+        display: flex;
+        align-items: center;
+        gap: var(--s-3);
+      }
+      .foot-price {
+        font-family: var(--font-display);
+        font-size: var(--t-2xl);
+        font-weight: 600;
+        line-height: 1.1;
+      }
+      .foot-price small {
+        display: block;
+        font-family: var(--font-ui);
+        font-size: var(--t-xs);
+        font-weight: 600;
+        color: var(--ink-500);
+      }
+      .foot-top .stepper {
+        margin-left: auto;
+      }
+      .foot-actions {
+        display: flex;
+        gap: var(--s-2);
+      }
+      .foot-actions .btn {
+        flex: 1;
+      }
+      .foot-actions .btn-ghost {
+        flex: 0 0 36%;
+      }
+
       .pricebox {
         background: var(--paper);
         border: 1px solid var(--line);
@@ -1185,6 +1439,18 @@
       .field.has-error .control {
         border-color: var(--danger-700);
         background: var(--danger-100);
+      }
+      .sheet-foot .error {
+        font-size: var(--t-sm);
+        font-weight: 600;
+        color: var(--danger-700);
+      }
+      .week-terms {
+        margin-top: var(--s-2);
+        padding: var(--s-2) 0 var(--s-3);
+        font-size: var(--t-sm);
+        font-weight: 600;
+        color: var(--brand-700);
       }
       .field .error {
         margin-top: var(--s-1);
@@ -1364,10 +1630,11 @@
          ====================================================================== */
       @container app (min-width: 900px) {
         .masthead {
-          padding: var(--s-4) var(--s-8);
+          height: 96px;
+          padding: 0 var(--s-8);
         }
         .masthead svg {
-          width: 128px;
+          height: 54px;
         }
         .weekbar {
           padding: var(--s-6) var(--s-8) 0;
@@ -1376,7 +1643,7 @@
           font-size: var(--t-2xl);
         }
         .daybar {
-          top: 68px;
+          top: 96px;
           padding: 0 var(--s-8);
         }
         .daybar ul {
@@ -1388,6 +1655,9 @@
           flex-direction: row;
           gap: var(--s-2);
           align-items: baseline;
+        }
+        .day .dbadge {
+          position: static;
         }
         .screen {
           display: grid;
@@ -1408,7 +1678,7 @@
           flex-direction: column;
           gap: var(--s-4);
           position: sticky;
-          top: 124px;
+          top: 165px;
         }
         .sumbar {
           position: static;
@@ -1425,15 +1695,31 @@
           border-radius: var(--radius-lg);
           max-height: 86%;
         }
-        .sheet-foot {
-          flex-direction: row-reverse;
-          align-items: center;
-        }
-        .sheet-foot .btn {
-          flex: 1;
-        }
         .dish {
           padding: var(--s-4) var(--s-5);
+        }
+        .rail-scroll {
+          display: grid;
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          overflow: visible;
+          margin-inline: 0;
+          padding-inline: 0;
+        }
+        .rail-card {
+          width: auto;
+        }
+        .rail-card .tile {
+          height: 104px;
+        }
+        .chiprail {
+          top: 149px;
+          margin-inline: 0;
+        }
+        section[data-sec] {
+          scroll-margin-top: 204px;
+        }
+        .chiprail-scroll {
+          padding-inline: 0;
         }
         .success h1 {
           font-size: var(--t-3xl);
@@ -1522,6 +1808,7 @@
           intake: 'Rendelésfelvétel 7:30–9:30',
           phone: '+36 30 490 1122',
           address: 'Szombathely, Mátyás Király u. 12.',
+          terms: 'Kiszállítás 150 Ft / cím / nap · Naponta legalább 2 200 Ft ételérték',
         },
         week: {
           heading: 'Heti menü',
@@ -1548,6 +1835,8 @@
           desserts: 'Desszertek',
           weekendHint: 'Szombaton eltérő ár',
           soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft.',
+          all: 'Összes',
+          jumpLabel: 'Ugrás a kínálaton belül',
         },
         dish: {
           soupIncluded: 'A menü ára tartalmazza',
@@ -1555,6 +1844,7 @@
           hasVariations: 'Választható',
           needsSide: 'Körettel',
           compose: 'Összeállítom',
+          noPhoto: 'Ehhez a fogáshoz nincs kép',
           composeBlank: 'Menü összeállítása',
           weekendPrice: (p) => 'szombaton ' + p,
         },
@@ -1605,7 +1895,10 @@
           soupSurcharge: 'Leves felár',
           soupSurchargeWhy: 'A leves csak a napi főételek árában van benne.',
           priceTotal: 'Menü ára',
-          add: (price) => 'Hozzáadás · ' + price,
+          add: 'Hozzáadás',
+          addMany: (n) => n + ' adag hozzáadása',
+          portions: 'adag',
+          portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba, saját névvel.',
           save: 'Módosítás mentése',
           cancel: 'Mégsem',
           pickerTitle: (slot) => slot + ' választása',
@@ -2075,26 +2368,20 @@
 
       const allergenCodes = (item) =>
         item.allergens && item.allergens.length
-          ? '<span class="allergens" title="' +
-            esc(S.allergens.codesLabel) +
-            '"><b>' +
-            item.allergens.join(', ') +
-            '</b></span>'
+          ? '<span class="achips" title="' +
+            esc(S.allergens.codesLabel + ' ' + item.allergens.join(', ')) +
+            '">' +
+            item.allergens.map((a) => '<span class="achip">' + a + '</span>').join('') +
+            '</span>'
           : '';
 
-      const priceCell = (item, date) => {
-        const p = priceOf(item, date);
-        const showWeekend =
-          !isWeekend(date) && item.priceWeekend !== item.priceWeekday && item.priceWeekend > 0;
-        return (
-          '<div class="dish-price num">' +
-          money(p) +
-          (showWeekend
-            ? '<span class="weekend">' + esc(S.dish.weekendPrice(money(item.priceWeekend))) + '</span>'
-            : '') +
-          '</div>'
-        );
-      };
+      /** The tile takes a photo when the item has one; until then, its initial. */
+      const Tile = (item, big) =>
+        '<span class="tile' +
+        (big ? ' tile-lg' : '') +
+        '" aria-hidden="true">' +
+        esc(item.name.replace(/^[0-9. ]+/, '').charAt(0).toUpperCase()) +
+        '</span>';
 
       /* ------------------------------------------------------------------ *
        * 6. COMPONENTS
@@ -2123,7 +2410,9 @@
           esc(S.week.range(fmt(first, { month: 'long', day: 'numeric' }), dateNum(last) + '.')) +
           '</span><span>' +
           esc(vm.cutoffNote || S.week.cutoffToday) +
-          '</span></div></div>'
+          '</span></div><p class="week-terms">' +
+          esc(S.order.terms) +
+          '</p></div>'
         );
       }
 
@@ -2188,47 +2477,120 @@
       function Dish(item, date, opts = {}) {
         const soldOut = !!item.soldOut;
         const isSoup = item.cat === 'daily_soup';
+        const tappable = opts.action && !soldOut;
         return (
-          '<div class="' +
+          '<' +
+          (tappable ? 'button type="button"' : 'div') +
+          ' class="' +
           cls('dish', soldOut && 'is-soldout') +
-          '"><div class="dish-name">' +
+          '"' +
+          (tappable ? ' data-compose="' + item.id + '"' : '') +
+          '>' +
+          Tile(item) +
+          '<span class="dish-body"><span class="dish-name">' +
           esc(item.name) +
-          '</div>' +
-          (isSoup
-            ? '<div class="included">' + esc(S.dish.soupIncluded) + '</div>'
-            : priceCell(item, date)) +
-          (item.desc ? '<p class="dish-desc">' + esc(item.desc) + '</p>' : '') +
-          '<div class="dish-meta">' +
+          '</span>' +
+          (item.desc ? '<span class="dish-desc">' + esc(item.desc) + '</span>' : '') +
+          '<span class="dish-meta">' +
           (soldOut ? '<span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
           (item.variations
             ? '<span class="tag tag-choice">' +
               esc(S.dish.hasVariations + ': ' + item.variations.join(' · ')) +
               '</span>'
             : '') +
-          (item.requiresSide ? '<span class="tag tag-choice">' + esc(S.dish.needsSide) + '</span>' : '') +
-          allergenCodes(item) +
-          '</div>' +
-          (opts.action && !soldOut
-            ? '<div class="dish-action"><button type="button" class="btn btn-secondary btn-sm" data-compose="' +
-              item.id +
-              '">' +
-              esc(S.dish.compose) +
-              '</button></div>'
+          (item.requiresSide
+            ? '<span class="tag tag-choice">' + esc(S.dish.needsSide) + '</span>'
             : '') +
-          '</div>'
+          allergenCodes(item) +
+          '</span></span>' +
+          '<span class="dish-price num">' +
+          (isSoup
+            ? money(0) + '<span class="included">' + esc(S.dish.soupIncluded) + '</span>'
+            : money(priceOf(item, date)) +
+              (!isWeekend(date) && item.priceWeekend !== item.priceWeekday
+                ? '<span class="weekend">' +
+                  esc(S.dish.weekendPrice(money(item.priceWeekend))) +
+                  '</span>'
+                : '')) +
+          '</span>' +
+          '</' +
+          (tappable ? 'button' : 'div') +
+          '>'
+        );
+      }
+
+      /** A rail card: price above the name, the way the reference marketplace does it. */
+      function RailCard(item, date, opts = {}) {
+        const soldOut = !!item.soldOut;
+        const tappable = opts.action && !soldOut;
+        return (
+          '<' +
+          (tappable ? 'button type="button"' : 'div') +
+          ' class="' +
+          cls('rail-card', soldOut && 'is-soldout') +
+          '"' +
+          (tappable ? ' data-compose="' + item.id + '"' : '') +
+          '>' +
+          Tile(item, true) +
+          '<span class="rc-price num">' +
+          money(priceOf(item, date)) +
+          '</span><span class="rc-name">' +
+          esc(item.name) +
+          '</span><span class="rc-meta">' +
+          (soldOut ? '<span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
+          allergenCodes(item) +
+          '</span></' +
+          (tappable ? 'button' : 'div') +
+          '>'
         );
       }
 
       function Section(title, items, date, opts = {}) {
         if (!items.length) return '';
+        const body = opts.rail
+          ? '<div class="rail-scroll">' + items.map((i) => RailCard(i, date, opts)).join('') + '</div>'
+          : '<div class="dishes">' + items.map((i) => Dish(i, date, opts)).join('') + '</div>';
         return (
-          '<section><div class="section-h"><h2>' +
+          '<section' +
+          (opts.sec ? ' data-sec="' + opts.sec + '"' : '') +
+          '><div class="section-h"><h2>' +
           esc(title) +
           '</h2>' +
           (opts.hint ? '<span class="hint">' + esc(opts.hint) + '</span>' : '') +
-          '</div><div class="dishes">' +
-          items.map((i) => Dish(i, date, opts)).join('') +
-          '</div></section>'
+          '</div>' +
+          body +
+          '</section>'
+        );
+      }
+
+      function ChipRail(vm) {
+        const chips = [
+          { sec: '', label: S.sections.all },
+          { sec: 'soups', label: S.sections.soups },
+          { sec: 'mains', label: S.sections.mains },
+          { sec: 'featured', label: S.sections.featured },
+          { sec: 'allweek', label: S.sections.allWeek },
+          { sec: 'sides', label: S.sections.sideExtras },
+          { sec: 'pickles', label: S.sections.pickles },
+          { sec: 'desserts', label: S.sections.desserts },
+        ];
+        return (
+          '<div class="chiprail"><div class="chiprail-scroll" role="group" aria-label="' +
+          esc(S.sections.jumpLabel) +
+          '">' +
+          chips
+            .map(
+              (c) =>
+                '<button type="button" class="chip" aria-pressed="' +
+                ((vm.activeChip || '') === c.sec) +
+                '" data-jump="' +
+                c.sec +
+                '">' +
+                esc(c.label) +
+                '</button>',
+            )
+            .join('') +
+          '</div></div>'
         );
       }
 
@@ -2470,6 +2832,7 @@
         const mainItem = c.main ? ITEMS[c.main] : null;
         const needsVariation = !!(mainItem && mainItem.variations);
         const needsSide = !!(mainItem && mainItem.requiresSide);
+        const portions = c.portions || 1;
 
         const slotRow = (slot, opts = {}) => {
           const item = c[slot] ? ITEMS[c[slot]] : null;
@@ -2479,7 +2842,7 @@
           if (item) {
             if (slot === 'soup') {
               const surcharge = p.lines.find((l) => l.adj && l.amount > 0);
-              amt = surcharge ? signed(surcharge.amount) : S.dish.soupIncluded;
+              amt = surcharge ? signed(surcharge.amount) : money(0);
             } else {
               amt = money(amountLine ? amountLine.amount : 0);
             }
@@ -2493,19 +2856,12 @@
             esc(S.composer.slots[slot]) +
             '</span><span class="value">' +
             (item
-              ? '<span class="picked">' +
-                esc(item.name) +
-                '</span>' +
-                (slot === 'main' && c.variation
-                  ? '<span class="sub">' + esc(c.variation) + '</span>'
-                  : '')
+              ? '<span class="picked">' + esc(item.name) + '</span>'
               : '<span class="placeholder">' +
                 esc(opts.required ? S.composer.choose : S.composer.none) +
                 '</span>') +
             (missing
-              ? '<span class="sub slot-req">' +
-                esc(slot === 'side' ? S.composer.sideMissing : S.composer.choose) +
-                '</span>'
+              ? '<span class="sub slot-req">' + esc(S.composer.sideMissing) + '</span>'
               : '') +
             '</span><span class="amt num">' +
             esc(amt) +
@@ -2513,19 +2869,32 @@
           );
         };
 
-        const variationRow =
-          needsVariation &&
-          '<button type="button" class="' +
-            cls('slot-row', !c.variation && 'is-required') +
-            '" data-slot="variation"><span class="label">' +
-            esc(S.composer.variationLabel) +
-            '</span><span class="value">' +
-            (c.variation
-              ? '<span class="picked">' + esc(c.variation) + '</span>'
-              : '<span class="placeholder">' + esc(S.composer.variationMissing) + '</span>') +
-            '<span class="sub">' +
-            esc(mainItem.name) +
-            '</span></span><span class="chev" aria-hidden="true">›</span></button>';
+        /* Variations as selectable price cards — one tap, price visible, no nested
+           sheet. Adapted from the reference item sheet. */
+        const variationBlock = needsVariation
+          ? '<div><p class="' +
+            cls('field-label', !c.variation && 'is-required') +
+            '">' +
+            esc(c.variation ? S.composer.variationLabel : S.composer.variationMissing) +
+            '</p><div class="varcards" role="radiogroup" aria-label="' +
+            esc(S.composer.variationOf(mainItem.name)) +
+            '">' +
+            mainItem.variations
+              .map(
+                (v) =>
+                  '<button type="button" class="varcard" role="radio" aria-checked="' +
+                  (c.variation === v) +
+                  '" data-pick-variation="' +
+                  esc(v) +
+                  '"><span class="vname">' +
+                  esc(v) +
+                  '</span><span class="vprice num">' +
+                  money(priceOf(mainItem, date)) +
+                  '</span><span class="vmark" aria-hidden="true">✓</span></button>',
+              )
+              .join('') +
+            '</div></div>'
+          : '';
 
         const priceRows = p.lines
           .map(
@@ -2554,11 +2923,11 @@
           '<div class="slots">' +
           slotRow('soup') +
           slotRow('main') +
-          (variationRow || '') +
           (needsSide ? slotRow('side', { required: true }) : '') +
           slotRow('pickle') +
           slotRow('dessert') +
           '</div>' +
+          variationBlock +
           (p.lines.length
             ? '<div class="pricebox">' +
               priceRows +
@@ -2569,28 +2938,43 @@
               '</span></div></div>'
             : '<div class="banner banner-info"><span class="icon" aria-hidden="true">i</span><div><p>' +
               esc(S.composer.emptyMenu) +
-              '</p></div></div>');
+              '</p></div></div>') +
+          (portions > 1
+            ? '<p class="help">' + esc(S.composer.portionsHelp) + '</p>'
+            : '');
 
         const invalid = p.errors.length > 0;
+        const errorText = p.errors.includes('variation')
+          ? S.composer.variationMissing
+          : p.errors.includes('side')
+            ? S.composer.sideMissing
+            : S.composer.emptyMenu;
+
+        /* Footer taken from the reference sheet: live price left, quantity right,
+           cancel and confirm on their own row. */
         const foot =
-          '<button type="button" class="btn btn-primary btn-block"' +
+          '<div class="foot-top"><span class="foot-price num">' +
+          money(p.total * portions) +
+          (portions > 1 ? '<small>' + esc(money(p.total) + ' × ' + portions) + '</small>' : '') +
+          '</span><span class="stepper"><button type="button" aria-label="' +
+          esc(S.extras.less) +
+          '" data-portions="-1"' +
+          (portions > 1 ? '' : ' disabled') +
+          '>−</button><span class="qty num">' +
+          portions +
+          ' ' +
+          esc(S.composer.portions) +
+          '</span><button type="button" aria-label="' +
+          esc(S.extras.more) +
+          '" data-portions="1">+</button></span></div>' +
+          (invalid ? '<p class="error">' + esc(errorText) + '</p>' : '') +
+          '<div class="foot-actions"><button type="button" class="btn btn-ghost" data-close-overlay>' +
+          esc(S.composer.cancel) +
+          '</button><button type="button" class="btn btn-primary"' +
           (invalid ? ' aria-disabled="true" disabled' : ' data-add="1"') +
           '>' +
-          esc(invalid ? S.composer.add(money(p.total)) : S.composer.add(money(p.total))) +
-          '</button>' +
-          (invalid
-            ? '<p class="field"><span class="error">' +
-              esc(
-                p.errors.includes('variation')
-                  ? S.composer.variationMissing
-                  : p.errors.includes('side')
-                    ? S.composer.sideMissing
-                    : S.composer.emptyMenu,
-              ) +
-              '</span></p>'
-            : '<button type="button" class="btn btn-ghost btn-block" data-close-overlay>' +
-              esc(S.composer.cancel) +
-              '</button>');
+          esc(portions > 1 ? S.composer.addMany(portions) : S.composer.add) +
+          '</button></div>';
 
         return Sheet(
           c.editing ? S.composer.editTitle : S.composer.title,
@@ -2604,28 +2988,6 @@
         const slot = vm.picker.slot;
         const date = vm.activeDate;
         const c = vm.composer;
-
-        if (slot === 'variation') {
-          const mainItem = ITEMS[c.main];
-          const opts = mainItem.variations
-            .map(
-              (v) =>
-                '<button type="button" class="option" role="radio" aria-checked="' +
-                (c.variation === v) +
-                '" data-pick-variation="' +
-                esc(v) +
-                '"><span class="radio"></span><span class="oname">' +
-                esc(v) +
-                '</span><span class="oamt"></span></button>',
-            )
-            .join('');
-          return Sheet(
-            S.composer.variationOf(mainItem.name),
-            cap(dayFull(date)),
-            '<div class="options" role="radiogroup">' + opts + '</div>',
-            '',
-          );
-        }
 
         const groups = slotOptions(slot, date);
         const none =
@@ -2720,16 +3082,23 @@
         const d = WEEK.byDate[vm.activeDate];
         const date = vm.activeDate;
         const main =
-          Section(S.sections.soups, d.soups, date, { hint: S.sections.soupsHint }) +
-          Section(S.sections.mains, d.mains, date, { action: true }) +
+          ChipRail(vm) +
+          Section(S.sections.soups, d.soups, date, { sec: 'soups', hint: S.sections.soupsHint }) +
+          Section(S.sections.mains, d.mains, date, { sec: 'mains', action: true }) +
           Section(S.sections.featured, WEEK.featured, date, {
+            sec: 'featured',
             action: true,
+            rail: true,
             hint: S.sections.weekendHint,
           }) +
-          Section(S.sections.allWeek, WEEK.allWeek, date, { action: true }) +
-          Section(S.sections.sideExtras, WEEK.sideExtras, date) +
-          Section(S.sections.pickles, WEEK.pickles, date) +
-          Section(S.sections.desserts, WEEK.desserts, date) +
+          Section(S.sections.allWeek, WEEK.allWeek, date, {
+            sec: 'allweek',
+            action: true,
+            rail: true,
+          }) +
+          Section(S.sections.sideExtras, WEEK.sideExtras, date, { sec: 'sides', rail: true }) +
+          Section(S.sections.pickles, WEEK.pickles, date, { sec: 'pickles', rail: true }) +
+          Section(S.sections.desserts, WEEK.desserts, date, { sec: 'desserts', rail: true }) +
           '<div class="allergen-note"><span aria-hidden="true">⚠</span><p>' +
           esc(S.allergens.notice) +
           ' <button type="button" data-open="allergens">' +
@@ -3045,6 +3414,7 @@
         ).id;
       const composedMenu = (o) => ({
         recipient: null,
+        portions: 1,
         soup: null,
         main: null,
         variation: null,
@@ -3135,7 +3505,7 @@
         {
           id: 'menu-empty',
           label: '2a · Menü — üres kosár',
-          note: 'Az első képernyő. Hétfő és kedd már lezárult (áthúzva, nem választható), a szerda az első rendelhető nap. A napi levesek ára 0, mellettük „A menü ára tartalmazza”. A <b>Gombás csirkemell</b> kézzel elfogyottra állítva.',
+          note: 'Az első képernyő. Hétfő és kedd már lezárult (áthúzva, nem választható), a szerda az első rendelhető nap. A kiszállítási díj és a minimum rögtön a fejlécben. A kategória-csipek a hosszú naphoz ugranak. A napi levesek ára 0, mellettük „A menü ára tartalmazza”. A <b>Gombás csirkemell</b> kézzel elfogyottra állítva.',
           vm: () => baseVm({}),
         },
         {
@@ -3153,7 +3523,7 @@
         {
           id: 'composer-required',
           label: '2b · Összeállító — kötelező mezők',
-          note: 'A „Rántott szelet” gombjáról nyílt. A főételnek van változata és köretet is kér, ezért mindkét sor piros, a „Hozzáadás” tiltva. A kinek-mező opcionális: ez a csoportos rendelés belépője.',
+          note: 'A fogás egész sora kattintható — nincs külön „Összeállítom” gomb. A főételnek van változata és köretet is kér: a köret sora piros, a változat kártyái pirossal címkézve, a „Hozzáadás” tiltva. A kinek-mező opcionális: ez a csoportos rendelés belépője.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3164,7 +3534,7 @@
         {
           id: 'picker-main',
           label: '2b · Fogásválasztó — főétel',
-          note: 'A napi főételek, a heti kiemelt ajánlat és az egész héten rendelhető tételek egy listában, csoportcímkékkel. Az elfogyott tétel áthúzva és nem választható.',
+          note: 'A napi főételek, a heti kiemelt ajánlat és az egész héten rendelhető tételek egy listában, csoportcímkékkel. Az elfogyott tétel áthúzva és nem választható. A változatot már nem itt választod: az az összeállítóban kártya.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3187,6 +3557,23 @@
                 main: permItem('Csirkemellcsíkok'),
                 side: permItem('Steak burgonya'),
                 dessert: permItem('Almás pite'),
+              }),
+            }),
+        },
+        {
+          id: 'composer-portions',
+          label: '2b · Összeállító — több adag ugyanabból',
+          note: 'A referenciából átvett mennyiség-léptető. Három kollégának ugyanaz a menü: egy összeállítás, három kosársor — mindegyik külön <code>order_menus</code> sor, saját névvel kitölthető. Ez az egyetlen új funkció, amit a Gasty-ből hoztam; ha nem kell, egy sor törlése.',
+          vm: () =>
+            baseVm({
+              cart: cartFull(),
+              overlay: 'composer',
+              composer: composedMenu({
+                soup: dayItem(WED, 'Húsleves cérnametélttel'),
+                main: dayItem(WED, 'Sertéssült'),
+                side: permItem('Főtt burgonya'),
+                pickle: permItem('Csemege uborka'),
+                portions: 3,
               }),
             }),
         },
@@ -3439,11 +3826,24 @@
       };
 
       stage.addEventListener('click', (ev) => {
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-pick-variation],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-pick-variation],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions]');
         if (!el || !vm) return;
         const d = el.dataset;
 
-        if (d.day) {
+        if (d.jump !== undefined) {
+          // Two device frames render the same view model; scroll the one clicked in.
+          vm.activeChip = d.jump;
+          render();
+          const frame = ev.target.closest('.device');
+          const target = d.jump
+            ? frame.querySelector('[data-sec="' + d.jump + '"]')
+            : frame.querySelector('.chiprail');
+          if (target) target.scrollIntoView({ block: 'start' });
+          return;
+        }
+        if (d.portions) {
+          vm.composer.portions = Math.max(1, (vm.composer.portions || 1) + Number(d.portions));
+        } else if (d.day) {
           vm.activeDate = d.day;
         } else if (d.compose) {
           vm.composer = composedMenu(d.compose === 'new' ? {} : { main: d.compose });
@@ -3461,7 +3861,10 @@
           vm.picker = { slot: d.slot };
           vm.overlay = 'picker';
         } else if (d.add) {
-          cartDay().menus.push({ ...vm.composer });
+          const n = vm.composer.portions || 1;
+          for (let k = 0; k < n; k++) {
+            cartDay().menus.push({ ...vm.composer, portions: 1 });
+          }
           vm.composer = composedMenu({});
           vm.overlay = null;
         } else if (d.remove !== undefined) {

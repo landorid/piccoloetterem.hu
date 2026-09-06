@@ -8,7 +8,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
 | Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
-| One-screen overview | [`overview.png`](overview.png) — all 17 states at mobile width |
+| One-screen overview | [`overview.png`](overview.png) — all 18 states at mobile width |
 
 ## How to read it
 
@@ -109,13 +109,16 @@ What O6/O7 need to build, in the order they appear:
 | `WeekBar` | week number pill, date range, cutoff sentence |
 | `DayRail` | six tabs; disabled for past days and holidays; cart-count badge; horizontally scrollable |
 | `Banner` | info / warn / danger / ok; title, body, optional list, optional action |
-| `DishList` + `Dish` | name, description, price (with the Saturday price when it differs), allergen codes, tags (`Elfogyott`, `Választható`, `Körettel`), "Összeállítom" |
-| `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14 |
+| `ChipRail` | sticky category chips that jump to a section |
+| `DishList` + `Dish` | tile, name, description, price (with the Saturday price when it differs), allergen chips, tags (`Elfogyott`, `Választható`, `Körettel`); the whole row is the tap target |
+| `RailCard` | the same item as a card in a horizontal rail: tile, price above name |
+| `Tile` | the leading square — a photo where one exists, the dish's initial where none does |
+| `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14; codes render as round chips |
 | `DayCart` | composed menus with recipient, per-line breakdown, adjustments, edit/remove, food subtotal |
 | `ExtrasRow` | name, unit price, stepper, line total |
-| `ComposerSheet` | recipient field, five slot rows, live price box, add button with the price in it |
+| `ComposerSheet` | recipient field, five slot rows, variation cards, live price box, footer with price + portions + actions |
+| `VariationCards` | one tap per variation, price on the card, accent ring and ✓ when chosen |
 | `SlotPicker` | grouped radio list, "Nem kérek" first, sold-out disabled |
-| `VariationPicker` | same list, no "Nem kérek" — a variation is required |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
 | `Totals` | per day: food, delivery fee, minimum warning; then the grand total |
 | `SummaryBar` | sticky bar on mobile, card in the rail on desktop; collapsed/expanded; blocker state |
@@ -126,7 +129,7 @@ What O6/O7 need to build, in the order they appear:
 
 ## The states in the mockup
 
-Scope 2a–2h of the issue, one entry each. All 17 exist at both widths.
+Scope 2a–2h of the issue, one entry each. All 18 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
@@ -136,6 +139,7 @@ Scope 2a–2h of the issue, one entry each. All 17 exist at both widths.
 | Összeállító — kötelező mezők | 2b | missing variation and missing side, add disabled |
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Összeállító — kész menü | 2b | full price breakdown with the soup surcharge explained |
+| Összeállító — több adag | 2b | one composition, three cart rows |
 | Összegzés kibontva | 2d | per-day subtotals, delivery fee line, grand total |
 | Minimum alatt | 2d | warning per day, "Tovább" blocked |
 | Pénztár | 2e | five fields, recap, totals |
@@ -147,6 +151,39 @@ Scope 2a–2h of the issue, one entry each. All 17 exist at both widths.
 | Beküldéskor elfogyott | 2g | which day, whose menu, which dish |
 | Jövő heti menü nincs feltöltve | 2h | message screen, no day rail |
 | Üres / zárt hét | 2h | day rail with every day marked "Zárva" |
+
+## What we took from market.gasty.io
+
+Dávid pointed at [Lucifer 2 Pizzéria on Gasty](https://market.gasty.io/delivery/lucifer_2_pizzeria/splash)
+as a flow he likes. It is a per-item marketplace, not a weekly menu, so what transfers is the
+*item-level* craft. What we took, and where it lands:
+
+| Taken | Where it lands here |
+|---|---|
+| **The item sheet's anatomy** — uppercase category eyebrow, big title, description, allergens, choices, sticky action bar | The composer sheet. It was already close; now the order and the emphasis match. |
+| **Variations as selectable price cards** with an accent ring and a ✓ badge | Replaces the nested variation picker. One tap instead of two, and every variation's price is visible at once. The single biggest improvement of this revision. |
+| **A footer with the live price left and the action right** | The composer footer. The old full-width button hid the price inside its own label. |
+| **A quantity stepper on the item** | "3 adag" on the composer: three colleagues, one composition, three cart rows — see decision 8. |
+| **A leading square tile on every row**, with a quiet placeholder when there is no photo | `Tile`. Piccolo has no photos (PLAN.md §2), so the tile carries the dish's initial. If photos ever arrive the tile takes them and nothing else moves. |
+| **The whole row as the tap target** | The "Összeállítom" button is gone: fewer things on the row, a much bigger target. |
+| **Horizontal rails for secondary sections** | Kiemelt ajánlat, Egész héten rendelhető, Feláras köretek, Savanyúságok, Desszertek. |
+| **A sticky category chip row** | Jump to a section without scrolling past the whole day. |
+| **The delivery fee stated in the header** — their "Mindössze 190 Ft kényelmi díj" | `order.terms`, under the week label. Ours was buried in the footer and the summary. |
+| **A closed-state banner that names the next opening** | We already had this for the cutoff; their version confirmed it earns the space. |
+
+What we deliberately did **not** take:
+
+- **The splash screen.** A welcome interstitial between a regular and their 07:40 order is a tax.
+  A single restaurant reached by people who already know it does not need to introduce itself.
+- **Horizontal rails for the daily soups and mains.** Gasty has eight categories of many items; we
+  have two soups and four or five mains. Hiding today's mains behind a swipe is exactly the wrong
+  trade. Rails are for the repeat-every-week sections only.
+- **Photo-first cards.** Without photos a photo-shaped layout is mostly grey. We kept the card
+  *shape* and the tile, not the photo-driven hierarchy — so price and name still lead.
+- **Their yellow accent.** Piccolo's brown is the brand. We took their *selected-state* treatment
+  (ring plus ✓ badge), not their hue.
+- **The per-item note field.** Our domain has one note per order, and the composer's free-text
+  field is already spoken for by the recipient name.
 
 ## Decisions taken in this mockup
 
@@ -171,6 +208,11 @@ confirm or reject:
    on delivery. Adding a payment block would imply a choice that does not exist.
 7. **Pickup is not drawn.** `pickupEnabled` is false for Piccolo; drawing an unreachable branch
    would invite it into O6.
+8. **The portions stepper creates N menus, not one menu with a quantity.** `order_menus` has no
+   quantity column and should not get one: three colleagues means three rows, each with its own
+   `recipient_name`, which is what the kitchen summary and the delivery list need. The stepper is
+   a shortcut for composing the same thing three times, nothing more. It is the only new capability
+   this revision adds — if it is not wanted, it is one component to delete.
 
 ## Follow-ups this mockup suggests
 

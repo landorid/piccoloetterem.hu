@@ -21,8 +21,8 @@ Merge it with what is already in `strings.ts`: keep `siteName`, replace the `ord
    | `errors.emptyWeekBody` | new `config.messages.*` entry — see the note in README.md |
    | extras names (`Éthordó doboz`, `Kenyér`, `Ketchup / tartármártás`) | `config.extras[].name` |
    | `order.phone`, `order.address`, `order.intake`, `footer.opening`, `footer.delivery` | restaurant identity — **not yet in `RestaurantConfig`**, see README.md §Follow-ups |
-3. **Numbers written into sentences.** `summary.minimumWarning`, `summary.minimumBlocked`,
-   `footer.delivery` and `dish.soupIncluded` currently spell out 2 200 Ft, 150 Ft and 650 Ft. They
+3. **Numbers written into sentences.** `order.terms`, `summary.minimumWarning`, `summary.minimumBlocked`,
+   `sections.soupsHint` and `footer.delivery` currently spell out 2 200 Ft, 150 Ft and 650 Ft. They
    must be interpolated from `config.pricing` instead of typed, or the copy lies the day a price
    changes. Left as prose here so the sentences read naturally in review; O6 wires them up.
 4. **Formatting is not copy.** `common.currency` is a formatter, not a string. Put it in a
@@ -40,6 +40,7 @@ export const strings = {
     intake: 'Rendelésfelvétel 7:30–9:30',
     phone: '+36 30 490 1122',
     address: 'Szombathely, Mátyás Király u. 12.',
+    terms: 'Kiszállítás 150 Ft / cím / nap · Naponta legalább 2 200 Ft ételérték',
   },
   week: {
     heading: 'Heti menü',
@@ -66,6 +67,8 @@ export const strings = {
     desserts: 'Desszertek',
     weekendHint: 'Szombaton eltérő ár',
     soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft.',
+    all: 'Összes',
+    jumpLabel: 'Ugrás a kínálaton belül',
   },
   dish: {
     soupIncluded: 'A menü ára tartalmazza',
@@ -73,6 +76,7 @@ export const strings = {
     hasVariations: 'Választható',
     needsSide: 'Körettel',
     compose: 'Összeállítom',
+    noPhoto: 'Ehhez a fogáshoz nincs kép',
     composeBlank: 'Menü összeállítása',
     weekendPrice: (p: string) => 'szombaton ' + p,
   },
@@ -122,7 +126,10 @@ export const strings = {
     soupSurcharge: 'Leves felár',
     soupSurchargeWhy: 'A leves csak a napi főételek árában van benne.',
     priceTotal: 'Menü ára',
-    add: (price: string) => 'Hozzáadás · ' + price,
+    add: 'Hozzáadás',
+    addMany: (n: number) => n + ' adag hozzáadása',
+    portions: 'adag',
+    portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba, saját névvel.',
     save: 'Módosítás mentése',
     cancel: 'Mégsem',
     pickerTitle: (slot: string) => slot + ' választása',
@@ -240,5 +247,8 @@ export const strings = {
   who cannot order by 9:30 has lost their lunch, not just a form submission.
 - **"Kinek lesz?" instead of "Címzett".** Group ordering is nine colleagues, not a shipping label.
 - **"Elfogyott", not "Nem elérhető".** It is what the kitchen says on the phone.
+- **`composer.portions` is `adag`, not `db`.** You order portions of a lunch, not pieces of a
+  product. `addMany(3)` reads "3 adag hozzáadása" — it says what the button will do, in the plural
+  the guest already sees on the stepper.
 - **The e-mail address is repeated on the success screen.** A mistyped address is the most common
   reason a confirmation never arrives, and it is the only moment the guest can still notice it.
