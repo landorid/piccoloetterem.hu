@@ -9,6 +9,7 @@ Companion documents:
 
 - [STACK.md](STACK.md) — the technology choices and the rules that must not be broken (Hungarian).
 - [LEGACY-INVENTORY.md](LEGACY-INVENTORY.md) — what the old system does, feature by feature.
+- [ORCHESTRATION.md](ORCHESTRATION.md) — how issues are launched, babysat and merged.
 
 Language: code, comments, commits, issues and docs are English. All user-facing text (public page
 and admin) is Hungarian, kept in one strings file per app.
@@ -34,9 +35,16 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 
 **Process**
 
-- One agent works one issue at a time, sequentially. Work happens on `develop`; `main` is
-  production. Agents commit directly to `develop`. No Turborepo, no GitHub Project board.
-- Issues carry `blocked by` links. Do not start an issue whose blockers are open.
+- One agent works one issue at a time, sequentially (concurrency 1). `develop` is the integration
+  branch, `main` is production. An agent branches `feat/<key>-<issue>` from `develop` and lands its
+  work through a **pull request into `develop`**; it never pushes to `develop` or `main` and never
+  merges its own PR. Dávid merges. Revised 2026-09-06: the original decision was direct commits to
+  `develop`; PRs replaced it so review, CI and conflict handling have somewhere to happen.
+- No Turborepo, no GitHub Project board.
+- Issues carry `blocked by` links. Do not start an issue whose blockers are open — a blocker counts
+  as done only when its PR is merged into `develop` and the issue is closed.
+- An orchestrator session (`docs/ORCHESTRATION.md`) picks the next issue, launches one worker
+  session for it, and babysits the open PR hourly.
 - GitHub Actions on every push to `develop`: typecheck, lint, unit tests, deploy the staging
   Worker. On push to `main`: the same checks, deploy production.
 - Testing: `packages/core` is fully unit-tested (Vitest). Database code is exercised against a
@@ -206,15 +214,43 @@ Strict order. Each issue is one agent session. `→` marks blockers. Issues live
 | P4 [#42](https://github.com/landorid/piccoloetterem.hu/issues/42) | Enter the permanent items and allergens into the admin | manual |
 | P5 [#43](https://github.com/landorid/piccoloetterem.hu/issues/43) | Connect SendOps to the AWS account | manual email |
 
-## 6. Definition of done for an agent issue
+## 6. How an agent issue is written and closed
 
-- Acceptance criteria in the issue are met; nothing outside the issue's scope was changed.
-- `pnpm typecheck`, `pnpm lint`, `pnpm test` pass locally.
-- Domain logic lives in `packages/core` with tests; handlers and components stay thin.
-- Hungarian UI strings go in the app's strings file, never inline.
-- No secrets committed. `.env.example` updated when a new variable appears.
-- Committed to `develop` with a message referencing the issue (`F3: …` / `Closes #12`).
-- A short note on the issue: what was built, what was deliberately left out, anything surprising.
+Every `ready-for-agent` issue is self-contained for a model with no prior context. It carries the
+same sections in the same order, and copies the decisions it needs instead of only linking them:
+
+| Section | Holds |
+|---|---|
+| Outcome | One paragraph: what exists when the issue is done |
+| Context | Project summary, repo layout, stack, the domain model / rules relevant to this issue, what earlier issues already provide |
+| Scope | Numbered steps, exact files and routes |
+| Non-goals | What must not be built here even if tempting |
+| Acceptance criteria | Checkboxes, each verifiable |
+| Validation | The commands or manual steps that prove the criteria, and what to paste in the closing note |
+| Repo guardrails | Branch, scope, language, where logic lives, secrets, checks, dependencies, closing note |
+| Stop conditions | When to stop and report instead of guessing |
+| Dependencies | `Blocked by` and `Unblocks` issue numbers |
+
+Guardrails (identical in every issue):
+
+- Branch `feat/<key>-<issue>` from `develop`; never commit to `develop` or `main`. Message
+  `<key>: <what>`. Open a draft PR into `develop` at the first commit, body ending `Closes #<issue>`;
+  mark it ready when acceptance passes. Never merge your own PR.
+- Change only what the issue scopes; keep shared-file diffs minimal and mention them.
+- Code, comments, commits in English. User-facing strings in Hungarian, in the app's `strings.ts`, never inline.
+- Domain logic in `packages/core` with tests; handlers and components stay thin.
+- No secrets in the repo; new env vars go into `.env.example`.
+- `pnpm typecheck && pnpm lint && pnpm test && pnpm build` pass before committing.
+- Do not reopen a decision in §2; if one blocks you, stop.
+- No new dependencies without a one-line justification in the closing note.
+- Close with a comment: what was built, what was left out on purpose, surprises, recommended follow-ups.
+
+Stop conditions (identical in every issue): a blocker still open or its output missing from
+`develop`; a required secret, account or resource absent; the scope would require changing a §2
+decision or a STACK.md §6 rule; acceptance cannot be validated with the listed means; the work
+exceeds roughly one working day (propose a split instead).
+
+Manual issues (label `manual`) are Dávid's and skip the guardrail and stop sections.
 
 ## 7. Backlog (no milestone, label `backlog`, issues #44–#51)
 
