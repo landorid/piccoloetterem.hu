@@ -6,6 +6,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | | |
 |---|---|
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
+| Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
 | One-screen overview | [`overview.png`](overview.png) — all 17 states at mobile width |
 
