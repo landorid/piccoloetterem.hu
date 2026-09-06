@@ -6,8 +6,11 @@ one has merged. Decided 2026-09-06; it revises the process bullets in [PLAN.md](
 
 ## Rules
 
-1. **Concurrency 1.** Exactly one worker is in flight at a time. Never launch the next issue while
-   an earlier one still has an open PR.
+1. **Concurrency 1 by default.** One worker in flight at a time; do not launch the next issue while
+   an earlier one still has an open PR. Dávid may authorise an exception (he did on 2026-09-06, for
+   #53 alongside #30). When he does, the heartbeat treats *every* open PR as in-flight — health-check
+   each one, and warn both workers about the files they can collide on. Never raise concurrency on
+   your own judgement.
 2. **PR per issue.** A worker branches `feat/<key>-<issue>` from `develop`, opens a draft PR into
    `develop`, and marks it ready when acceptance passes.
 3. **Never auto-merge.** Neither the worker nor the orchestrator merges anything, ever. Dávid merges
@@ -90,7 +93,7 @@ Runs in the orchestrator session, once an hour. Each tick, in order:
 1. **Merged?** `gh pr list --state merged --limit 5`. If the current PR merged, **close its issue
    manually** (`gh issue close <n> --comment "Done: PR #<pr> merged into develop as <sha>."`) —
    nothing closes it automatically. Then the slot is free, go to step 5.
-2. **PR health.** For the open PR: `gh pr checks <n>` (CI), `gh pr view <n> --json reviewDecision,mergeable,comments,reviews`.
+2. **PR health.** For each open PR: `gh pr checks <n>` (CI), `gh pr view <n> --json reviewDecision,mergeable,comments,reviews`.
    - CI red → tell the worker session which check failed and its log tail. **Until #22 (F7) merges
      there is no project CI** — only GitGuardian runs, so a green tick proves nothing and this
      substep has nothing to read. Judge those PRs on the worker's pasted validation output instead.
@@ -102,8 +105,8 @@ Runs in the orchestrator session, once an hour. Each tick, in order:
    it to Dávid rather than silently waiting.
 4. **Blocked on Dávid?** PR is ready for review, CI green, no conflicts → say so and stop nagging;
    the merge is his.
-5. **Next issue.** Only when no PR is open: take the next row of the order table whose blockers are
-   all closed, and post its task chip.
+5. **Next issue.** Only when no PR is open (or Dávid has authorised an exception): take the next
+   row of the order table whose blockers are all closed, and post its task chip.
 6. **Manual reminders.** Mention any `manual` issue whose blockers just closed.
 
 Never merge. Never push to `develop` or `main`. Never start a second worker.
