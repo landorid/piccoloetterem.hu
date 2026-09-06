@@ -6,7 +6,15 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/dist", "!**/.astro", "!**/.wrangler", "!**/coverage", "!pnpm-lock.yaml"]
+    "includes": [
+      "**",
+      "!docs/design",
+      "!**/dist",
+      "!**/.astro",
+      "!**/.wrangler",
+      "!**/coverage",
+      "!pnpm-lock.yaml"
+    ]
   },
   "formatter": {
     "enabled": true,
