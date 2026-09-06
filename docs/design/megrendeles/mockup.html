@@ -1260,20 +1260,21 @@
         text-decoration-color: var(--line-strong);
       }
 
-      .varcards {
+      .choicecards {
         display: flex;
         gap: var(--s-2);
         overflow-x: auto;
         scrollbar-width: none;
         padding: 2px 0 var(--s-1);
       }
-      .varcards::-webkit-scrollbar {
+      .choicecards::-webkit-scrollbar {
         display: none;
       }
-      .varcard {
+      .choicecard {
         position: relative;
         flex: none;
-        min-width: 122px;
+        min-width: 120px;
+        max-width: 210px;
         padding: var(--s-3) 36px var(--s-3) var(--s-3);
         border: 2px solid var(--line);
         border-radius: var(--radius);
@@ -1285,22 +1286,29 @@
         flex-direction: column;
         gap: 2px;
       }
-      .varcard[aria-checked='true'] {
+      .choicecard[aria-checked='true'] {
         border-color: var(--brand-600);
         background: var(--brand-50);
       }
-      .varcard .vname {
+      .choicecard .vname {
         font-family: var(--font-display);
         font-size: var(--t-base);
         font-weight: 500;
         line-height: 1.2;
+        text-wrap: balance;
       }
-      .varcard .vprice {
+      .choicecard[aria-disabled='true'] .vname,
+      .choicecard[aria-disabled='true'] .vprice {
+        color: var(--ink-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--line-strong);
+      }
+      .choicecard .vprice {
         font-size: var(--t-sm);
         font-weight: 600;
         color: var(--ink-500);
       }
-      .varcard .vmark {
+      .choicecard .vmark {
         position: absolute;
         top: 8px;
         right: 8px;
@@ -1311,7 +1319,7 @@
         background: var(--paper);
         color: transparent;
       }
-      .varcard[aria-checked='true'] .vmark {
+      .choicecard[aria-checked='true'] .vmark {
         display: grid;
         place-items: center;
         border-color: var(--brand-600);
@@ -1887,6 +1895,7 @@
           none: 'Nem kérek',
           choose: 'Válassz',
           variationLabel: 'Változat',
+          requiredSuffix: 'kötelező',
           variationOf: (name) => name + ' — változat',
           variationMissing: 'Válassz változatot',
           sideMissing: 'Ehhez a főételhez köret jár',
@@ -2860,40 +2869,99 @@
               : '<span class="placeholder">' +
                 esc(opts.required ? S.composer.choose : S.composer.none) +
                 '</span>') +
-            (missing
-              ? '<span class="sub slot-req">' + esc(S.composer.sideMissing) + '</span>'
-              : '') +
             '</span><span class="amt num">' +
             esc(amt) +
             '</span><span class="chev" aria-hidden="true">›</span></button>'
           );
         };
 
-        /* Variations as selectable price cards — one tap, price visible, no nested
-           sheet. Adapted from the reference item sheet. */
-        const variationBlock = needsVariation
-          ? '<div><p class="' +
-            cls('field-label', !c.variation && 'is-required') +
+        /**
+         * Inline choice cards: one tap, no nested sheet, every option's price effect
+         * visible at once. Used where the whole option list fits — soup (2 options,
+         * and it drives both price adjustments) and side (7, and the only required
+         * slot). Main keeps the row + picker because it has 11 options across three
+         * categories; pickle and dessert keep theirs to stay quiet and keep the sheet
+         * short, but either becomes cards with one more choiceCards() call.
+         * The figure on a card is what that choice does to the menu total — for soup
+         * that is the −100 / +650 adjustment itself, which is the price the old system
+         * hid until after you had chosen.
+         */
+        const choiceCards = (slotLabel, opts) => {
+          const label = opts.required ? slotLabel + ' · ' + S.composer.requiredSuffix : slotLabel;
+          const cards = opts.options
+            .map((o) => {
+              const checked = (o.id || null) === (c[opts.slot] || null);
+              const soldOut = !!(o.id && ITEMS[o.id] && ITEMS[o.id].soldOut);
+              return (
+                '<button type="button" class="choicecard" role="radio" aria-checked="' +
+                checked +
+                '"' +
+                (soldOut ? ' aria-disabled="true" disabled' : '') +
+                ' data-pick="' +
+                esc(o.id || '') +
+                '" data-slot="' +
+                opts.slot +
+                '"><span class="vname">' +
+                esc(o.name) +
+                '</span><span class="vprice num">' +
+                esc(o.amount) +
+                '</span><span class="vmark" aria-hidden="true">✓</span></button>'
+              );
+            })
+            .join('');
+          return (
+            '<div><p class="' +
+            cls('field-label', opts.required && 'is-required') +
             '">' +
-            esc(c.variation ? S.composer.variationLabel : S.composer.variationMissing) +
-            '</p><div class="varcards" role="radiogroup" aria-label="' +
-            esc(S.composer.variationOf(mainItem.name)) +
+            esc(label) +
+            '</p><div class="choicecards" role="radiogroup" aria-label="' +
+            esc(S.composer.slots[opts.slot] || label) +
             '">' +
-            mainItem.variations
-              .map(
-                (v) =>
-                  '<button type="button" class="varcard" role="radio" aria-checked="' +
-                  (c.variation === v) +
-                  '" data-pick-variation="' +
-                  esc(v) +
-                  '"><span class="vname">' +
-                  esc(v) +
-                  '</span><span class="vprice num">' +
-                  money(priceOf(mainItem, date)) +
-                  '</span><span class="vmark" aria-hidden="true">✓</span></button>',
-              )
-              .join('') +
+            cards +
             '</div></div>'
+          );
+        };
+
+        /** What the receipt would say if this soup (or none) were chosen. */
+        const soupAmount = (id) => {
+          const adj = priceMenu({ ...c, soup: id }, date).lines.find((l) => l.adj);
+          return adj ? signed(adj.amount) : money(0);
+        };
+
+        const soupBlock = choiceCards(S.composer.slots.soup, {
+          slot: 'soup',
+          options: [
+            { id: null, name: S.composer.none, amount: soupAmount(null) },
+            ...WEEK.byDate[date].soups.map((s) => ({
+              id: s.id,
+              name: s.name,
+              amount: soupAmount(s.id),
+            })),
+          ],
+        });
+
+        const sideBlock = needsSide
+          ? choiceCards(S.composer.slots.side, {
+              slot: 'side',
+              required: !c.side,
+              options: [...WEEK.sides, ...WEEK.sideExtras].map((i) => ({
+                id: i.id,
+                name: i.name,
+                amount: money(priceOf(i, date)),
+              })),
+            })
+          : '';
+
+        const variationBlock = needsVariation
+          ? choiceCards(S.composer.variationLabel, {
+              slot: 'variation',
+              required: !c.variation,
+              options: mainItem.variations.map((v) => ({
+                id: v,
+                name: v,
+                amount: money(priceOf(mainItem, date)),
+              })),
+            })
           : '';
 
         const priceRows = p.lines
@@ -2920,14 +2988,16 @@
           '" /><p class="help">' +
           esc(S.composer.recipientHelp) +
           '</p></div>' +
+          soupBlock +
           '<div class="slots">' +
-          slotRow('soup') +
           slotRow('main') +
-          (needsSide ? slotRow('side', { required: true }) : '') +
+          '</div>' +
+          variationBlock +
+          sideBlock +
+          '<div class="slots">' +
           slotRow('pickle') +
           slotRow('dessert') +
           '</div>' +
-          variationBlock +
           (p.lines.length
             ? '<div class="pricebox">' +
               priceRows +
@@ -2939,9 +3009,7 @@
             : '<div class="banner banner-info"><span class="icon" aria-hidden="true">i</span><div><p>' +
               esc(S.composer.emptyMenu) +
               '</p></div></div>') +
-          (portions > 1
-            ? '<p class="help">' + esc(S.composer.portionsHelp) + '</p>'
-            : '');
+          (portions > 1 ? '<p class="help">' + esc(S.composer.portionsHelp) + '</p>' : '');
 
         const invalid = p.errors.length > 0;
         const errorText = p.errors.includes('variation')
@@ -2950,8 +3018,6 @@
             ? S.composer.sideMissing
             : S.composer.emptyMenu;
 
-        /* Footer taken from the reference sheet: live price left, quantity right,
-           cancel and confirm on their own row. */
         const foot =
           '<div class="foot-top"><span class="foot-price num">' +
           money(p.total * portions) +
@@ -3523,7 +3589,7 @@
         {
           id: 'composer-required',
           label: '2b · Összeállító — kötelező mezők',
-          note: 'A fogás egész sora kattintható — nincs külön „Összeállítom” gomb. A főételnek van változata és köretet is kér: a köret sora piros, a változat kártyái pirossal címkézve, a „Hozzáadás” tiltva. A kinek-mező opcionális: ez a csoportos rendelés belépője.',
+          note: 'A leves, a változat és a köret kártya — a választás nem hagyja el a lapot. Csak a főétel maradt sor + választólap, mert annak 11 opciója van három kategóriából. A kötelező blokkok címkéje piros és ki is mondja: „· kötelező”, nem csak a szín jelöl. A „Nem kérek” leveskártya már itt mutatja a −100 Ft-ot.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3534,7 +3600,7 @@
         {
           id: 'picker-main',
           label: '2b · Fogásválasztó — főétel',
-          note: 'A napi főételek, a heti kiemelt ajánlat és az egész héten rendelhető tételek egy listában, csoportcímkékkel. Az elfogyott tétel áthúzva és nem választható. A változatot már nem itt választod: az az összeállítóban kártya.',
+          note: 'Az egyetlen megmaradt választólap: a főételé. Napi főételek, heti kiemelt ajánlat és egész héten rendelhető tételek egy listában, csoportcímkékkel; az elfogyott tétel áthúzva és nem választható. A leves, a változat és a köret az összeállítóban kártya.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3546,7 +3612,7 @@
         {
           id: 'composer-valid',
           label: '2b · Összeállító — kész menü, árbontással',
-          note: 'Minden kötelező mező kitöltve. Az árdoboz soronként mutatja, miből áll az összeg, és megindokolja a leves felárat.',
+          note: 'Itt a főétel a „Csirkemellcsíkok”, aminek az ára nem tartalmaz levest — ezért a leveskártyán <b>+650 Ft</b> áll, még mielőtt rákoppintanál. A régi rendszerben ezt csak utólag tudtad meg (és 450-et számolt, miközben 650-et hirdetett).',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3826,7 +3892,7 @@
       };
 
       stage.addEventListener('click', (ev) => {
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-pick-variation],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions]');
         if (!el || !vm) return;
         const d = el.dataset;
 
@@ -3852,10 +3918,11 @@
           vm.overlay = 'allergens';
         } else if (d.pick !== undefined && d.slot) {
           vm.composer[d.slot] = d.pick || null;
-          if (d.slot === 'main') vm.composer.variation = null;
-          vm.overlay = 'composer';
-        } else if (d.pickVariation) {
-          vm.composer.variation = d.pickVariation;
+          if (d.slot === 'main') {
+            vm.composer.variation = null;
+            const picked = d.pick ? ITEMS[d.pick] : null;
+            if (!picked || !picked.requiresSide) vm.composer.side = null;
+          }
           vm.overlay = 'composer';
         } else if (d.slot && el.classList.contains('slot-row')) {
           vm.picker = { slot: d.slot };

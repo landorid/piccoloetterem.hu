@@ -118,6 +118,7 @@ export const strings = {
     none: 'Nem kérek',
     choose: 'Válassz',
     variationLabel: 'Változat',
+    requiredSuffix: 'kötelező',
     variationOf: (name: string) => name + ' — változat',
     variationMissing: 'Válassz változatot',
     sideMissing: 'Ehhez a főételhez köret jár',
