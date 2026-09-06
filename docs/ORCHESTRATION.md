@@ -11,13 +11,17 @@ one has merged. Decided 2026-09-06; it revises the process bullets in [PLAN.md](
 2. **PR per issue.** A worker branches `feat/<key>-<issue>` from `develop`, opens a draft PR into
    `develop`, and marks it ready when acceptance passes.
 3. **Never auto-merge.** Neither the worker nor the orchestrator merges anything, ever. Dávid merges
-   the PR and GitHub closes the issue via `Closes #<n>`. That merge is the only signal that the next
-   issue may start.
-4. **Blockers are merge-gated.** An issue is startable only when every issue in its `Blocked by`
+   the PR. That merge is the only signal that the next issue may start.
+4. **The orchestrator closes the issue.** `Closes #<n>` does **not** fire here: GitHub auto-closes a
+   linked issue only when the PR merges into the repository's *default* branch (`main`), and our PRs
+   target `develop`. After confirming a PR merged, the orchestrator closes the issue by hand with a
+   comment naming the merge commit. Without this every issue stays open and the blocker gate below
+   deadlocks.
+5. **Blockers are merge-gated.** An issue is startable only when every issue in its `Blocked by`
    list is *closed* — an open PR does not count.
-5. **Manual issues are Dávid's.** Issues labelled `manual` (#39–#43) are never given to a worker.
+6. **Manual issues are Dávid's.** Issues labelled `manual` (#39–#43) are never given to a worker.
    The orchestrator only reminds when one becomes unblocked.
-6. **#30 needs review.** O2 is a design mockup labelled `needs-review`. Its dependent #34 stays
+7. **#30 needs review.** O2 is a design mockup labelled `needs-review`. Its dependent #34 stays
    blocked until Dávid has approved the mockup, not merely until the PR merged.
 
 ## The order
@@ -82,10 +86,13 @@ has none of the orchestrator's context. Template:
 
 Runs in the orchestrator session, once an hour. Each tick, in order:
 
-1. **Merged?** `gh pr list --state merged --limit 5` and `gh issue view <current> --json state`.
-   If the current issue is closed and its PR merged → the slot is free, go to step 5.
+1. **Merged?** `gh pr list --state merged --limit 5`. If the current PR merged, **close its issue
+   manually** (`gh issue close <n> --comment "Done: PR #<pr> merged into develop as <sha>."`) —
+   nothing closes it automatically. Then the slot is free, go to step 5.
 2. **PR health.** For the open PR: `gh pr checks <n>` (CI), `gh pr view <n> --json reviewDecision,mergeable,comments,reviews`.
-   - CI red → tell the worker session which check failed and its log tail.
+   - CI red → tell the worker session which check failed and its log tail. **Until #22 (F7) merges
+     there is no project CI** — only GitGuardian runs, so a green tick proves nothing and this
+     substep has nothing to read. Judge those PRs on the worker's pasted validation output instead.
    - `mergeable: CONFLICTING` → tell the worker to rebase onto `develop`.
    - Unresolved review comments → relay them to the worker.
    Reach the worker with `send_message` to its session. If the worker session is gone, post the
