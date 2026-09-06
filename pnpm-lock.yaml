@@ -51,6 +51,9 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(vite@8.2.2(@types/node@22.20.0)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.13)(yaml@2.9.0))
+      '@types/node':
+        specifier: 22.20.0
+        version: 22.20.0
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -79,6 +82,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: 5.20260906.1
         version: 5.20260906.1
+      '@types/node':
+        specifier: 22.20.0
+        version: 22.20.0
       typescript:
         specifier: 5.9.3
         version: 5.9.3
@@ -104,6 +110,9 @@ importers:
       '@astrojs/check':
         specifier: 0.9.10
         version: 0.9.10(prettier@3.9.6)(typescript@5.9.3)
+      '@types/node':
+        specifier: 22.20.0
+        version: 22.20.0
       '@types/react':
         specifier: 19.2.18
         version: 19.2.18
@@ -138,6 +147,9 @@ importers:
         specifier: 8.23.0
         version: 8.23.0
     devDependencies:
+      '@types/node':
+        specifier: 22.20.0
+        version: 22.20.0
       '@types/pg':
         specifier: 8.23.1
         version: 8.23.1

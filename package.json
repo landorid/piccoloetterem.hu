@@ -13,7 +13,7 @@
     "format": "biome check --write .",
     "test": "vitest run",
     "build:packages": "pnpm -r --stream --filter \"./packages/*\" build",
-    "build:apps": "pnpm -r --stream --filter \"./apps/*\" build",
+    "build:apps": "pnpm --filter @piccolo/web --filter @piccolo/admin build && pnpm --filter @piccolo/api build",
     "build": "pnpm run build:packages && pnpm run build:apps",
     "dev": "pnpm run build:packages && concurrently -n api,web,admin -c blue,green,magenta \"pnpm --filter @piccolo/api dev\" \"pnpm --filter @piccolo/web dev\" \"pnpm --filter @piccolo/admin dev\""
   },

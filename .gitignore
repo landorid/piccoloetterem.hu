@@ -11,5 +11,9 @@ coverage/
 .env.*
 !.env.example
 
+# Wrangler reads local secrets from .dev.vars; never commit it.
+.dev.vars
+.dev.vars.*
+
 .DS_Store
 *.log
