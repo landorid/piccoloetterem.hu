@@ -34,7 +34,7 @@
         --ink-900: #211c16;
         --ink-700: #4b4239;
         --ink-500: #7b7065;
-        --ink-400: #9c9184;
+        --ink-400: #8a7f72;
 
         --line: #e8dfd2;
         --line-strong: #d6c8b4;
@@ -546,7 +546,7 @@
       .dish.is-soldout .dish-name,
       .dish.is-soldout .dish-desc,
       .dish.is-soldout .dish-price {
-        color: var(--ink-400);
+        color: var(--ink-500);
       }
       .dish.is-soldout .dish-name {
         text-decoration: line-through;
@@ -808,6 +808,7 @@
         min-width: 0;
       }
       .cart-line .amt {
+        flex: none;
         margin-left: auto;
         white-space: nowrap;
       }
@@ -830,6 +831,7 @@
         font-weight: 700;
       }
       .cart-menu-total .amt {
+        flex: none;
         margin-left: auto;
       }
       .cart-actions {
@@ -893,6 +895,7 @@
         font-weight: 700;
       }
       .extra .amt {
+        flex: none;
         width: 68px;
         text-align: right;
         font-weight: 600;
@@ -1008,7 +1011,7 @@
         font-weight: 500;
       }
       .slot-row .value .placeholder {
-        color: var(--ink-400);
+        color: var(--ink-500);
       }
       .slot-row .value .sub {
         display: block;
@@ -1111,6 +1114,7 @@
         gap: var(--s-3);
       }
       .pricebox .row .amt {
+        flex: none;
         margin-left: auto;
         white-space: nowrap;
       }
@@ -1160,7 +1164,7 @@
         resize: vertical;
       }
       .field .control::placeholder {
-        color: var(--ink-400);
+        color: var(--ink-500);
       }
       .field .help {
         margin-top: var(--s-1);
@@ -1200,6 +1204,7 @@
         color: var(--ink-700);
       }
       .totals .row .amt {
+        flex: none;
         margin-left: auto;
         white-space: nowrap;
       }
@@ -2250,7 +2255,7 @@
                   '</span><span class="what">' +
                   esc(l.what) +
                   '</span><span class="amt num">' +
-                  (l.amount === 0 ? (l.note ? esc(l.note) : money(0)) : l.adj ? signed(l.amount) : money(l.amount)) +
+                  (l.adj ? signed(l.amount) : money(l.amount)) +
                   '</span></div>',
               )
               .join('');
@@ -3326,7 +3331,7 @@
 
       const stage = document.getElementById('stage');
       const stateSelect = document.getElementById('state');
-      let view = 'both';
+      let view = new URLSearchParams(location.search).get('view') || 'both';
       let currentId = (location.hash || '').slice(1) || STATES[0].id;
       let vm = null;
 
@@ -3488,6 +3493,10 @@
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(render, 120);
       });
+
+      document
+        .querySelectorAll('.seg button')
+        .forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === view)));
 
       loadState(currentId);
     </script>
