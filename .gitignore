@@ -1,4 +1,15 @@
+# The legacy CodeIgniter app: reference only, never part of this repository.
 ci_piccolo/
+
 node_modules/
+dist/
+.astro/
+.wrangler/
+coverage/
+
 .env
-.env.local
+.env.*
+!.env.example
+
+.DS_Store
+*.log

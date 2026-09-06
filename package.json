@@ -1,0 +1,27 @@
+{
+  "name": "piccolo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --stream typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "build:packages": "pnpm -r --stream --filter \"./packages/*\" build",
+    "build:apps": "pnpm -r --stream --filter \"./apps/*\" build",
+    "build": "pnpm run build:packages && pnpm run build:apps",
+    "dev": "pnpm run build:packages && concurrently -n api,web,admin -c blue,green,magenta \"pnpm --filter @piccolo/api dev\" \"pnpm --filter @piccolo/web dev\" \"pnpm --filter @piccolo/admin dev\""
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@types/node": "22.20.0",
+    "concurrently": "10.0.5",
+    "typescript": "5.9.3",
+    "vitest": "5.0.0"
+  }
+}
