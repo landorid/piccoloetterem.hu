@@ -112,13 +112,13 @@ What O6/O7 need to build, in the order they appear:
 | `ChipRail` | sticky category chips that jump to a section |
 | `DishList` + `Dish` | tile, name, description, price (with the Saturday price when it differs), allergen chips, tags (`Elfogyott`, `Választható`, `Körettel`); the whole row is the tap target |
 | `RailCard` | the same item as a card in a horizontal rail: tile, price above name |
-| `Tile` | the leading square — a photo where one exists, the dish's initial where none does |
+| `Tile` | the leading 48px square — a photo where one exists, the dish's initial where none does, empty where the choice is not a dish ("Nem kérek") |
 | `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14; codes render as round chips |
 | `DayCart` | composed menus with recipient, per-line breakdown, adjustments, edit/remove, food subtotal |
 | `ExtrasRow` | name, unit price, stepper, line total |
 | `ComposerSheet` | recipient field, five slot rows, variation cards, live price box, footer with price + portions + actions |
-| `ChoiceCards` | soup, variation and side: one tap per option, the price effect on the card, accent ring and ✓ when chosen |
-| `SlotPicker` | grouped radio list, "Nem kérek" first, sold-out disabled — main course only |
+| `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
+| `SlotPicker` | the same row, joined into one list with group headers: "Nem kérek" first, sold-out disabled — main course only |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
 | `Totals` | per day: food, delivery fee, minimum warning; then the grand total |
 | `SummaryBar` | sticky bar on mobile, card in the rail on desktop; collapsed/expanded; blocker state |
@@ -161,7 +161,7 @@ as a flow he likes. It is a per-item marketplace, not a weekly menu, so what tra
 | Taken | Where it lands here |
 |---|---|
 | **The item sheet's anatomy** — uppercase category eyebrow, big title, description, allergens, choices, sticky action bar | The composer sheet. It was already close; now the order and the emphasis match. |
-| **Choices as selectable price cards** with an accent ring and a ✓ badge | Replaces the nested picker for **soup, variation and side**. One tap instead of two, and every option's price effect is visible before you choose. The single biggest improvement of this revision — see "Which slots are cards" below. |
+| **Choices as full-width selection rows** — tile, name, price under the name, a mark on the right that fills with the accent and a ✓ when chosen | Replaces the nested picker for **soup, variation and side**. One tap instead of two, and every option's price effect is visible before you choose. The single biggest improvement of this revision — see "Which slots are rows" below. |
 | **A footer with the live price left and the action right** | The composer footer. The old full-width button hid the price inside its own label. |
 | **A quantity stepper on the item** | "3 adag" on the composer: three colleagues, one composition, three cart rows — see decision 8. |
 | **A leading square tile on every row**, with a quiet placeholder when there is no photo | `Tile`. Piccolo has no photos (PLAN.md §2), so the tile carries the dish's initial. If photos ever arrive the tile takes them and nothing else moves. |
@@ -181,21 +181,34 @@ What we deliberately did **not** take:
 - **Photo-first cards.** Without photos a photo-shaped layout is mostly grey. We kept the card
   *shape* and the tile, not the photo-driven hierarchy — so price and name still lead.
 - **Their yellow accent.** Piccolo's brown is the brand. We took their *selected-state* treatment
-  (ring plus ✓ badge), not their hue.
+  (accent border, accent tint, filled disc with a ✓), not their hue.
 - **The per-item note field.** Our domain has one note per order, and the composer's free-text
   field is already spoken for by the recipient name.
 
-### Which slots are cards, and why
+### Which slots are rows, and why
 
 | Slot | Options | Treatment |
 |---|---|---|
-| Leves | 2 + "Nem kérek" | **cards** — and the card carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
-| Főétel | 11, across three categories | **row + picker** — too many for a rail, and the composer is usually entered from a main anyway, so the slot arrives filled. |
-| Változat | 2–3 | **cards** |
-| Köret | 7 | **cards** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
-| Savanyúság, Desszert | 3 + "Nem kérek" each | **rows** — afterthoughts. Rows keep them quiet, signal "optional", and keep the sheet short. Either becomes cards with one more `choiceCards()` call if Dávid wants it. |
+| Leves | 2 + "Nem kérek" | **choice rows** — and the row carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
+| Főétel | 11, across three categories | **slot row + picker** — too many to inline, and the composer is usually entered from a main anyway, so the slot arrives filled. |
+| Változat | 2–3 | **choice rows**, without tiles — a variation is a property of the main course above it, not a dish of its own, and `Csirkemell` / `Csirkecomb` would both draw a `C`. |
+| Köret | 7 | **choice rows** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
+| Savanyúság, Desszert | 3 + "Nem kérek" each | **slot rows + picker** — afterthoughts. They keep the sheet short, and the collapsed row signals "optional". Either becomes choice rows with one more `choiceRows()` call if Dávid wants it. |
 
-A required card block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
+A required block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
+
+**All seven side options stack; the block does not scroll on its own.** The sheet body already
+scrolls, and a scroller nested inside it is the gesture people lose on a phone — you swipe to reach
+the price box and move the side list instead. It would also hide exactly the options that are the
+usual reason the add button is disabled. The cost is an honest one: the composer is a long sheet,
+and on a main course with a variation the chosen side can start below the fold. The price box at
+the bottom still names everything chosen, so nothing is hidden, only scrolled to.
+
+**The picker uses the same row, joined into a list.** One anatomy for choosing a dish, two chromes:
+separated hairline cards inline in the composer (a small set of alternatives), one card of joined
+rows in the main-course picker (11 items in three labelled groups, each with a description and
+allergen codes). Separating those eleven into eleven cards would cost a border and a gap per item
+and break the group structure that makes the list scannable.
 
 ## Decisions taken in this mockup
 

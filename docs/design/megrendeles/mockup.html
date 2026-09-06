@@ -526,6 +526,13 @@
         color: var(--brand-500);
         overflow: hidden;
       }
+      /* A choice that is not a dish ("Nem kérek"): an empty tile keeps the column
+         and says "nothing here" rather than inventing an initial. */
+      .tile-none {
+        background: var(--ground);
+        border-style: dashed;
+        border-color: var(--line-strong);
+      }
       .dish {
         display: flex;
         align-items: flex-start;
@@ -1208,125 +1215,116 @@
         border-radius: var(--radius);
         overflow: hidden;
       }
-      .option {
-        display: grid;
-        grid-template-columns: 22px 1fr auto;
-        gap: var(--s-1) var(--s-3);
-        width: 100%;
-        padding: var(--s-3) var(--s-4);
-        border: 0;
-        border-top: 1px solid var(--line);
-        background: none;
-        text-align: left;
-        align-items: start;
-      }
-      .option:first-child {
-        border-top: 0;
-      }
-      .option .radio {
-        width: 22px;
-        height: 22px;
-        border-radius: 50%;
-        border: 2px solid var(--line-strong);
-        margin-top: 1px;
-      }
-      .option[aria-checked='true'] .radio {
-        border-color: var(--brand-600);
-        background:
-          radial-gradient(circle at center, var(--brand-600) 0 5px, transparent 5px);
-      }
-      .option .oname {
-        font-family: var(--font-display);
-        font-size: var(--t-base);
-        font-weight: 500;
-      }
-      .option .osub {
-        grid-column: 2;
-        font-size: var(--t-sm);
-        color: var(--ink-500);
-      }
-      .option .oamt {
-        font-weight: 600;
-        white-space: nowrap;
-        font-size: var(--t-md);
-      }
-      .option[aria-disabled='true'] {
-        cursor: not-allowed;
-      }
-      .option[aria-disabled='true'] .oname,
-      .option[aria-disabled='true'] .oamt {
-        color: var(--ink-400);
-        text-decoration: line-through;
-        text-decoration-color: var(--line-strong);
-      }
-
-      .choicecards {
+      /* --- pick rows ------------------------------------------------------------
+         One anatomy for choosing a dish, taken from the reference item sheet: a 48px
+         tile, the name with its price effect under it, and a 28px mark on the right
+         that fills with the accent and a ✓ when chosen. Two chromes on the same row:
+         .choicerow — a separated, hairline card, used inline in the composer;
+         .option    — a joined list row inside .options, used by the main-course picker,
+                      which has 11 items in three labelled groups and so wants a list.
+         The whole row is the target and it is never shorter than --tap. */
+      .pickrow {
         display: flex;
-        gap: var(--s-2);
-        overflow-x: auto;
-        scrollbar-width: none;
-        padding: 2px 0 var(--s-1);
-      }
-      .choicecards::-webkit-scrollbar {
-        display: none;
-      }
-      .choicecard {
-        position: relative;
-        flex: none;
-        min-width: 120px;
-        max-width: 210px;
-        padding: var(--s-3) 36px var(--s-3) var(--s-3);
-        border: 2px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--paper);
+        align-items: center;
+        gap: var(--s-3);
+        width: 100%;
+        min-height: var(--tap);
+        border: 0;
+        background: none;
         font: inherit;
         color: inherit;
         text-align: left;
+      }
+      .pickrow .pbody {
+        flex: 1;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 2px;
       }
-      .choicecard[aria-checked='true'] {
-        border-color: var(--brand-600);
-        background: var(--brand-50);
-      }
-      .choicecard .vname {
+      .pickrow .pname {
         font-family: var(--font-display);
         font-size: var(--t-base);
         font-weight: 500;
-        line-height: 1.2;
-        text-wrap: balance;
+        line-height: 1.25;
       }
-      .choicecard[aria-disabled='true'] .vname,
-      .choicecard[aria-disabled='true'] .vprice {
-        color: var(--ink-500);
-        text-decoration: line-through;
-        text-decoration-color: var(--line-strong);
-      }
-      .choicecard .vprice {
+      .pickrow .pamt {
         font-size: var(--t-sm);
         font-weight: 600;
         color: var(--ink-500);
       }
-      .choicecard .vmark {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 22px;
-        height: 22px;
+      .pickrow[aria-checked='true'] .pamt {
+        color: var(--brand-700);
+      }
+      .pickrow .psub {
+        font-size: var(--t-sm);
+        color: var(--ink-500);
+      }
+      .pickrow[aria-disabled='true'] {
+        cursor: not-allowed;
+      }
+      .pickrow[aria-disabled='true'] .pname,
+      .pickrow[aria-disabled='true'] .pamt {
+        color: var(--ink-500);
+        text-decoration: line-through;
+        text-decoration-color: var(--line-strong);
+      }
+      .pickrow[aria-disabled='true'] .tile {
+        opacity: 0.55;
+      }
+      .pickrow .pmark {
+        flex: none;
+        width: 28px;
+        height: 28px;
         border-radius: 50%;
         border: 2px solid var(--line-strong);
         background: var(--paper);
         color: transparent;
       }
-      .choicecard[aria-checked='true'] .vmark {
+      .pickrow[aria-checked='true'] .pmark {
         display: grid;
         place-items: center;
         border-color: var(--brand-600);
         background: var(--brand-600);
         color: #fff;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 700;
+      }
+
+      .option {
+        padding: var(--s-2) var(--s-4);
+        border-top: 1px solid var(--line);
+      }
+      .option:first-child {
+        border-top: 0;
+      }
+      .option[aria-checked='true'] {
+        background: var(--brand-50);
+      }
+      button.option:not([aria-checked='true']):not([disabled]):hover {
+        background: var(--brand-50);
+      }
+
+      /* The option list stacks in full — no inner scroller. The sheet body already
+         scrolls, and a scroller inside it would hide the side options that are the
+         usual reason the add button is disabled. */
+      .choicerows {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-2);
+      }
+      .choicerow {
+        padding: var(--s-2) var(--s-3);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+      }
+      .choicerow[aria-checked='true'] {
+        border-color: var(--brand-600);
+        background: var(--brand-50);
+      }
+      button.choicerow:not([aria-checked='true']):not([disabled]):hover {
+        background: var(--brand-50);
       }
       .field-label {
         font-size: var(--t-xs);
@@ -2384,12 +2382,17 @@
             '</span>'
           : '';
 
-      /** The tile takes a photo when the item has one; until then, its initial. */
+      /**
+       * The tile takes a photo when the item has one; until then, its initial.
+       * A null item is a pick that is not a dish — "Nem kérek" — and gets an empty
+       * tile: it holds the column so the rows above and below stay aligned, and it
+       * reads as an absence instead of claiming an identity the choice does not have.
+       */
       const Tile = (item, big) =>
-        '<span class="tile' +
-        (big ? ' tile-lg' : '') +
+        '<span class="' +
+        cls('tile', big && 'tile-lg', !item && 'tile-none') +
         '" aria-hidden="true">' +
-        esc(item.name.replace(/^[0-9. ]+/, '').charAt(0).toUpperCase()) +
+        (item ? esc(item.name.replace(/^[0-9. ]+/, '').charAt(0).toUpperCase()) : '') +
         '</span>';
 
       /* ------------------------------------------------------------------ *
@@ -2876,24 +2879,32 @@
         };
 
         /**
-         * Inline choice cards: one tap, no nested sheet, every option's price effect
+         * Inline choice rows: one tap, no nested sheet, every option's price effect
          * visible at once. Used where the whole option list fits — soup (2 options,
-         * and it drives both price adjustments) and side (7, and the only required
-         * slot). Main keeps the row + picker because it has 11 options across three
-         * categories; pickle and dessert keep theirs to stay quiet and keep the sheet
-         * short, but either becomes cards with one more choiceCards() call.
-         * The figure on a card is what that choice does to the menu total — for soup
-         * that is the −100 / +650 adjustment itself, which is the price the old system
-         * hid until after you had chosen.
+         * and it drives both price adjustments), the variation, and the side (7, and
+         * the only required slot). Main keeps the row + picker because it has 11
+         * options across three categories; pickle and dessert keep theirs to stay
+         * quiet and keep the sheet short, but either becomes rows with one more
+         * choiceRows() call.
+         * The figure under an option's name is what that choice does to the menu
+         * total — for soup that is the −100 / +650 adjustment itself, which is the
+         * price the old system hid until after you had chosen.
+         * Every option is rendered; the block never scrolls on its own. Seven side
+         * rows make a tall block, but a scroller inside the scrolling sheet would
+         * hide the very options that are the usual reason the add button is disabled.
+         * noTile drops the tile for the variation block: a variation is a property of
+         * the main course above it, not a dish of its own, and "Csirkemell" and
+         * "Csirkecomb" would both draw a C.
          */
-        const choiceCards = (slotLabel, opts) => {
+        const choiceRows = (slotLabel, opts) => {
           const label = opts.required ? slotLabel + ' · ' + S.composer.requiredSuffix : slotLabel;
-          const cards = opts.options
+          const rows = opts.options
             .map((o) => {
+              const item = o.id ? ITEMS[o.id] : null;
               const checked = (o.id || null) === (c[opts.slot] || null);
-              const soldOut = !!(o.id && ITEMS[o.id] && ITEMS[o.id].soldOut);
+              const soldOut = !!(item && item.soldOut);
               return (
-                '<button type="button" class="choicecard" role="radio" aria-checked="' +
+                '<button type="button" class="pickrow choicerow" role="radio" aria-checked="' +
                 checked +
                 '"' +
                 (soldOut ? ' aria-disabled="true" disabled' : '') +
@@ -2901,11 +2912,14 @@
                 esc(o.id || '') +
                 '" data-slot="' +
                 opts.slot +
-                '"><span class="vname">' +
+                '">' +
+                (opts.noTile ? '' : Tile(item)) +
+                '<span class="pbody"><span class="pname">' +
                 esc(o.name) +
-                '</span><span class="vprice num">' +
+                (soldOut ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
+                '</span><span class="pamt num">' +
                 esc(o.amount) +
-                '</span><span class="vmark" aria-hidden="true">✓</span></button>'
+                '</span></span><span class="pmark" aria-hidden="true">✓</span></button>'
               );
             })
             .join('');
@@ -2914,10 +2928,10 @@
             cls('field-label', opts.required && 'is-required') +
             '">' +
             esc(label) +
-            '</p><div class="choicecards" role="radiogroup" aria-label="' +
+            '</p><div class="choicerows" role="radiogroup" aria-label="' +
             esc(S.composer.slots[opts.slot] || label) +
             '">' +
-            cards +
+            rows +
             '</div></div>'
           );
         };
@@ -2928,7 +2942,7 @@
           return adj ? signed(adj.amount) : money(0);
         };
 
-        const soupBlock = choiceCards(S.composer.slots.soup, {
+        const soupBlock = choiceRows(S.composer.slots.soup, {
           slot: 'soup',
           options: [
             { id: null, name: S.composer.none, amount: soupAmount(null) },
@@ -2941,7 +2955,7 @@
         });
 
         const sideBlock = needsSide
-          ? choiceCards(S.composer.slots.side, {
+          ? choiceRows(S.composer.slots.side, {
               slot: 'side',
               required: !c.side,
               options: [...WEEK.sides, ...WEEK.sideExtras].map((i) => ({
@@ -2953,8 +2967,9 @@
           : '';
 
         const variationBlock = needsVariation
-          ? choiceCards(S.composer.variationLabel, {
+          ? choiceRows(S.composer.variationLabel, {
               slot: 'variation',
+              noTile: true,
               required: !c.variation,
               options: mainItem.variations.map((v) => ({
                 id: v,
@@ -3057,13 +3072,15 @@
 
         const groups = slotOptions(slot, date);
         const none =
-          '<button type="button" class="option" role="radio" aria-checked="' +
+          '<button type="button" class="pickrow option" role="radio" aria-checked="' +
           !c[slot] +
           '" data-pick="" data-slot="' +
           slot +
-          '"><span class="radio"></span><span class="oname">' +
+          '">' +
+          Tile(null) +
+          '<span class="pbody"><span class="pname">' +
           esc(S.composer.none) +
-          '</span><span class="oamt"></span></button>';
+          '</span></span><span class="pmark" aria-hidden="true">✓</span></button>';
 
         const body = groups
           .map(
@@ -3081,7 +3098,7 @@
                         ? money(0)
                         : money(priceOf(it, date));
                   return (
-                    '<button type="button" class="option" role="radio" aria-checked="' +
+                    '<button type="button" class="pickrow option" role="radio" aria-checked="' +
                     (c[slot] === it.id) +
                     '"' +
                     (soldOut ? ' aria-disabled="true" disabled' : '') +
@@ -3089,21 +3106,23 @@
                     it.id +
                     '" data-slot="' +
                     slot +
-                    '"><span class="radio"></span><span class="oname">' +
+                    '">' +
+                    Tile(it) +
+                    '<span class="pbody"><span class="pname">' +
                     esc(it.name) +
                     (soldOut ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
-                    '</span><span class="oamt num">' +
+                    '</span><span class="pamt num">' +
                     esc(amount) +
                     '</span>' +
                     (it.desc || (it.allergens && it.allergens.length)
-                      ? '<span class="osub">' +
+                      ? '<span class="psub">' +
                         esc(it.desc || '') +
                         (it.allergens && it.allergens.length
                           ? ' · ' + esc(S.allergens.codesLabel + ' ' + it.allergens.join(', '))
                           : '') +
                         '</span>'
                       : '') +
-                    '</button>'
+                    '</span><span class="pmark" aria-hidden="true">✓</span></button>'
                   );
                 })
                 .join(''),
@@ -3589,7 +3608,7 @@
         {
           id: 'composer-required',
           label: '2b · Összeállító — kötelező mezők',
-          note: 'A leves, a változat és a köret kártya — a választás nem hagyja el a lapot. Csak a főétel maradt sor + választólap, mert annak 11 opciója van három kategóriából. A kötelező blokkok címkéje piros és ki is mondja: „· kötelező”, nem csak a szín jelöl. A „Nem kérek” leveskártya már itt mutatja a −100 Ft-ot.',
+          note: 'A leves, a változat és a köret teljes szélességű választósor: kezdőbetűs négyzet, név, alatta az ár, jobb oldalt a jelölő karika — a választás nem hagyja el a lapot. Csak a főétel maradt sor + választólap, mert annak 11 opciója van három kategóriából. A kötelező blokkok címkéje piros és ki is mondja: „· kötelező”, nem csak a szín jelöl. A „Nem kérek” levessor már itt mutatja a −100 Ft-ot. A változatoknál nincs négyzet: a változat nem önálló fogás, és a „Csirkemell” meg a „Csirkecomb” is ugyanazt a C-t kapná.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3600,7 +3619,7 @@
         {
           id: 'picker-main',
           label: '2b · Fogásválasztó — főétel',
-          note: 'Az egyetlen megmaradt választólap: a főételé. Napi főételek, heti kiemelt ajánlat és egész héten rendelhető tételek egy listában, csoportcímkékkel; az elfogyott tétel áthúzva és nem választható. A leves, a változat és a köret az összeállítóban kártya.',
+          note: 'Az egyetlen megmaradt választólap: a főételé. Napi főételek, heti kiemelt ajánlat és egész héten rendelhető tételek egy listában, csoportcímkékkel; az elfogyott tétel áthúzva és nem választható. A sorok felépítése ugyanaz, mint az összeállítóban — itt viszont egyetlen kártyába fűzve, mert 11 tétel három csoportban lista akar lenni, nem kártyahalom. A leves, a változat és a köret az összeállítóban választósor.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -3612,7 +3631,7 @@
         {
           id: 'composer-valid',
           label: '2b · Összeállító — kész menü, árbontással',
-          note: 'Itt a főétel a „Csirkemellcsíkok”, aminek az ára nem tartalmaz levest — ezért a leveskártyán <b>+650 Ft</b> áll, még mielőtt rákoppintanál. A régi rendszerben ezt csak utólag tudtad meg (és 450-et számolt, miközben 650-et hirdetett).',
+          note: 'Itt a főétel a „Csirkemellcsíkok”, aminek az ára nem tartalmaz levest — ezért a leves sorában <b>+650 Ft</b> áll, még mielőtt rákoppintanál. A régi rendszerben ezt csak utólag tudtad meg (és 450-et számolt, miközben 650-et hirdetett). A köret mind a hét opciója egymás alatt áll: a lap görgethető, a blokk nem — görgető a görgetőben az a mozdulat, ami telefonon elvész.',
           vm: () =>
             baseVm({
               cart: cartFull(),
