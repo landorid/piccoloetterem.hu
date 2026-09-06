@@ -8,7 +8,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
 | Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
-| One-screen overview | [`overview.png`](overview.png) — all 19 states at mobile width |
+| One-screen overview | [`overview.png`](overview.png) — all 20 states at mobile width |
 
 ## How to read it
 
@@ -114,8 +114,9 @@ What O6/O7 need to build, in the order they appear:
 | `RailCard` | the same item as a card in a horizontal rail: tile, price above name |
 | `Tile` | the leading 48px square — a photo where one exists, the dish's initial where none does, empty where the choice is not a dish ("Nem kérek") |
 | `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14; codes render as round chips |
-| `DayCart` | composed menus with recipient, per-line breakdown, adjustments, edit/remove, food subtotal |
-| `ExtrasRow` | name, unit price, stepper, line total |
+| `DayCart` | composed menus with recipient, per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
+| `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
+| `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
 | `ComposerSheet` | recipient field, five slot rows, variation cards, live price box, footer with price + portions + actions |
 | `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
 | `SlotPicker` | the same row, joined into one list with group headers: "Nem kérek" first, sold-out disabled — main course only |
@@ -129,12 +130,13 @@ What O6/O7 need to build, in the order they appear:
 
 ## The states in the mockup
 
-Scope 2a–2h of the issue, one entry each. All 19 exist at both widths.
+Scope 2a–2h of the issue, one entry each. All 20 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
 | Menü — üres kosár | 2a | past days disabled, soups at 0, sold-out dish, allergen notice |
 | Menü — kosárral | 2a, 2c | three menus with names, both price adjustments, day badges |
+| Extrák saját kategóriában | 2a, 2d | the extras section with two non-zero quantities, a day that holds extras and no menu, the minimum warning |
 | Allergén tájékoztató | 2a | the 14-item list |
 | Összeállító — kötelező mezők | 2b | missing variation and missing side, add disabled |
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
@@ -228,8 +230,26 @@ confirm or reject:
 4. **The soup surcharge is explained where it happens.** "+650 Ft leves felár" carries a one-line
    reason under it. In the old system this was the single most confusing price, and it was charged
    at 450 while the site advertised 650.
-5. **Extras live inside the day's order, not in a separate step.** They are per day and per order,
-   and they only make sense once something has been ordered.
+5. **Extras are a category of the offer, and the day's order is where you check them.** They were
+   originally only a stepper block inside the day's order, on the argument that they only make sense
+   once something has been ordered. Dávid asked for ketchup, tartar sauce and bread to be addable
+   *from their own category*, the way a dish is — and he is right: the block was invisible while you
+   browsed, and unreachable on a day that had no menu yet. They now have a section at the end of the
+   offer list and a chip of their own. Three things follow.
+   **(a) A vertical list, not a rail.** The repeat-every-week sections are rails, but a rail card is
+   150 px wide and is itself the tap target; an extras row carries two 44 px buttons, a unit price
+   and a line total, and cannot be a rail card without shrinking one of them. Three rows also make a
+   very short rail.
+   **(b) Last in the order.** Bread, sauce and a takeaway box are what you add on the way out. Before
+   the daily mains they would compete with the reason the page exists; the chip makes "last" cost one
+   tap from anywhere.
+   **(c) One stepper per value.** The day's order keeps the extras, but as *priced lines* with a link
+   back to the section — the same treatment a composed menu already gets there, a receipt with an
+   edit route, not a second form. On desktop the rail and the offer list are on screen together, and
+   two live steppers writing one number read as two features.
+   The known cost: a day that holds only extras gets no badge on its day tab, because the badge
+   counts menus. The sticky summary still counts the day and warns that it is under the minimum, so
+   nothing is hidden — but if O6 wants the tab to mark it too, that is a badge variant, not a rule.
 6. **No payment section at all** — one sentence at the bottom of checkout says the courier is paid
    on delivery. Adding a payment block would imply a choice that does not exist.
 7. **Pickup is not drawn.** `pickupEnabled` is false for Piccolo; drawing an unreachable branch
@@ -264,5 +284,13 @@ Not in scope for #30 — listed so they are not lost:
   (`emptyWeek`); PLAN.md §3 only lists `nextWeekNotPublished`.
 - **Prices inside sentences** (2 200 / 150 / 650 Ft) must be interpolated from `config.pricing` —
   see strings.md, note 3.
+- **Is `Ketchup / tartármártás` one extra or two?** The client asked for "ketchup **és**
+  tartármártás **és** kenyér" — three things — but `RestaurantConfig.extras` carries ketchup and
+  tartar sauce as a single combined entry at 400 Ft, which is what PLAN.md §2 lists and what the old
+  system charged. Splitting them into two separately orderable extras (and what each would then
+  cost) is a question about the restaurant's actual offer, not a design call, so the mockup leaves
+  the config untouched. **Dávid: this belongs to issue #41**, where the `RestaurantConfig` values are
+  confirmed with the restaurant. Whichever way it goes, the section renders `CFG.extras` — two
+  entries or three, nothing in the design changes.
 - **Sold-out items are hidden from nothing.** A guest can still open a sold-out dish's row and read
   it; only the action is removed. If the restaurant would rather hide them entirely, say so now.

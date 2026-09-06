@@ -1066,6 +1066,33 @@
         font-weight: 600;
         font-size: var(--t-md);
       }
+      /* The same row in the offer list, in the dish list's card so the extras
+         section sits in the same column as every other section. No leading tile:
+         two of the three extras start with the same letter, and on a 375 px phone
+         the stepper needs those 60 px more than the row needs a square. */
+      .extra-list {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: var(--paper);
+        overflow: hidden;
+        box-shadow: var(--shadow-1);
+      }
+      .extra-list .extra {
+        min-height: 64px;
+        padding: var(--s-3) var(--s-4);
+        border-top: 1px solid var(--line);
+      }
+      .extra-list .extra:first-child {
+        border-top: 0;
+      }
+      .extra-list .extra .name {
+        font-size: var(--t-base);
+      }
+      .extra-list .extra.is-on {
+        background: var(--brand-50);
+      }
 
       /* --- overlays: composer, pickers, sheets ---------------------------------- */
       .overlay {
@@ -1839,6 +1866,7 @@
           sideExtras: 'Feláras köretek',
           pickles: 'Savanyúságok',
           desserts: 'Desszertek',
+          extras: 'Extrák',
           weekendHint: 'Szombaton eltérő ár',
           soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft. Koppints rá, és mellé választhatsz főételt.',
           all: 'Összes',
@@ -1926,6 +1954,10 @@
           hint: 'Naponta, az adott nap rendeléséhez.',
           less: 'Kevesebb',
           more: 'Több',
+          lessOf: (name) => 'Kevesebb: ' + name,
+          moreOf: (name) => 'Több: ' + name,
+          unitPrice: (p) => p + ' / db',
+          change: 'Extrák módosítása',
         },
         summary: {
           title: 'Összegzés',
@@ -2585,6 +2617,7 @@
           { sec: 'sides', label: S.sections.sideExtras },
           { sec: 'pickles', label: S.sections.pickles },
           { sec: 'desserts', label: S.sections.desserts },
+          { sec: 'extras', label: S.sections.extras },
         ];
         return (
           '<div class="chiprail"><div class="chiprail-scroll" role="group" aria-label="' +
@@ -2606,6 +2639,65 @@
         );
       }
 
+      /**
+       * One extra, in the two places it appears: a stepper row in the offer list,
+       * where it is added, and a priced line in the day's order, where it is
+       * checked before paying. Same anatomy and the same strings — the stepper
+       * writes the state the cart line reads back, so the two can never disagree.
+       */
+      function ExtraRow(x, qty, opts = {}) {
+        const step = !!opts.stepper;
+        return (
+          '<div class="' +
+          cls('extra', step && qty && 'is-on') +
+          '"><span class="name">' +
+          esc(step ? x.name : x.name + ' × ' + qty) +
+          (step ? '<small>' + esc(S.extras.unitPrice(money(x.price))) + '</small>' : '') +
+          '</span>' +
+          (step
+            ? '<span class="stepper"><button type="button" aria-label="' +
+              esc(S.extras.lessOf(x.name)) +
+              '" data-extra="' +
+              x.key +
+              '" data-delta="-1"' +
+              (qty ? '' : ' disabled') +
+              '>−</button><span class="qty num">' +
+              qty +
+              '</span><button type="button" aria-label="' +
+              esc(S.extras.moreOf(x.name)) +
+              '" data-extra="' +
+              x.key +
+              '" data-delta="1">+</button></span>'
+            : '') +
+          '<span class="amt num">' +
+          (qty ? money(qty * x.price) : '—') +
+          '</span></div>'
+        );
+      }
+
+      /**
+       * The extras as a category of their own in the offer list, last — they are
+       * things you add on the way out, and they must not compete with today's
+       * mains. A vertical list, not a rail: three rows, each carrying two 44 px
+       * buttons and two prices, do not fit a 150 px card, and a rail card whose
+       * whole surface is the tap target cannot hold controls of its own.
+       * They belong to the day whose tab is active, exactly like the menus do.
+       */
+      function ExtrasSection(vm) {
+        const day = vm.cart.find((c) => c.date === vm.activeDate);
+        const qtyOf = (key) =>
+          (((day && day.extras) || []).find((e) => e.key === key) || {}).qty || 0;
+        return (
+          '<section data-sec="extras"><div class="section-h"><h2>' +
+          esc(S.sections.extras) +
+          '</h2><span class="hint">' +
+          esc(S.extras.hint) +
+          '</span></div><div class="extra-list">' +
+          CFG.extras.map((x) => ExtraRow(x, qtyOf(x.key), { stepper: true })).join('') +
+          '</div></section>'
+        );
+      }
+
       function CartCard(vm) {
         const day = vm.cart.find((c) => c.date === vm.activeDate);
         const priced = day ? priceDay(day) : null;
@@ -2616,16 +2708,17 @@
           esc(cap(dayFull(vm.activeDate))) +
           '</span></div>';
 
-        if (!priced || !priced.menus.length) {
-          return (
-            '<div class="card">' +
-            head +
-            '<div class="cart-empty"><p><b>' +
-            esc(S.cart.empty) +
-            '</b></p><p>' +
-            esc(S.cart.emptyCta) +
-            '</p></div></div>'
-          );
+        // Extras can now be added from the offer list without a menu, so "empty"
+        // means neither — a day carrying two breads is not an empty day, and the
+        // card must not hide the lines that the food subtotal is counting.
+        const empty =
+          '<div class="cart-empty"><p><b>' +
+          esc(S.cart.empty) +
+          '</b></p><p>' +
+          esc(S.cart.emptyCta) +
+          '</p></div>';
+        if (!priced || (!priced.menus.length && !priced.extras.length)) {
+          return '<div class="card">' + head + empty + '</div>';
         }
 
         const menus = priced.menus
@@ -2666,44 +2759,29 @@
           })
           .join('');
 
-        const extras = CFG.extras
-          .map((x) => {
-            const qty = ((day.extras || []).find((e) => e.key === x.key) || {}).qty || 0;
-            return (
-              '<div class="extra"><span class="name">' +
-              esc(x.name) +
-              '<small>' +
-              money(x.price) +
-              ' / db</small></span><span class="stepper"><button type="button" aria-label="' +
-              esc(S.extras.less) +
-              '" data-extra="' +
-              x.key +
-              '" data-delta="-1"' +
-              (qty ? '' : ' disabled') +
-              '>−</button><span class="qty num">' +
-              qty +
-              '</span><button type="button" aria-label="' +
-              esc(S.extras.more) +
-              '" data-extra="' +
-              x.key +
-              '" data-delta="1">+</button></span><span class="amt num">' +
-              (qty ? money(qty * x.price) : '—') +
-              '</span></div>'
-            );
-          })
-          .join('');
+        // The day's order is a receipt: composed menus appear here as priced lines
+        // with an edit button, not as editable forms. The extras now follow the
+        // same rule — they are added in their own section of the offer list, and
+        // this block states what that came to and offers the way back to it. One
+        // stepper per value: on desktop the rail and the offer list are on screen
+        // at the same time, and two live steppers for one number read as two
+        // features.
+        const extras = priced.extras.length
+          ? '<div class="extras"><div class="section-h"><h2 style="font-size:var(--t-base)">' +
+            esc(S.extras.title) +
+            '</h2></div>' +
+            priced.extras.map((x) => ExtraRow(x, x.qty)).join('') +
+            '<div class="cart-actions"><button type="button" class="btn-quiet" data-jump="extras">' +
+            esc(S.extras.change) +
+            '</button></div></div>'
+          : '';
 
         return (
           '<div class="card">' +
           head +
-          menus +
-          '<div class="extras"><div class="section-h"><h2 style="font-size:var(--t-base)">' +
-          esc(S.extras.title) +
-          '</h2><span class="hint">' +
-          esc(S.extras.hint) +
-          '</span></div>' +
+          (priced.menus.length ? menus : empty) +
           extras +
-          '</div><div class="card-body" style="border-top:1px solid var(--line);display:flex;gap:12px;font-weight:700"><span>' +
+          '<div class="card-body" style="border-top:1px solid var(--line);display:flex;gap:12px;font-weight:700"><span>' +
           esc(S.cart.foodSubtotal) +
           '</span><span class="num" style="margin-left:auto">' +
           money(priced.food) +
@@ -3188,6 +3266,7 @@
           Section(S.sections.sideExtras, WEEK.sideExtras, date, { sec: 'sides', rail: true }) +
           Section(S.sections.pickles, WEEK.pickles, date, { sec: 'pickles', rail: true }) +
           Section(S.sections.desserts, WEEK.desserts, date, { sec: 'desserts', rail: true }) +
+          ExtrasSection(vm) +
           '<div class="allergen-note"><span aria-hidden="true">⚠</span><p>' +
           esc(S.allergens.notice) +
           ' <button type="button" data-open="allergens">' +
@@ -3612,6 +3691,25 @@
           vm: () => baseVm({ cart: cartFull() }),
         },
         {
+          id: 'menu-extras',
+          label: '2a+2d · Extrák saját kategóriában',
+          note: 'Az extrák a kínálat végén saját kategóriát kaptak, saját csippel — így böngészés közben is látszanak, és akkor is hozzáadhatók, ha a naphoz még nincs menü. Lista, nem vízszintes sín: egy sorba két 44 px-es gomb és két ár kell, az pedig nem fér egy 150 px-es kártyára. A lépegető ugyanazt az állapotot írja, amit a nap rendelése visszaolvas — csütörtökre itt <b>csak extrák</b> kerültek, menü nélkül. A nap kártyája ezért nem mondja magát üresnek: kiírja, hogy még nincs összeállított menü, és alatta ott a két tétel és az ételek összege. Az 500 Ft messze a napi 2 200 Ft alatt van, ezért az összegzés sávja figyelmeztet és blokkol.',
+          vm: () =>
+            baseVm({
+              activeDate: THU,
+              cart: [
+                {
+                  date: THU,
+                  menus: [],
+                  extras: [
+                    { key: 'bread', qty: 2 },
+                    { key: 'sauce', qty: 1 },
+                  ],
+                },
+              ],
+            }),
+        },
+        {
           id: 'allergens',
           label: '2a · Allergén tájékoztató',
           note: 'A fogások alatti számkódok feloldása. A tájékoztató szövege a <code>RestaurantConfig.allergenNotice</code>-ból jön.',
@@ -3936,6 +4034,15 @@
         return d;
       };
 
+      /* A day stays in the cart while it holds a menu *or* an extra; once it holds
+         neither it must go, or the summary would charge a delivery fee and warn
+         about a minimum for a day nothing was ordered on. */
+      const dropDayIfEmpty = (day) => {
+        if (!day.menus.length && !(day.extras || []).some((e) => e.qty > 0)) {
+          vm.cart = vm.cart.filter((c) => c !== day);
+        }
+      };
+
       stage.addEventListener('click', (ev) => {
         const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions]');
         if (!el || !vm) return;
@@ -3984,12 +4091,13 @@
         } else if (d.remove !== undefined) {
           const day = vm.cart.find((c) => c.date === vm.activeDate);
           day.menus.splice(Number(d.remove), 1);
-          if (!day.menus.length) vm.cart = vm.cart.filter((c) => c !== day);
+          dropDayIfEmpty(day);
         } else if (d.extra) {
           const day = cartDay();
           let e = day.extras.find((x) => x.key === d.extra);
           if (!e) day.extras.push((e = { key: d.extra, qty: 0 }));
           e.qty = Math.max(0, e.qty + Number(d.delta));
+          dropDayIfEmpty(day);
         } else if (d.toggle === 'summary') {
           vm.summaryOpen = !vm.summaryOpen;
         } else if (d.go) {
