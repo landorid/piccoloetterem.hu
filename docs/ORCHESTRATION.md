@@ -32,27 +32,28 @@ Strict serial order, already checked against every `Blocked by` list. Run top to
 |---|---|---|---|---|
 | 1 | #16 | F1 | — | Creates `develop`. Everything waits on it. |
 | 2 | #30 | O2 | — | Design mockup. Run early: Dávid's review has latency and #34 needs it. |
-| 3 | #17 | F2 | 16 | Unblocks manual #41 on merge. |
-| 4 | #18 | F3 | 16 | |
-| 5 | #19 | F4 | 16, 18 | |
-| 6 | #20 | F5 | 19 | |
-| 7 | #21 | F6 | 19 | |
-| 8 | #22 | F7 | 19 | Unblocks manual #40 on merge. |
-| 9 | #23 | M1 | 17 | |
-| 10 | #24 | M2 | 18, 21, 23 | |
-| 11 | #25 | M3 | 24 | |
-| 12 | #26 | M4 | 20, 21 | |
-| 13 | #27 | M5 | 24, 26 | |
-| 14 | #28 | M6 | 24, 26 | |
-| 15 | #29 | O1 | 23 | |
-| 16 | #31 | O3 | 18, 25, 29 | |
-| 17 | #32 | O4 | 31 | Unblocks manual #39 on merge. |
-| 18 | #33 | O5 | 20, 25 | |
-| 19 | #34 | O6 | 29, 30, 33 | Also needs Dávid's sign-off on the #30 mockup. |
-| 20 | #35 | O7 | 31, 34 | |
-| 21 | #36 | S1 | 31, 21 | |
-| 22 | #37 | S2 | 36, 26 | |
-| 23 | #38 | S3 | 36, 26 | |
+| 3 | #53 | F1a | — | Wiring defects found reviewing PR #52. Must land before #18 and #19. |
+| 4 | #17 | F2 | 16 | Unblocks manual #41 on merge. |
+| 5 | #18 | F3 | 16, 53 | |
+| 6 | #19 | F4 | 16, 18, 53 | |
+| 7 | #20 | F5 | 19 | |
+| 8 | #21 | F6 | 19 | |
+| 9 | #22 | F7 | 19 | Unblocks manual #40 on merge. |
+| 10 | #23 | M1 | 17 | |
+| 11 | #24 | M2 | 18, 21, 23 | |
+| 12 | #25 | M3 | 24 | |
+| 13 | #26 | M4 | 20, 21 | |
+| 14 | #27 | M5 | 24, 26 | |
+| 15 | #28 | M6 | 24, 26 | |
+| 16 | #29 | O1 | 23 | |
+| 17 | #31 | O3 | 18, 25, 29 | |
+| 18 | #32 | O4 | 31 | Unblocks manual #39 on merge. |
+| 19 | #33 | O5 | 20, 25 | |
+| 20 | #34 | O6 | 29, 30, 33 | Also needs Dávid's sign-off on the #30 mockup. |
+| 21 | #35 | O7 | 31, 34 | |
+| 22 | #36 | S1 | 31, 21 | |
+| 23 | #37 | S2 | 36, 26 | |
+| 24 | #38 | S3 | 36, 26 | |
 
 Manual issues to remind Dávid about when their blocker closes: #41 (after #17), #40 (after #22),
 #39 (after #32), #43 (after #39), #42 (after #27, #28, #35, #38).
