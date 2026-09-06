@@ -1,0 +1,4 @@
+# Keeps the assets directory in git while it is still empty. Cloudflare excludes
+# .assetsignore itself from the upload, so nothing is served from here yet:
+# every request falls through to the Worker. Issue #19 fills this directory with
+# the built output of apps/web (at /) and apps/admin (at /admin/*).

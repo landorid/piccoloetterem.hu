@@ -3,8 +3,9 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Static assets. Issue #19 replaces this placeholder directory with the built
-# output of apps/web (at /) and apps/admin (at /admin/*).
+# Static assets. The directory is empty for now, so every request falls through
+# to the Worker. Issue #19 fills it with the built output of apps/web (at /) and
+# apps/admin (at /admin/*).
 [assets]
 directory = "./public"
 binding = "ASSETS"
