@@ -1,0 +1,10 @@
+name = "piccolo"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Static assets. Issue #19 replaces this placeholder directory with the built
+# output of apps/web (at /) and apps/admin (at /admin/*).
+[assets]
+directory = "./public"
+binding = "ASSETS"
