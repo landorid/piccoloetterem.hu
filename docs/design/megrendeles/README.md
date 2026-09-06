@@ -8,7 +8,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
 | Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
-| One-screen overview | [`overview.png`](overview.png) — all 18 states at mobile width |
+| One-screen overview | [`overview.png`](overview.png) — all 19 states at mobile width |
 
 ## How to read it
 
@@ -129,7 +129,7 @@ What O6/O7 need to build, in the order they appear:
 
 ## The states in the mockup
 
-Scope 2a–2h of the issue, one entry each. All 18 exist at both widths.
+Scope 2a–2h of the issue, one entry each. All 19 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
@@ -140,6 +140,7 @@ Scope 2a–2h of the issue, one entry each. All 18 exist at both widths.
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Összeállító — kész menü | 2b | full price breakdown with the soup surcharge explained |
 | Összeállító — több adag | 2b | one composition, three cart rows |
+| Összeállító — csak leves | 2b | a soup in the soup slot, no main, the +650 Ft surcharge explained |
 | Összegzés kibontva | 2d | per-day subtotals, delivery fee line, grand total |
 | Minimum alatt | 2d | warning per day, "Tovább" blocked |
 | Pénztár | 2e | five fields, recap, totals |
@@ -238,6 +239,18 @@ confirm or reject:
    `recipient_name`, which is what the kitchen summary and the delivery list need. The stepper is
    a shortcut for composing the same thing three times, nothing more. It is the only new capability
    this revision adds — if it is not wanted, it is one component to delete.
+9. **A soup on its own is possible, but not advertised.** PLAN.md §2 already prices a soup without a
+   main at 650 Ft, and the composer already accepted a menu with only a soup — the menu simply had no
+   way to start one, so the empty cart's "or compose a menu with a soup" was a promise the page could
+   not keep. Tapping a soup row now opens the same composer with the *soup* slot filled instead of the
+   main one. That is the whole change: one small mapping from the item's category to the slot it
+   belongs in (`slotOfItem`), not a second flow, and no new domain rule. It deliberately gets no
+   button and no second call-to-action next to the mains — these are people ordering lunch, the soup
+   is normally part of a menu, and a lone soup should be reachable, not loud. What it does get is the
+   price, twice: the section hint states it before the tap, and the composer's price box carries the
+   `+650 Ft` line with its reason the moment the soup stands alone. The soup row keeps its
+   `0 Ft · A menü ára tartalmazza`, because that price is a property of the *menu*, not of the soup;
+   the hint directly above the rows names the other case.
 
 ## Follow-ups this mockup suggests
 

@@ -1840,7 +1840,7 @@
           pickles: 'Savanyúságok',
           desserts: 'Desszertek',
           weekendHint: 'Szombaton eltérő ár',
-          soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft.',
+          soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft. Koppints rá, és mellé választhatsz főételt.',
           all: 'Összes',
           jumpLabel: 'Ugrás a kínálaton belül',
         },
@@ -3168,7 +3168,11 @@
         const date = vm.activeDate;
         const main =
           ChipRail(vm) +
-          Section(S.sections.soups, d.soups, date, { sec: 'soups', hint: S.sections.soupsHint }) +
+          Section(S.sections.soups, d.soups, date, {
+            sec: 'soups',
+            action: true,
+            hint: S.sections.soupsHint,
+          }) +
           Section(S.sections.mains, d.mains, date, { sec: 'mains', action: true }) +
           Section(S.sections.featured, WEEK.featured, date, {
             sec: 'featured',
@@ -3509,6 +3513,14 @@
         ...o,
       });
 
+      /**
+       * Which composer slot a dish tapped in the menu fills. Everything on offer is a
+       * main course except the two daily soups, so a soup starts the same composer with
+       * the soup slot filled instead of the main one — the domain and the pricing always
+       * allowed a soup without a main, only the menu had no way to say it.
+       */
+      const slotOfItem = (id) => (ITEMS[id].cat === 'daily_soup' ? 'soup' : 'main');
+
       const WED = '2026-09-09';
       const THU = '2026-09-10';
 
@@ -3659,6 +3671,20 @@
                 side: permItem('Főtt burgonya'),
                 pickle: permItem('Csemege uborka'),
                 portions: 3,
+              }),
+            }),
+        },
+        {
+          id: 'composer-soup-only',
+          label: '2b · Összeállító — csak leves',
+          note: 'A levessorra koppintva ugyanez az összeállító nyílik meg, csak a leves szeletébe kerül a fogás a főétel helyett — ezt a domain és az árazás eddig is engedte, a kínálatból viszont nem lehetett elindítani. Főétel nélkül a leves nem ingyenes: az árdobozban azonnal ott a <b>+650 Ft</b> és az indoklása is (<code>RestaurantConfig.pricing.soupPrice</code>), így a felár ott derül ki, ahol keletkezik, nem a kosárban. Külön gombot nem kapott, és a főételek mellé sem került második gomb: az ebédelők túlnyomó része főételt rendel — a leves önmagában legyen lehetséges, ne hangsúlyos.',
+          vm: () =>
+            baseVm({
+              cart: cartFull(),
+              overlay: 'composer',
+              composer: composedMenu({
+                recipient: 'Eszter',
+                soup: dayItem(WED, 'Brokkolikrémleves'),
               }),
             }),
         },
@@ -3931,7 +3957,9 @@
         } else if (d.day) {
           vm.activeDate = d.day;
         } else if (d.compose) {
-          vm.composer = composedMenu(d.compose === 'new' ? {} : { main: d.compose });
+          vm.composer = composedMenu(
+            d.compose === 'new' ? {} : { [slotOfItem(d.compose)]: d.compose },
+          );
           vm.overlay = 'composer';
         } else if (d.open === 'allergens') {
           vm.overlay = 'allergens';
