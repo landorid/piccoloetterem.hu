@@ -67,7 +67,8 @@ Run a single workspace with `pnpm --filter @piccolo/core <script>` and a single 
   request into `develop` that **Dávid** merges; GitHub closes the issue via `Closes #<n>`.
 - Open a **draft PR into `develop`** as soon as you have your first commit: title `<key>: <what>`,
   body ending with `Closes #<this issue>`. Mark it ready for review once every acceptance criterion
-  passes and CI is green.
+  passes and CI is green (CI arrives in #22 — until then there is no CI: validate locally and
+  paste the output in the closing note).
 - Keep the PR mergeable: rebase onto `develop` when it falls behind, keep CI green, and answer
   review comments on the PR.
 - Commit messages: `<key>: <what>`, e.g. `F3: add Drizzle schema`.
@@ -80,7 +81,8 @@ Run a single workspace with `pnpm --filter @piccolo/core <script>` and a single 
   `develop` or `main`. Commit messages: `<key>: <what>` e.g. `F3: add Drizzle schema`.
 - Open a **draft PR into `develop`** as soon as you have your first commit: title `<key>: <what>`,
   body ending with `Closes #<this issue>`. Mark it ready for review once every acceptance criterion
-  passes and CI is green.
+  passes and CI is green (CI arrives in #22 — until then there is no CI: validate locally and
+  paste the output in the closing note).
 - **Never merge your own PR** and never merge anything into `develop` or `main` — Dávid merges.
   Keep the PR mergeable: rebase onto `develop` when it falls behind, keep CI green, and answer
   review comments on the PR.
