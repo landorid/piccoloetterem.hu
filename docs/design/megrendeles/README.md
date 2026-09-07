@@ -116,10 +116,10 @@ What O6/O7 need to build, in the order they appear:
 | `Tile` | the leading 48px square — a photo where one exists, the dish's initial where none does, empty where the choice is not a dish ("Nem kérek") |
 | `AllergenChip` + `AllergenTip` | a round tinted disc with a hand-drawn pictogram, one per EU allergen; hover, focus or tap names it in a bubble that gives the number too. Three chips per dish, then a `+N` chip that names the rest in its bubble. Used by `Dish`, `RailCard` and `SlotPicker` |
 | `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14, each line carrying its pictogram next to the number |
-| `DayCart` | composed menus with recipient, per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
+| `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
 | `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
 | `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
-| `ComposerSheet` | recipient field, five slot rows, variation cards, live price box, footer with price + portions + actions |
+| `ComposerSheet` | five slots across two steps, variation cards, live price box, footer with price + portions + actions |
 | `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
 | `SlotPicker` | the same row, joined into one list with group headers: "Nem kérek" first, sold-out disabled — main course only |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
@@ -189,8 +189,8 @@ What we deliberately did **not** take:
   *shape* and the tile, not the photo-driven hierarchy — so price and name still lead.
 - **Their yellow accent.** Piccolo's brown is the brand. We took their *selected-state* treatment
   (accent border, accent tint, filled disc with a ✓), not their hue.
-- **The per-item note field.** Our domain has one note per order, and the composer's free-text
-  field is already spoken for by the recipient name.
+- **The per-item note field.** Our domain has one note per order, and there is nothing else the
+  composer needs free text for.
 
 ### Which slots are rows, and why
 
@@ -228,9 +228,11 @@ confirm or reject:
 2. **The composer is entered from a main course, not from a blank form.** The dominant action is
    "today's main, add, done"; a blank composer is one extra decision at 07:40. "Menü összeállítása"
    is still there for anyone who starts from the soup.
-3. **The recipient name lives at the top of the composer, not in a separate "group ordering" mode.**
-   The measurement in STACK.md §3 says 88 % of shared e-mail addresses are office orders — group
-   ordering is the normal case, not an advanced feature.
+3. **A menu belongs to no one — menus are numbered, not named.** Several menus a day is still the
+   normal case (STACK.md §3: 88 % of shared e-mail addresses are office orders), but the person a
+   menu is *for* is not something this page collects. Dávid decided this on 2026-09-07, and it
+   changes PLAN.md §2 ("each with an optional `recipient_name`") and §3
+   (`order_menus.recipient_name`) — see the follow-ups below.
 4. **The soup surcharge is explained where it happens.** "+650 Ft leves felár" carries a one-line
    reason under it. In the old system this was the single most confusing price, and it was charged
    at 450 while the site advertised 650.
@@ -259,10 +261,10 @@ confirm or reject:
 7. **Pickup is not drawn.** `pickupEnabled` is false for Piccolo; drawing an unreachable branch
    would invite it into O6.
 8. **The portions stepper creates N menus, not one menu with a quantity.** `order_menus` has no
-   quantity column and should not get one: three colleagues means three rows, each with its own
-   `recipient_name`, which is what the kitchen summary and the delivery list need. The stepper is
-   a shortcut for composing the same thing three times, nothing more. It is the only new capability
-   this revision adds — if it is not wanted, it is one component to delete.
+   quantity column and should not get one: three of the same lunch is three rows, which is what the
+   kitchen summary counts and what the delivery list carries. A "×3" on a single row is one glance
+   away from being read as one. The stepper is a shortcut for composing the same thing three times,
+   nothing more.
 9. **A soup on its own is possible, but not advertised.** PLAN.md §2 already prices a soup without a
    main at 650 Ft, and the composer already accepted a menu with only a soup — the menu simply had no
    way to start one, so the empty cart's "or compose a menu with a soup" was a promise the page could
@@ -307,6 +309,13 @@ confirm or reject:
 
 Not in scope for #30 — listed so they are not lost:
 
+- **A menu no longer carries a recipient name, and PLAN.md still says it does.** Dávid decided on
+  2026-09-07 that a composed menu belongs to no one. That contradicts PLAN.md §2 ("Group ordering:
+  several composed menus per day, each with an optional `recipient_name`") and §3
+  (`order_menus.recipient_name`). Downstream: **#18 / F3** should not create the column,
+  **#31 / O3** should not accept it, and **#36–#38 / S1–S3** lose the per-person split in the
+  kitchen summary and the delivery list — those now identify a menu by its number within the day.
+  A separate issue tracks the PLAN.md edit; this mockup is already built without the name.
 - **`RestaurantConfig` has no restaurant identity fields.** The masthead, the footer and three
   error messages need phone, address, opening hours and the intake window. They are hard-coded in
   the mockup. Recommend adding a `contact: { phone, address, openingHours, intakeWindow }` branch

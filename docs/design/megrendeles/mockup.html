@@ -1065,10 +1065,6 @@
         font-weight: 700;
         font-size: var(--t-base);
       }
-      .cart-who .anon {
-        font-weight: 500;
-        color: var(--ink-500);
-      }
       .cart-lines {
         grid-column: 1 / -1;
         display: flex;
@@ -2035,9 +2031,6 @@
         composer: {
           title: 'Menü összeállítása',
           editTitle: 'Menü módosítása',
-          recipientLabel: 'Kinek lesz? (opcionális)',
-          recipientPlaceholder: 'Pl. Anita',
-          recipientHelp: 'Ha többeknek rendelsz, a név alapján osztjátok szét az ebédet.',
           slots: {
             soup: 'Leves',
             main: 'Főétel',
@@ -2060,7 +2053,7 @@
           add: 'Hozzáadás',
           addMany: (n) => n + ' adag hozzáadása',
           portions: 'adag',
-          portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba, saját névvel.',
+          portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba.',
           save: 'Módosítás mentése',
           cancel: 'Mégsem',
           pickerTitle: (slot) => slot + ' választása',
@@ -2068,7 +2061,6 @@
         cart: {
           title: 'A rendelésed erre a napra',
           menuNumber: (n) => n + '. menü',
-          anonymous: 'Név nélkül',
           edit: 'Módosítás',
           remove: 'Törlés',
           addAnother: 'Még egy menü ehhez a naphoz',
@@ -2993,9 +2985,7 @@
               .join('');
             return (
               '<div class="cart-menu"><div class="cart-who">' +
-              (m.menu.recipient
-                ? esc(m.menu.recipient)
-                : '<span class="anon">' + esc(S.cart.menuNumber(idx + 1)) + ' · ' + esc(S.cart.anonymous) + '</span>') +
+              esc(S.cart.menuNumber(idx + 1)) +
               '</div><div class="cart-lines">' +
               lines +
               '</div><div class="cart-menu-total"><span>' +
@@ -3326,15 +3316,6 @@
           .join('');
 
         const body =
-          '<div class="field"><label for="who">' +
-          esc(S.composer.recipientLabel) +
-          '</label><input class="control" id="who" placeholder="' +
-          esc(S.composer.recipientPlaceholder) +
-          '" value="' +
-          esc(c.recipient || '') +
-          '" /><p class="help">' +
-          esc(S.composer.recipientHelp) +
-          '</p></div>' +
           soupBlock +
           '<div class="slots">' +
           slotRow('main') +
@@ -3560,9 +3541,7 @@
                 .map(
                   (m, i) =>
                     '<div class="cart-menu"><div class="cart-who">' +
-                    (m.menu.recipient
-                      ? esc(m.menu.recipient)
-                      : '<span class="anon">' + esc(S.cart.menuNumber(i + 1)) + '</span>') +
+                    esc(S.cart.menuNumber(i + 1)) +
                     '</div><div class="amt num" style="font-weight:700">' +
                     money(m.price.total) +
                     '</div><div class="cart-lines">' +
@@ -3715,7 +3694,7 @@
                   .map(
                     (m, k) =>
                       '<div class="cart-line"><span class="slot">' +
-                      esc(m.menu.recipient || S.cart.menuNumber(k + 1)) +
+                      esc(S.cart.menuNumber(k + 1)) +
                       '</span><span class="what">' +
                       esc(
                         m.price.lines
@@ -3838,7 +3817,6 @@
           (i) => i.name === name,
         ).id;
       const composedMenu = (o) => ({
-        recipient: null,
         portions: 1,
         soup: null,
         main: null,
@@ -3865,7 +3843,6 @@
           date: WED,
           menus: [
             composedMenu({
-              recipient: 'Dávid',
               soup: dayItem(WED, 'Húsleves cérnametélttel'),
               main: dayItem(WED, 'Rántott szelet'),
               variation: 'Csirkemell',
@@ -3873,12 +3850,11 @@
               pickle: permItem('Vegyes vágott'),
             }),
             composedMenu({
-              recipient: 'Anita',
               soup: dayItem(WED, 'Brokkolikrémleves'),
               main: permItem('Rántott trapista sajt'),
               side: permItem('Hasábburgonya'),
             }),
-            composedMenu({ recipient: 'Tomi', main: dayItem(WED, 'Paprikás csirke') }),
+            composedMenu({ main: dayItem(WED, 'Paprikás csirke') }),
           ],
           extras: [
             { key: 'box', qty: 3 },
@@ -3889,13 +3865,11 @@
           date: THU,
           menus: [
             composedMenu({
-              recipient: 'Dávid',
               soup: dayItem(THU, 'Gulyásleves'),
               main: dayItem(THU, 'Sült oldalas'),
               side: permItem('Steak burgonya'),
             }),
             composedMenu({
-              recipient: 'Anita',
               soup: dayItem(THU, 'Sárgaborsó-krémleves'),
               main: dayItem(THU, 'Csirkepaprikás'),
               dessert: permItem('Túrógombóc'),
@@ -3907,7 +3881,7 @@
 
       const cartBelowMinimum = () => {
         const c = cartFull();
-        c[1].menus = [composedMenu({ recipient: 'Dávid', main: dayItem(THU, 'Csirkepaprikás') })];
+        c[1].menus = [composedMenu({ main: dayItem(THU, 'Csirkepaprikás') })];
         c[1].extras = [{ key: 'box', qty: 1 }];
         return c;
       };
@@ -3943,8 +3917,8 @@
         },
         {
           id: 'menu-cart',
-          label: '2a+2c · Menü — kosárral, csoportos rendelés',
-          note: 'Három összeállított menü szerdára, névvel. Látszik mindkét árkorrekció: <b>Anita</b> menüjénél „+650 Ft leves felár” (a rántott sajt ára nem tartalmaz levest), <b>Tomi</b> menüjénél „−100 Ft leves nélkül”. A nap füleken a kosár-jelvény mutatja a menük számát.',
+          label: '2a+2c · Menü — kosárral, több menü egy napra',
+          note: 'Három összeállított menü szerdára. A menük sorszámot kapnak, nem nevet: egy menü nem tartozik személyhez. Látszik mindkét árkorrekció — a 2. menünél „+650 Ft leves felár” (a rántott sajt ára nem tartalmaz levest), a 3.-nál „−100 Ft leves nélkül”. A nap füleken a kosár-jelvény mutatja a menük számát.',
           vm: () => baseVm({ cart: cartFull() }),
         },
         {
@@ -4010,8 +3984,7 @@
               cart: cartFull(),
               overlay: 'composer',
               composer: composedMenu({
-                recipient: 'Réka',
-                soup: dayItem(WED, 'Húsleves cérnametélttel'),
+                  soup: dayItem(WED, 'Húsleves cérnametélttel'),
                 main: permItem('Csirkemellcsíkok'),
                 side: permItem('Steak burgonya'),
                 dessert: permItem('Almás pite'),
@@ -4021,7 +3994,7 @@
         {
           id: 'composer-portions',
           label: '2b · Összeállító — több adag ugyanabból',
-          note: 'A referenciából átvett mennyiség-léptető. Három kollégának ugyanaz a menü: egy összeállítás, három kosársor — mindegyik külön <code>order_menus</code> sor, saját névvel kitölthető. Ez az egyetlen új funkció, amit a Gasty-ből hoztam; ha nem kell, egy sor törlése.',
+          note: 'A referenciából átvett mennyiség-léptető. Háromszor ugyanaz a menü: egy összeállítás, három kosársor — mindegyik külön <code>order_menus</code> sor. Így a konyha darabszámot lát, nem egy „×3” jelölést, amit el lehet nézni.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -4044,8 +4017,7 @@
               cart: cartFull(),
               overlay: 'composer',
               composer: composedMenu({
-                recipient: 'Eszter',
-                soup: dayItem(WED, 'Brokkolikrémleves'),
+                  soup: dayItem(WED, 'Brokkolikrémleves'),
               }),
             }),
         },
