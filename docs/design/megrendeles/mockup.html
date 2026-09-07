@@ -2127,7 +2127,7 @@
           formTitle: (n) => n + '. menü összeállítása',
           formHint: 'Minden kérdésre válaszolj — a „Nem kérek” is válasz.',
           reset: 'Ürítés',
-          mealExtras: 'Szósz, kenyér',
+          mealExtras: 'Extra',
           mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
           extrasSubtotal: 'Kiegészítők',
           grandForAdd: 'Összesen',
@@ -2278,7 +2278,8 @@
         extras: [
           { key: 'box', name: 'Éthordó doboz', price: 100 },
           { key: 'bread', name: 'Kenyér', price: 50 },
-          { key: 'sauce', name: 'Ketchup / tartármártás', price: 400 },
+          { key: 'ketchup', name: 'Ketchup', price: 400 },
+          { key: 'tartar', name: 'Tartármártás', price: 400 },
         ],
         pickupEnabled: false,
       };
@@ -3425,11 +3426,11 @@
 
         /**
          * Step 2 offers the things you eat *alongside* the lunch. Two of them are menu
-         * slots (dessert, pickle); sauce and bread are day-level extras with a quantity,
+         * slots (dessert, pickle); the sauces and bread are day-level extras with a quantity,
          * so they are held here and merged into the day when the menu is added. The box
          * is not here: it is packaging, and it belongs to the day, not to a plate.
          */
-        const MEAL_EXTRAS = ['sauce', 'bread'];
+        const MEAL_EXTRAS = ['ketchup', 'tartar', 'bread'];
         const pendingExtras = c.extras || {};
         const mealExtras = CFG.extras.filter((x) => MEAL_EXTRAS.includes(x.key));
         const extrasTotal = mealExtras.reduce(
@@ -4151,7 +4152,7 @@
                   menus: [],
                   extras: [
                     { key: 'bread', qty: 2 },
-                    { key: 'sauce', qty: 1 },
+                    { key: 'tartar', qty: 1 },
                   ],
                 },
               ],

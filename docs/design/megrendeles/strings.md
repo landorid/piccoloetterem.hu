@@ -19,7 +19,7 @@ Merge it with what is already in `strings.ts`: keep `siteName`, replace the `ord
    | `allergens.notice` | `config.allergenNotice` |
    | `errors.nextWeekBody` | `config.messages.nextWeekNotPublished` |
    | `errors.emptyWeekBody` | new `config.messages.*` entry — see the note in README.md |
-   | extras names (`Éthordó doboz`, `Kenyér`, `Ketchup / tartármártás`) | `config.extras[].name` |
+   | extras names (`Éthordó doboz`, `Kenyér`, `Ketchup`, `Tartármártás`) | `config.extras[].name` |
    | `order.phone`, `order.address`, `order.intake`, `footer.opening`, `footer.delivery` | restaurant identity — **not yet in `RestaurantConfig`**, see README.md §Follow-ups |
 3. **Numbers written into sentences.** `order.terms`, `summary.minimumWarning`, `summary.minimumBlocked`,
    `sections.soupsHint` and `footer.delivery` currently spell out 2 200 Ft, 150 Ft and 650 Ft. They
@@ -125,7 +125,7 @@ export const strings = {
     formTitle: (n: number) => n + '. menü összeállítása',
     formHint: 'Minden kérdésre válaszolj — a „Nem kérek” is válasz.',
     reset: 'Ürítés',
-    mealExtras: 'Szósz, kenyér',
+    mealExtras: 'Extra',
     mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
     extrasSubtotal: 'Kiegészítők',
     grandForAdd: 'Összesen',

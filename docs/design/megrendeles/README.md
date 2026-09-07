@@ -312,12 +312,12 @@ confirm or reject:
 
 1. The page opens on **an empty form for menu 1**, under the day tabs. No browsing, no modal.
 2. Fill it top down: main (a row that opens the one remaining sheet), then variation and side if
-   that dish needs them, then soup, dessert, pickle, sauce and bread — all open on the page. The
+   that dish needs them, then soup, dessert, pickle and the Extra steppers — all open on the page. The
    soup rows carry the adjustment they would cause, so the −100 / +650 is visible before the tap.
 3. Or scroll to the catalogue below and tap a dish there: it drops into the form and the page
    scrolls back to it. Two ways in, one place where a menu is built.
 4. **Hozzáadás** commits the composition to the active day — N copies if the portions stepper says
-   N, with the sauce and bread scaled by the same N. The form empties and its head now reads
+   N, with the Extra quantities scaled by the same N. The form empties and its head now reads
    "2. menü összeállítása".
 5. The day's order fills in beside the form (above it on a phone); "Módosítás" pulls a menu back
    into the form, where it was built.
@@ -332,7 +332,7 @@ confirm or reject:
     deliberate trade: everything visible with nothing to discover beats a short screen you have to
     travel through. The main course keeps its sheet — 11 dishes across three categories do not
     belong inline, and the catalogue below already lists them all.
-12. **Sauce and bread are offered inside the form but land on the day.** They are `order_extras`
+12. **The sauces and bread are offered inside the form but land on the day.** They are `order_extras`
     rows with a quantity, not menu slots, so the form holds them until "Hozzáadás" and then merges
     them into the active day, multiplied by the portions count — three identical lunches want three
     breads. The box is not offered here: it is packaging, it belongs to the day, and it already has
@@ -387,13 +387,14 @@ Not in scope for #30 — listed so they are not lost:
   (`emptyWeek`); PLAN.md §3 only lists `nextWeekNotPublished`.
 - **Prices inside sentences** (2 200 / 150 / 650 Ft) must be interpolated from `config.pricing` —
   see strings.md, note 3.
-- **Is `Ketchup / tartármártás` one extra or two?** The client asked for "ketchup **és**
-  tartármártás **és** kenyér" — three things — but `RestaurantConfig.extras` carries ketchup and
-  tartar sauce as a single combined entry at 400 Ft, which is what PLAN.md §2 lists and what the old
-  system charged. Splitting them into two separately orderable extras (and what each would then
-  cost) is a question about the restaurant's actual offer, not a design call, so the mockup leaves
-  the config untouched. **Dávid: this belongs to issue #41**, where the `RestaurantConfig` values are
-  confirmed with the restaurant. Whichever way it goes, the section renders `CFG.extras` — two
-  entries or three, nothing in the design changes.
+- **Ketchup and tartar sauce are now two extras — their prices still need confirming.** Dávid
+  settled this on 2026-09-07: they are separate products, not one line. The mockup carries
+  `ketchup` and `tartar` as two `RestaurantConfig.extras` entries, **each at the 400 Ft the combined
+  entry charged**, because that is the only figure we have. Two things follow. **(a)** Whether a
+  sauce really costs 400 Ft each once they are sold separately is a question for the restaurant —
+  it belongs to **issue #41**, where the config values are confirmed. **(b)** PLAN.md §2 still
+  enumerates the old list ("box 100, bread 50, ketchup/tartar 400"); the *rule* it states is
+  unchanged — extras are per day, with a quantity, counted in the food subtotal — only the
+  parenthetical is stale, and #41 rewrites it anyway.
 - **Sold-out items are hidden from nothing.** A guest can still open a sold-out dish's row and read
   it; only the action is removed. If the restaurant would rather hide them entirely, say so now.
