@@ -348,7 +348,7 @@ Not in scope for #30 — listed so they are not lost:
   (`order_menus.recipient_name`). Downstream: **#18 / F3** should not create the column,
   **#31 / O3** should not accept it, and **#36–#38 / S1–S3** lose the per-person split in the
   kitchen summary and the delivery list — those now identify a menu by its number within the day.
-  A separate issue tracks the PLAN.md edit; this mockup is already built without the name.
+  Tracked in [#56](https://github.com/landorid/piccoloetterem.hu/issues/56); this mockup is already built without the name.
 - **`RestaurantConfig` has no restaurant identity fields.** The masthead, the footer and three
   error messages need phone, address, opening hours and the intake window. They are hard-coded in
   the mockup. Recommend adding a `contact: { phone, address, openingHours, intakeWindow }` branch
