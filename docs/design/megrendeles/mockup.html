@@ -1263,25 +1263,43 @@
         line-height: 1;
         flex: none;
       }
-      .sheet-steps {
-        flex: 1 0 100%;
+      .composer-form {
         display: flex;
-        gap: 6px;
-        margin-top: var(--s-3);
+        flex-direction: column;
+        background: var(--ground);
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius);
+        overflow: hidden;
+        box-shadow: var(--shadow-1);
+        scroll-margin-top: 150px;
       }
-      .sheet-steps > span {
-        flex: 1;
-        height: 4px;
-        border-radius: 999px;
-        background: var(--line);
+      .cf-head {
+        padding: var(--s-3) var(--s-4);
+        background: var(--paper);
+        border-bottom: 1px solid var(--line);
       }
-      .sheet-steps > span.is-on {
-        background: var(--brand-600);
+      .cf-head h2 {
+        font-family: var(--font-display);
+        font-size: var(--t-lg);
+        font-weight: 500;
       }
-      .step-lead {
-        font-size: var(--t-md);
-        color: var(--ink-700);
-        margin-top: calc(var(--s-2) * -1);
+      .cf-head .hint {
+        font-size: var(--t-sm);
+        color: var(--ink-500);
+      }
+      .cf-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-4);
+        padding: var(--s-4);
+      }
+      .cf-foot {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-2);
+        padding: var(--s-3) var(--s-4) var(--s-4);
+        background: var(--paper);
+        border-top: 1px solid var(--line);
       }
       .extra-note {
         font-size: var(--t-sm);
@@ -1962,13 +1980,17 @@
           grid-column: 1 / -1;
           grid-row: 1;
         }
-        .screen:not(.single) > .col-main {
+        .screen:not(.single) > .composer-form {
           grid-column: 1;
           grid-row: 2;
         }
+        .screen:not(.single) > .col-main {
+          grid-column: 1;
+          grid-row: 3;
+        }
         .screen:not(.single) > .rail {
           grid-column: 2;
-          grid-row: 2;
+          grid-row: 2 / span 2;
         }
         .only-desktop {
           display: flex;
@@ -2094,11 +2116,9 @@
           choose: 'Válassz',
           variationLabel: 'Változat',
           requiredSuffix: 'kötelező',
-          stepTwoTitle: 'Kiegészítők',
-          stepExtras: 'Kérsz mellé valamit?',
-          stepOf: (n) => n + '. lépés a 2-ből',
-          next: 'Tovább',
-          back: 'Vissza',
+          formTitle: (n) => n + '. menü összeállítása',
+          formHint: 'Válaszd ki, mit kérsz. Amit nem jelölsz be, azt nem kérjük.',
+          reset: 'Ürítés',
           mealExtras: 'Szósz, kenyér',
           mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
           extrasSubtotal: 'Kiegészítők',
@@ -3054,7 +3074,9 @@
               esc(S.composer.priceTotal) +
               '</span><span class="amt num">' +
               money(m.price.total) +
-              '</span></div><div class="cart-actions"><button type="button" class="btn-quiet">' +
+              '</span></div><div class="cart-actions"><button type="button" class="btn-quiet" data-edit="' +
+              idx +
+              '">' +
               esc(S.cart.edit) +
               '</button><button type="button" class="btn-danger" data-remove="' +
               idx +
@@ -3185,7 +3207,7 @@
       }
 
       /* --- overlays ------------------------------------------------------- */
-      function Sheet(title, sub, body, foot, step) {
+      function Sheet(title, sub, body, foot) {
         return (
           '<div class="overlay" data-close-overlay><div class="sheet" role="dialog" aria-modal="true" aria-label="' +
           esc(title) +
@@ -3195,17 +3217,7 @@
           (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') +
           '</div><button type="button" class="sheet-close" aria-label="' +
           esc(S.common.close) +
-          '" data-close-overlay>×</button>' +
-          (step
-            ? '<span class="sheet-steps" role="img" aria-label="' +
-              esc(S.composer.stepOf(step)) +
-              '"><span class="' +
-              cls(step >= 1 && 'is-on') +
-              '"></span><span class="' +
-              cls(step >= 2 && 'is-on') +
-              '"></span></span>'
-            : '') +
-          '</div><div class="sheet-body">' +
+          '" data-close-overlay>×</button></div><div class="sheet-body">' +
           body +
           '</div>' +
           (foot ? '<div class="sheet-foot">' + foot + '</div>' : '') +
@@ -3231,7 +3243,7 @@
         return [{ items: WEEK.desserts }];
       }
 
-      function ComposerSheet(vm) {
+      function ComposerForm(vm) {
         const c = vm.composer;
         const date = vm.activeDate;
         const p = priceMenu(c, date);
@@ -3239,7 +3251,6 @@
         const needsVariation = !!(mainItem && mainItem.variations);
         const needsSide = !!(mainItem && mainItem.requiresSide);
         const portions = c.portions || 1;
-        const step = c.step === 2 ? 2 : 1;
 
         const slotRow = (slot, opts = {}) => {
           const item = c[slot] ? ITEMS[c[slot]] : null;
@@ -3323,7 +3334,9 @@
             cls('field-label', opts.required && 'is-required') +
             '">' +
             esc(label) +
-            '</p><div class="choicerows" role="radiogroup" aria-label="' +
+            '</p>' +
+            (opts.hint ? '<p class="extra-note" style="margin-top:calc(var(--s-2) * -1)">' + esc(opts.hint) + '</p>' : '') +
+            '<div class="choicerows" role="radiogroup" aria-label="' +
             esc(S.composer.slots[opts.slot] || label) +
             '">' +
             rows +
@@ -3339,6 +3352,7 @@
 
         const soupBlock = choiceRows(S.composer.slots.soup, {
           slot: 'soup',
+          hint: mainItem ? null : S.sections.soupsHint,
           options: [
             { id: null, name: S.composer.none, amount: soupAmount(null) },
             ...WEEK.byDate[date].soups.map((s) => ({
@@ -3428,30 +3442,19 @@
             '" data-delta="1">+</button></span></div>'
           );
         };
-
-        const stepOneBody =
+        /**
+         * The form is the screen, not a modal: it opens empty for the next menu and
+         * every choice is on the page. The offer list below is the same catalogue —
+         * tapping a dish there drops it into this form — so there are two ways in and
+         * only one place where a menu is built.
+         */
+        const body =
           '<div class="slots">' +
           slotRow('main') +
           '</div>' +
           variationBlock +
           soupBlock +
           sideBlock +
-          (p.lines.length
-            ? '<div class="pricebox">' +
-              priceRows +
-              '<div class="row total"><span>' +
-              esc(S.composer.priceTotal) +
-              '</span><span class="amt num">' +
-              money(p.total) +
-              '</span></div></div>'
-            : '<div class="banner banner-info"><span class="icon" aria-hidden="true">i</span><div><p>' +
-              esc(S.composer.emptyMenu) +
-              '</p></div></div>');
-
-        const stepTwoBody =
-          '<p class="step-lead">' +
-          esc(S.composer.stepExtras) +
-          '</p>' +
           choiceRows(S.composer.slots.dessert, {
             slot: 'dessert',
             options: [
@@ -3481,27 +3484,27 @@
           '</div><p class="extra-note">' +
           esc(S.composer.mealExtrasHint) +
           '</p></div>' +
-          '<div class="pricebox">' +
-          priceRows +
-          '<div class="row total"><span>' +
-          esc(S.composer.priceTotal) +
-          '</span><span class="amt num">' +
-          money(p.total) +
-          '</span></div>' +
-          (extrasTotal
-            ? '<div class="row" style="margin-top:var(--s-2)"><span>' +
-              esc(S.composer.extrasSubtotal) +
+          (p.lines.length || extrasTotal
+            ? '<div class="pricebox">' +
+              priceRows +
+              '<div class="row total"><span>' +
+              esc(S.composer.priceTotal) +
               '</span><span class="amt num">' +
-              money(extrasTotal) +
-              '</span></div>'
+              money(p.total) +
+              '</span></div>' +
+              (extrasTotal
+                ? '<div class="row" style="margin-top:var(--s-2)"><span>' +
+                  esc(S.composer.extrasSubtotal) +
+                  '</span><span class="amt num">' +
+                  money(extrasTotal) +
+                  '</span></div>'
+                : '') +
+              '</div>'
             : '') +
-          '</div>';
-
-        const body =
-          (step === 1 ? stepOneBody : stepTwoBody) +
           (portions > 1 ? '<p class="help">' + esc(S.composer.portionsHelp) + '</p>' : '');
 
         const invalid = p.errors.length > 0;
+        const empty = p.errors.includes('empty') && !extrasTotal;
         const errorText = p.errors.includes('variation')
           ? S.composer.variationMissing
           : p.errors.includes('side')
@@ -3515,46 +3518,41 @@
           (portions > 1
             ? '<small>' + esc(money(p.total + extrasTotal) + ' × ' + portions) + '</small>'
             : '') +
-          '</span>' +
-          (step === 2
-            ? '<span class="stepper"><button type="button" aria-label="' +
-              esc(S.extras.less) +
-              '" data-portions="-1"' +
-              (portions > 1 ? '' : ' disabled') +
-              '>−</button><span class="qty num">' +
-              portions +
-              ' ' +
-              esc(S.composer.portions) +
-              '</span><button type="button" aria-label="' +
-              esc(S.extras.more) +
-              '" data-portions="1">+</button></span>'
-            : '') +
-          '</div>' +
-          (invalid ? '<p class="error">' + esc(errorText) + '</p>' : '') +
+          '</span><span class="stepper"><button type="button" aria-label="' +
+          esc(S.extras.less) +
+          '" data-portions="-1"' +
+          (portions > 1 ? '' : ' disabled') +
+          '>−</button><span class="qty num">' +
+          portions +
+          ' ' +
+          esc(S.composer.portions) +
+          '</span><button type="button" aria-label="' +
+          esc(S.extras.more) +
+          '" data-portions="1">+</button></span></div>' +
+          (invalid && !empty ? '<p class="error">' + esc(errorText) + '</p>' : '') +
           '<div class="foot-actions">' +
-          (step === 1
-            ? '<button type="button" class="btn btn-ghost" data-close-overlay>' +
-              esc(S.composer.cancel) +
-              '</button><button type="button" class="btn btn-primary"' +
-              (invalid ? ' aria-disabled="true" disabled' : ' data-step="2"') +
-              '>' +
-              esc(S.composer.next) +
-              '</button>'
-            : '<button type="button" class="btn btn-ghost" data-step="1">' +
-              esc(S.composer.back) +
-              '</button><button type="button" class="btn btn-primary"' +
-              (invalid ? ' aria-disabled="true" disabled' : ' data-add="1"') +
-              '>' +
-              esc(portions > 1 ? S.composer.addMany(portions) : S.composer.add) +
+          (empty
+            ? ''
+            : '<button type="button" class="btn btn-ghost" data-reset="1">' +
+              esc(S.composer.reset) +
               '</button>') +
-          '</div>';
+          '<button type="button" class="btn btn-primary"' +
+          (invalid ? ' aria-disabled="true" disabled' : ' data-add="1"') +
+          '>' +
+          esc(portions > 1 ? S.composer.addMany(portions) : S.composer.add) +
+          '</button></div>';
 
-        return Sheet(
-          step === 1 ? S.composer.title : S.composer.stepTwoTitle,
-          cap(dayFull(date)),
-          body,
-          foot,
-          step,
+        const menuNo = (vm.cart.find((d) => d.date === date) || { menus: [] }).menus.length + 1;
+        return (
+          '<section class="composer-form" data-sec="compose"><div class="cf-head"><h2>' +
+          esc(S.composer.formTitle(menuNo)) +
+          '</h2><p class="hint">' +
+          esc(S.composer.formHint) +
+          '</p></div><div class="cf-body">' +
+          body +
+          '</div><div class="cf-foot">' +
+          foot +
+          '</div></section>'
         );
       }
 
@@ -3661,7 +3659,7 @@
       function MenuScreen(vm) {
         const d = WEEK.byDate[vm.activeDate];
         const date = vm.activeDate;
-        const main =
+        const offer =
           ChipRail(vm) +
           Section(S.sections.soups, d.soups, date, {
             sec: 'soups',
@@ -3695,12 +3693,13 @@
           '<div class="banners">' +
           (vm.banners || []).map(Banner).join('') +
           '</div>' +
+          ComposerForm(vm) +
           '<div class="rail">' +
           CartCard(vm) +
           SummaryBar(vm, 'desktop') +
           '</div>' +
           '<div class="col-main">' +
-          main +
+          offer +
           '</div>' +
           '</div>' +
           SummaryBar(vm, 'mobile')
@@ -3979,8 +3978,7 @@
         else screen = MessageScreen(vm);
 
         let overlay = '';
-        if (vm.overlay === 'composer') overlay = ComposerSheet(vm);
-        else if (vm.overlay === 'picker') overlay = PickerSheet(vm);
+        if (vm.overlay === 'picker') overlay = PickerSheet(vm);
         else if (vm.overlay === 'allergens') overlay = AllergenSheet();
 
         return (
@@ -4006,7 +4004,6 @@
         ).id;
       const composedMenu = (o) => ({
         portions: 1,
-        step: 1,
         extras: {},
         soup: null,
         main: null,
@@ -4101,8 +4098,8 @@
       const STATES = [
         {
           id: 'menu-empty',
-          label: '2a · Menü — üres kosár',
-          note: 'Az első képernyő. Hétfő és kedd már lezárult (áthúzva, nem választható), a szerda az első rendelhető nap. A kiszállítási díj és a minimum rögtön a fejlécben. A kategória-csipek a hosszú naphoz ugranak. A napi levesek ára 0, mellettük „A menü ára tartalmazza”. A <b>Gombás csirkemell</b> kézzel elfogyottra állítva.',
+          label: '2a+2b · Az első képernyő — üres űrlap',
+          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. Alatta megmarad a kínálat böngészhető listája: ott is koppinthatsz egy fogásra, és beleesik az űrlapba. Hétfő és kedd már lezárult (áthúzva), a kiszállítási díj és a minimum a fejlécben.',
           vm: () => baseVm({}),
         },
         {
@@ -4144,19 +4141,18 @@
         },
         {
           id: 'composer-required',
-          label: '2b · Összeállító — kötelező mezők',
+          label: '2b · Űrlap — kötelező mezők',
           note: 'A leves, a változat és a köret teljes szélességű választósor: kezdőbetűs négyzet, név, alatta az ár, jobb oldalt a jelölő karika — a választás nem hagyja el a lapot. Csak a főétel maradt sor + választólap, mert annak 11 opciója van három kategóriából. A kötelező blokkok címkéje piros és ki is mondja: „· kötelező”, nem csak a szín jelöl. A „Nem kérek” levessor már itt mutatja a −100 Ft-ot. A változatoknál nincs négyzet: a változat nem önálló fogás, és a „Csirkemell” meg a „Csirkecomb” is ugyanazt a C-t kapná.',
           vm: () =>
             baseVm({
               cart: cartFull(),
-              overlay: 'composer',
               composer: composedMenu({ main: dayItem(WED, 'Rántott szelet') }),
             }),
         },
         {
           id: 'picker-main',
           label: '2b · Fogásválasztó — főétel',
-          note: 'Az egyetlen megmaradt választólap: a főételé. Napi főételek, heti kiemelt ajánlat és egész héten rendelhető tételek egy listában, csoportcímkékkel; az elfogyott tétel áthúzva és nem választható. A sorok felépítése ugyanaz, mint az összeállítóban — itt viszont egyetlen kártyába fűzve, mert 11 tétel három csoportban lista akar lenni, nem kártyahalom. A leves, a változat és a köret az összeállítóban választósor.',
+          note: 'Az egyetlen megmaradt választólap: a főételé. Napi főételek, heti kiemelt ajánlat és egész héten rendelhető tételek egy listában, csoportcímkékkel; az elfogyott tétel áthúzva és nem választható. A sorok felépítése ugyanaz, mint az űrlapon — itt viszont egyetlen kártyába fűzve, mert 11 tétel három csoportban lista akar lenni, nem kártyahalom. Minden más választás az űrlapon van, nyitva.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -4167,12 +4163,11 @@
         },
         {
           id: 'composer-valid',
-          label: '2b · Összeállító — kész menü, árbontással',
+          label: '2b · Űrlap — kész menü, árbontással',
           note: 'Itt a főétel a „Csirkemellcsíkok”, aminek az ára nem tartalmaz levest — ezért a leves sorában <b>+650 Ft</b> áll, még mielőtt rákoppintanál. A régi rendszerben ezt csak utólag tudtad meg (és 450-et számolt, miközben 650-et hirdetett). A köret mind a hét opciója egymás alatt áll: a lap görgethető, a blokk nem — görgető a görgetőben az a mozdulat, ami telefonon elvész.',
           vm: () =>
             baseVm({
               cart: cartFull(),
-              overlay: 'composer',
               composer: composedMenu({
                   soup: dayItem(WED, 'Húsleves cérnametélttel'),
                 main: permItem('Csirkemellcsíkok'),
@@ -4183,49 +4178,27 @@
         },
         {
           id: 'composer-portions',
-          label: '2b · Összeállító — több adag ugyanabból',
+          label: '2b · Űrlap — több adag ugyanabból',
           note: 'A referenciából átvett mennyiség-léptető. Háromszor ugyanaz a menü: egy összeállítás, három kosársor — mindegyik külön <code>order_menus</code> sor. Így a konyha darabszámot lát, nem egy „×3” jelölést, amit el lehet nézni.',
           vm: () =>
             baseVm({
               cart: cartFull(),
-              overlay: 'composer',
               composer: composedMenu({
                 soup: dayItem(WED, 'Húsleves cérnametélttel'),
                 main: dayItem(WED, 'Sertéssült'),
                 side: permItem('Főtt burgonya'),
                 pickle: permItem('Csemege uborka'),
                 portions: 3,
-                step: 2,
-              }),
-            }),
-        },
-        {
-          id: 'composer-step2',
-          label: '2b · Összeállító — 2. lépés, kiegészítők',
-          note: 'A „Tovább” után a lap nem a menüt kérdezi tovább, hanem azt, amit <i>mellé</i> eszel: desszert, savanyúság, majd szósz és kenyér. A fejlécben kétszakaszos jelző mutatja, hol tartasz. A desszert és a savanyúság a menü szeletei, a szósz és a kenyér viszont <b>a nap rendeléséhez</b> adódik hozzá mennyiséggel (<code>order_extras</code>), ezért kapnak léptetőt és külön sort az árdobozban — a doboz nem került ide, mert az csomagolás, nem a tányér mellé jár. Több adagnál a kiegészítők is annyiszor kerülnek a kosárba.',
-          vm: () =>
-            baseVm({
-              cart: cartFull(),
-              overlay: 'composer',
-              composer: composedMenu({
-                soup: dayItem(WED, 'Húsleves cérnametélttel'),
-                main: dayItem(WED, 'Rántott szelet'),
-                variation: 'Csirkemell',
-                side: permItem('Hasábburgonya'),
-                dessert: permItem('Somlói galuska'),
-                step: 2,
-                extras: { bread: 2, sauce: 1 },
               }),
             }),
         },
         {
           id: 'composer-soup-only',
-          label: '2b · Összeállító — csak leves',
-          note: 'A levessorra koppintva ugyanez az összeállító nyílik meg, csak a leves szeletébe kerül a fogás a főétel helyett — ezt a domain és az árazás eddig is engedte, a kínálatból viszont nem lehetett elindítani. Főétel nélkül a leves nem ingyenes: az árdobozban azonnal ott a <b>+650 Ft</b> és az indoklása is (<code>RestaurantConfig.pricing.soupPrice</code>), így a felár ott derül ki, ahol keletkezik, nem a kosárban. Külön gombot nem kapott, és a főételek mellé sem került második gomb: az ebédelők túlnyomó része főételt rendel — a leves önmagában legyen lehetséges, ne hangsúlyos.',
+          label: '2b · Űrlap — csak leves',
+          note: 'A levessorra koppintva a fogás az űrlap leves szeletébe kerül, nem a főételbe — ezt a domain és az árazás eddig is engedte, a kínálatból viszont nem lehetett elindítani. Főétel nélkül a leves nem ingyenes: az árdobozban azonnal ott a <b>+650 Ft</b> és az indoklása is (<code>RestaurantConfig.pricing.soupPrice</code>), így a felár ott derül ki, ahol keletkezik, nem a kosárban. Külön gombot nem kapott, és a főételek mellé sem került második gomb: az ebédelők túlnyomó része főételt rendel — a leves önmagában legyen lehetséges, ne hangsúlyos.',
           vm: () =>
             baseVm({
               cart: cartFull(),
-              overlay: 'composer',
               composer: composedMenu({
                   soup: dayItem(WED, 'Brokkolikrémleves'),
               }),
@@ -4246,7 +4219,7 @@
         {
           id: 'checkout',
           label: '2e · Pénztár',
-          note: 'Négy kötelező mező és a megjegyzés. A böngésző a korábbi rendelésből tölti elő (localStorage). Alatta naponként a teljes rendelés, majd a végösszeg.',
+          note: 'Négy kötelező mező és a megjegyzés. A böngésző a korábbi rendelésből tölti elő (localStorage). A teljes rendelés <b>a mezők mellett</b> áll — kosárérték, naponkénti bontás, végösszeg. Mobilon fordul: az űrlap megy előre, mert azon a képernyőn a kitöltés a feladat, az összegzés az ellenőrzés.',
           vm: () => baseVm({ screen: 'checkout', cart: cartFull() }),
         },
         {
@@ -4643,9 +4616,10 @@
         hideTips();
         if (vm) vm.tip = null;
 
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions],[data-step],[data-mealextra]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions],[data-mealextra],[data-reset],[data-edit]');
         if (!el || !vm) return;
         const d = el.dataset;
+        let jumpTo = null;
 
         if (d.jump !== undefined) {
           // Two device frames render the same view model; scroll the one clicked in.
@@ -4658,8 +4632,14 @@
           if (target) target.scrollIntoView({ block: 'start' });
           return;
         }
-        if (d.step) {
-          vm.composer.step = Number(d.step);
+        if (d.reset) {
+          vm.composer = composedMenu({});
+        } else if (d.edit !== undefined) {
+          // Editing pulls the menu back into the form, where it was built.
+          const day = vm.cart.find((x) => x.date === vm.activeDate);
+          vm.composer = { ...day.menus[Number(d.edit)], portions: 1, extras: {} };
+          day.menus.splice(Number(d.edit), 1);
+          dropDayIfEmpty(day);
         } else if (d.mealextra) {
           const next = { ...(vm.composer.extras || {}) };
           next[d.mealextra] = Math.max(0, (next[d.mealextra] || 0) + Number(d.delta));
@@ -4669,20 +4649,27 @@
         } else if (d.day) {
           vm.activeDate = d.day;
         } else if (d.compose) {
-          vm.composer = composedMenu(
-            d.compose === 'new' ? {} : { [slotOfItem(d.compose)]: d.compose },
-          );
-          vm.overlay = 'composer';
+          if (d.compose === 'new') {
+            vm.composer = composedMenu({});
+          } else {
+            const slot = slotOfItem(d.compose);
+            vm.composer = { ...vm.composer, [slot]: d.compose };
+            if (slot === 'main') {
+              vm.composer.variation = null;
+              if (!ITEMS[d.compose].requiresSide) vm.composer.side = null;
+            }
+          }
+          jumpTo = 'compose';
         } else if (d.open === 'allergens') {
           vm.overlay = 'allergens';
         } else if (d.pick !== undefined && d.slot) {
           vm.composer[d.slot] = d.pick || null;
+          if (vm.overlay === 'picker') vm.overlay = null;
           if (d.slot === 'main') {
             vm.composer.variation = null;
             const picked = d.pick ? ITEMS[d.pick] : null;
             if (!picked || !picked.requiresSide) vm.composer.side = null;
           }
-          vm.overlay = 'composer';
         } else if (d.slot && el.classList.contains('slot-row')) {
           vm.picker = { slot: d.slot };
           vm.overlay = 'picker';
@@ -4690,7 +4677,7 @@
           const n = vm.composer.portions || 1;
           const day = cartDay();
           for (let k = 0; k < n; k++) {
-            const menu = { ...vm.composer, portions: 1, step: 1 };
+            const menu = { ...vm.composer, portions: 1 };
             menu.extras = undefined;
             day.menus.push(menu);
           }
@@ -4718,9 +4705,13 @@
           vm.screen = d.go;
           vm.banners = [];
         } else if (d.closeOverlay !== undefined) {
-          vm.overlay = vm.overlay === 'picker' ? 'composer' : null;
+          vm.overlay = null;
         }
         render();
+        if (jumpTo) {
+          const target = ev.target.closest('.device').querySelector('[data-sec="' + jumpTo + '"]');
+          if (target) target.scrollIntoView({ block: 'start' });
+        }
       });
 
       stateSelect.innerHTML = STATES.map(
