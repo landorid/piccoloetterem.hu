@@ -1232,6 +1232,7 @@
       }
       .sheet-head {
         display: flex;
+        flex-wrap: wrap;
         align-items: center;
         gap: var(--s-3);
         padding: var(--s-3) var(--s-4);
@@ -1261,6 +1262,30 @@
         font-size: 20px;
         line-height: 1;
         flex: none;
+      }
+      .sheet-steps {
+        flex: 1 0 100%;
+        display: flex;
+        gap: 6px;
+        margin-top: var(--s-3);
+      }
+      .sheet-steps > span {
+        flex: 1;
+        height: 4px;
+        border-radius: 999px;
+        background: var(--line);
+      }
+      .sheet-steps > span.is-on {
+        background: var(--brand-600);
+      }
+      .step-lead {
+        font-size: var(--t-md);
+        color: var(--ink-700);
+        margin-top: calc(var(--s-2) * -1);
+      }
+      .extra-note {
+        font-size: var(--t-sm);
+        color: var(--ink-500);
       }
       .sheet-body {
         flex: 1;
@@ -1705,6 +1730,28 @@
       }
 
       /* --- success -------------------------------------------------------------- */
+      .cartsum {
+        display: flex;
+        flex-direction: column;
+        gap: var(--s-3);
+      }
+      .cartsum .eyebrow {
+        color: var(--ink-500);
+      }
+      .cartsum-total {
+        font-family: var(--font-display);
+        font-size: var(--t-3xl);
+        font-weight: 600;
+        line-height: 1;
+        margin-top: calc(var(--s-2) * -1);
+      }
+      .cartsum-totals {
+        padding: var(--s-4);
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-1);
+      }
       .success-mark {
         width: 64px;
         height: 64px;
@@ -1843,8 +1890,13 @@
           align-items: center;
           padding: var(--s-8);
         }
+        .choicerows {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+          gap: var(--s-2);
+        }
         .sheet {
-          max-width: 640px;
+          max-width: 760px;
           border-radius: var(--radius-lg);
           max-height: 86%;
         }
@@ -2042,6 +2094,15 @@
           choose: 'Válassz',
           variationLabel: 'Változat',
           requiredSuffix: 'kötelező',
+          stepTwoTitle: 'Kiegészítők',
+          stepExtras: 'Kérsz mellé valamit?',
+          stepOf: (n) => n + '. lépés a 2-ből',
+          next: 'Tovább',
+          back: 'Vissza',
+          mealExtras: 'Szósz, kenyér',
+          mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
+          extrasSubtotal: 'Kiegészítők',
+          grandForAdd: 'Összesen',
           variationOf: (name) => name + ' — változat',
           variationMissing: 'Válassz változatot',
           sideMissing: 'Ehhez a főételhez köret jár',
@@ -2102,6 +2163,7 @@
           back: 'Vissza a menühöz',
           contact: 'Elérhetőség',
           orderTitle: 'A rendelésed',
+          cartValue: 'Kosár értéke',
           name: 'Név',
           namePlaceholder: 'Teljes név',
           phone: 'Telefonszám',
@@ -3123,7 +3185,7 @@
       }
 
       /* --- overlays ------------------------------------------------------- */
-      function Sheet(title, sub, body, foot) {
+      function Sheet(title, sub, body, foot, step) {
         return (
           '<div class="overlay" data-close-overlay><div class="sheet" role="dialog" aria-modal="true" aria-label="' +
           esc(title) +
@@ -3133,7 +3195,17 @@
           (sub ? '<div class="sub">' + esc(sub) + '</div>' : '') +
           '</div><button type="button" class="sheet-close" aria-label="' +
           esc(S.common.close) +
-          '" data-close-overlay>×</button></div><div class="sheet-body">' +
+          '" data-close-overlay>×</button>' +
+          (step
+            ? '<span class="sheet-steps" role="img" aria-label="' +
+              esc(S.composer.stepOf(step)) +
+              '"><span class="' +
+              cls(step >= 1 && 'is-on') +
+              '"></span><span class="' +
+              cls(step >= 2 && 'is-on') +
+              '"></span></span>'
+            : '') +
+          '</div><div class="sheet-body">' +
           body +
           '</div>' +
           (foot ? '<div class="sheet-foot">' + foot + '</div>' : '') +
@@ -3167,6 +3239,7 @@
         const needsVariation = !!(mainItem && mainItem.variations);
         const needsSide = !!(mainItem && mainItem.requiresSide);
         const portions = c.portions || 1;
+        const step = c.step === 2 ? 2 : 1;
 
         const slotRow = (slot, opts = {}) => {
           const item = c[slot] ? ITEMS[c[slot]] : null;
@@ -3315,17 +3388,54 @@
           )
           .join('');
 
-        const body =
-          soupBlock +
+        /**
+         * Step 2 offers the things you eat *alongside* the lunch. Two of them are menu
+         * slots (dessert, pickle); sauce and bread are day-level extras with a quantity,
+         * so they are held here and merged into the day when the menu is added. The box
+         * is not here: it is packaging, and it belongs to the day, not to a plate.
+         */
+        const MEAL_EXTRAS = ['sauce', 'bread'];
+        const pendingExtras = c.extras || {};
+        const mealExtras = CFG.extras.filter((x) => MEAL_EXTRAS.includes(x.key));
+        const extrasTotal = mealExtras.reduce(
+          (sum, x) => sum + (pendingExtras[x.key] || 0) * x.price,
+          0,
+        );
+
+        const mealExtraRow = (x) => {
+          const qty = pendingExtras[x.key] || 0;
+          return (
+            '<div class="' +
+            cls('pickrow choicerow', qty && 'is-on') +
+            '">' +
+            Tile(x) +
+            '<span class="pbody"><span class="pname">' +
+            esc(x.name) +
+            '</span><span class="pamt num">' +
+            esc(S.extras.unitPrice(money(x.price))) +
+            '</span></span><span class="stepper"><button type="button" aria-label="' +
+            esc(S.extras.lessOf(x.name)) +
+            '" data-mealextra="' +
+            x.key +
+            '" data-delta="-1"' +
+            (qty ? '' : ' disabled') +
+            '>−</button><span class="qty num">' +
+            qty +
+            '</span><button type="button" aria-label="' +
+            esc(S.extras.moreOf(x.name)) +
+            '" data-mealextra="' +
+            x.key +
+            '" data-delta="1">+</button></span></div>'
+          );
+        };
+
+        const stepOneBody =
           '<div class="slots">' +
           slotRow('main') +
           '</div>' +
           variationBlock +
+          soupBlock +
           sideBlock +
-          '<div class="slots">' +
-          slotRow('pickle') +
-          slotRow('dessert') +
-          '</div>' +
           (p.lines.length
             ? '<div class="pricebox">' +
               priceRows +
@@ -3336,7 +3446,59 @@
               '</span></div></div>'
             : '<div class="banner banner-info"><span class="icon" aria-hidden="true">i</span><div><p>' +
               esc(S.composer.emptyMenu) +
-              '</p></div></div>') +
+              '</p></div></div>');
+
+        const stepTwoBody =
+          '<p class="step-lead">' +
+          esc(S.composer.stepExtras) +
+          '</p>' +
+          choiceRows(S.composer.slots.dessert, {
+            slot: 'dessert',
+            options: [
+              { id: null, name: S.composer.none, amount: money(0) },
+              ...WEEK.desserts.map((i) => ({
+                id: i.id,
+                name: i.name,
+                amount: money(priceOf(i, date)),
+              })),
+            ],
+          }) +
+          choiceRows(S.composer.slots.pickle, {
+            slot: 'pickle',
+            options: [
+              { id: null, name: S.composer.none, amount: money(0) },
+              ...WEEK.pickles.map((i) => ({
+                id: i.id,
+                name: i.name,
+                amount: money(priceOf(i, date)),
+              })),
+            ],
+          }) +
+          '<div><p class="field-label">' +
+          esc(S.composer.mealExtras) +
+          '</p><div class="choicerows">' +
+          mealExtras.map(mealExtraRow).join('') +
+          '</div><p class="extra-note">' +
+          esc(S.composer.mealExtrasHint) +
+          '</p></div>' +
+          '<div class="pricebox">' +
+          priceRows +
+          '<div class="row total"><span>' +
+          esc(S.composer.priceTotal) +
+          '</span><span class="amt num">' +
+          money(p.total) +
+          '</span></div>' +
+          (extrasTotal
+            ? '<div class="row" style="margin-top:var(--s-2)"><span>' +
+              esc(S.composer.extrasSubtotal) +
+              '</span><span class="amt num">' +
+              money(extrasTotal) +
+              '</span></div>'
+            : '') +
+          '</div>';
+
+        const body =
+          (step === 1 ? stepOneBody : stepTwoBody) +
           (portions > 1 ? '<p class="help">' + esc(S.composer.portionsHelp) + '</p>' : '');
 
         const invalid = p.errors.length > 0;
@@ -3346,35 +3508,53 @@
             ? S.composer.sideMissing
             : S.composer.emptyMenu;
 
+        const addTotal = (p.total + extrasTotal) * portions;
         const foot =
           '<div class="foot-top"><span class="foot-price num">' +
-          money(p.total * portions) +
-          (portions > 1 ? '<small>' + esc(money(p.total) + ' × ' + portions) + '</small>' : '') +
-          '</span><span class="stepper"><button type="button" aria-label="' +
-          esc(S.extras.less) +
-          '" data-portions="-1"' +
-          (portions > 1 ? '' : ' disabled') +
-          '>−</button><span class="qty num">' +
-          portions +
-          ' ' +
-          esc(S.composer.portions) +
-          '</span><button type="button" aria-label="' +
-          esc(S.extras.more) +
-          '" data-portions="1">+</button></span></div>' +
+          money(addTotal) +
+          (portions > 1
+            ? '<small>' + esc(money(p.total + extrasTotal) + ' × ' + portions) + '</small>'
+            : '') +
+          '</span>' +
+          (step === 2
+            ? '<span class="stepper"><button type="button" aria-label="' +
+              esc(S.extras.less) +
+              '" data-portions="-1"' +
+              (portions > 1 ? '' : ' disabled') +
+              '>−</button><span class="qty num">' +
+              portions +
+              ' ' +
+              esc(S.composer.portions) +
+              '</span><button type="button" aria-label="' +
+              esc(S.extras.more) +
+              '" data-portions="1">+</button></span>'
+            : '') +
+          '</div>' +
           (invalid ? '<p class="error">' + esc(errorText) + '</p>' : '') +
-          '<div class="foot-actions"><button type="button" class="btn btn-ghost" data-close-overlay>' +
-          esc(S.composer.cancel) +
-          '</button><button type="button" class="btn btn-primary"' +
-          (invalid ? ' aria-disabled="true" disabled' : ' data-add="1"') +
-          '>' +
-          esc(portions > 1 ? S.composer.addMany(portions) : S.composer.add) +
-          '</button></div>';
+          '<div class="foot-actions">' +
+          (step === 1
+            ? '<button type="button" class="btn btn-ghost" data-close-overlay>' +
+              esc(S.composer.cancel) +
+              '</button><button type="button" class="btn btn-primary"' +
+              (invalid ? ' aria-disabled="true" disabled' : ' data-step="2"') +
+              '>' +
+              esc(S.composer.next) +
+              '</button>'
+            : '<button type="button" class="btn btn-ghost" data-step="1">' +
+              esc(S.composer.back) +
+              '</button><button type="button" class="btn btn-primary"' +
+              (invalid ? ' aria-disabled="true" disabled' : ' data-add="1"') +
+              '>' +
+              esc(portions > 1 ? S.composer.addMany(portions) : S.composer.add) +
+              '</button>') +
+          '</div>';
 
         return Sheet(
-          c.editing ? S.composer.editTitle : S.composer.title,
+          step === 1 ? S.composer.title : S.composer.stepTwoTitle,
           cap(dayFull(date)),
           body,
           foot,
+          step,
         );
       }
 
@@ -3616,8 +3796,21 @@
           );
         };
 
+        const p = priceCart(vm.cart);
+        const summary =
+          '<div class="rail"><div class="cartsum"><p class="eyebrow">' +
+          esc(S.checkout.cartValue) +
+          '</p><p class="cartsum-total num">' +
+          money(p.grand) +
+          '</p>' +
+          OrderRecap(vm.cart) +
+          '<div class="cartsum-totals">' +
+          Totals(vm.cart, { feeNote: true }) +
+          '</div></div></div>';
+
         return (
-          '<div class="screen single"><div class="col-main">' +
+          '<div class="screen">' +
+          '<div class="col-main">' +
           '<button type="button" class="btn-quiet" data-go="menu" style="align-self:flex-start">‹ ' +
           esc(S.checkout.back) +
           '</button>' +
@@ -3648,13 +3841,6 @@
             placeholder: S.checkout.notePlaceholder,
           }) +
           '</div></div></div>' +
-          '<div class="section-h"><h2>' +
-          esc(S.checkout.orderTitle) +
-          '</h2></div>' +
-          OrderRecap(vm.cart) +
-          '<div class="card"><div class="card-body">' +
-          Totals(vm.cart, { feeNote: true }) +
-          '</div></div>' +
           '<p style="font-size:var(--t-md);color:var(--ink-700)">' +
           esc(S.checkout.payment) +
           '</p>' +
@@ -3665,7 +3851,9 @@
             ? '<span class="spinner" aria-hidden="true"></span>' + esc(S.checkout.submitting)
             : esc(S.checkout.submit)) +
           '</button>' +
-          '</div></div>'
+          '</div>' +
+          summary +
+          '</div>'
         );
       }
 
@@ -3818,6 +4006,8 @@
         ).id;
       const composedMenu = (o) => ({
         portions: 1,
+        step: 1,
+        extras: {},
         soup: null,
         main: null,
         variation: null,
@@ -4005,6 +4195,26 @@
                 side: permItem('Főtt burgonya'),
                 pickle: permItem('Csemege uborka'),
                 portions: 3,
+                step: 2,
+              }),
+            }),
+        },
+        {
+          id: 'composer-step2',
+          label: '2b · Összeállító — 2. lépés, kiegészítők',
+          note: 'A „Tovább” után a lap nem a menüt kérdezi tovább, hanem azt, amit <i>mellé</i> eszel: desszert, savanyúság, majd szósz és kenyér. A fejlécben kétszakaszos jelző mutatja, hol tartasz. A desszert és a savanyúság a menü szeletei, a szósz és a kenyér viszont <b>a nap rendeléséhez</b> adódik hozzá mennyiséggel (<code>order_extras</code>), ezért kapnak léptetőt és külön sort az árdobozban — a doboz nem került ide, mert az csomagolás, nem a tányér mellé jár. Több adagnál a kiegészítők is annyiszor kerülnek a kosárba.',
+          vm: () =>
+            baseVm({
+              cart: cartFull(),
+              overlay: 'composer',
+              composer: composedMenu({
+                soup: dayItem(WED, 'Húsleves cérnametélttel'),
+                main: dayItem(WED, 'Rántott szelet'),
+                variation: 'Csirkemell',
+                side: permItem('Hasábburgonya'),
+                dessert: permItem('Somlói galuska'),
+                step: 2,
+                extras: { bread: 2, sauce: 1 },
               }),
             }),
         },
@@ -4433,7 +4643,7 @@
         hideTips();
         if (vm) vm.tip = null;
 
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions],[data-step],[data-mealextra]');
         if (!el || !vm) return;
         const d = el.dataset;
 
@@ -4448,7 +4658,13 @@
           if (target) target.scrollIntoView({ block: 'start' });
           return;
         }
-        if (d.portions) {
+        if (d.step) {
+          vm.composer.step = Number(d.step);
+        } else if (d.mealextra) {
+          const next = { ...(vm.composer.extras || {}) };
+          next[d.mealextra] = Math.max(0, (next[d.mealextra] || 0) + Number(d.delta));
+          vm.composer.extras = next;
+        } else if (d.portions) {
           vm.composer.portions = Math.max(1, (vm.composer.portions || 1) + Number(d.portions));
         } else if (d.day) {
           vm.activeDate = d.day;
@@ -4472,8 +4688,17 @@
           vm.overlay = 'picker';
         } else if (d.add) {
           const n = vm.composer.portions || 1;
+          const day = cartDay();
           for (let k = 0; k < n; k++) {
-            cartDay().menus.push({ ...vm.composer, portions: 1 });
+            const menu = { ...vm.composer, portions: 1, step: 1 };
+            menu.extras = undefined;
+            day.menus.push(menu);
+          }
+          for (const [key, qty] of Object.entries(vm.composer.extras || {})) {
+            if (!qty) continue;
+            let e = day.extras.find((x) => x.key === key);
+            if (!e) day.extras.push((e = { key, qty: 0 }));
+            e.qty += qty * n;
           }
           vm.composer = composedMenu({});
           vm.overlay = null;

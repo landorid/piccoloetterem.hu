@@ -65,8 +65,9 @@ export const strings = {
     sideExtras: 'Feláras köretek',
     pickles: 'Savanyúságok',
     desserts: 'Desszertek',
+    extras: 'Extrák',
     weekendHint: 'Szombaton eltérő ár',
-    soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft.',
+    soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft. Koppints rá, és mellé választhatsz főételt.',
     all: 'Összes',
     jumpLabel: 'Ugrás a kínálaton belül',
   },
@@ -84,7 +85,10 @@ export const strings = {
     link: 'Allergének',
     title: 'Allergén tájékoztató',
     codesLabel: 'Allergének:',
-    notice: 'Az ételek allergénjeit a fogás neve alatt számokkal jelöljük. A konyhánkban glutént, tejet, tojást, szóját, diót, zellert és halat is használunk, ezért a nyomokban való előfordulás egyetlen fogásnál sem zárható ki. Ha allergiád van, a rendelés leadása előtt hívj minket.',
+    tip: (n: number, name: string) => n + ' · ' + name,
+    more: (n: number) => '+' + n,
+    moreLabel: (names: string) => 'További allergének: ' + names,
+    notice: 'Az ételek allergénjeit a fogás neve alatt ikonokkal jelöljük — az ikonra koppintva kiírjuk a nevét. A konyhánkban glutént, tejet, tojást, szóját, diót, zellert és halat is használunk, ezért a nyomokban való előfordulás egyetlen fogásnál sem zárható ki. Ha allergiád van, a rendelés leadása előtt hívj minket.',
     list: [
       'Glutént tartalmazó gabonák',
       'Rákfélék',
@@ -105,9 +109,6 @@ export const strings = {
   composer: {
     title: 'Menü összeállítása',
     editTitle: 'Menü módosítása',
-    recipientLabel: 'Kinek lesz? (opcionális)',
-    recipientPlaceholder: 'Pl. Anita',
-    recipientHelp: 'Ha többeknek rendelsz, a név alapján osztjátok szét az ebédet.',
     slots: {
       soup: 'Leves',
       main: 'Főétel',
@@ -119,6 +120,15 @@ export const strings = {
     choose: 'Válassz',
     variationLabel: 'Változat',
     requiredSuffix: 'kötelező',
+    stepTwoTitle: 'Kiegészítők',
+    stepExtras: 'Kérsz mellé valamit?',
+    stepOf: (n: number) => n + '. lépés a 2-ből',
+    next: 'Tovább',
+    back: 'Vissza',
+    mealExtras: 'Szósz, kenyér',
+    mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
+    extrasSubtotal: 'Kiegészítők',
+    grandForAdd: 'Összesen',
     variationOf: (name: string) => name + ' — változat',
     variationMissing: 'Válassz változatot',
     sideMissing: 'Ehhez a főételhez köret jár',
@@ -130,7 +140,7 @@ export const strings = {
     add: 'Hozzáadás',
     addMany: (n: number) => n + ' adag hozzáadása',
     portions: 'adag',
-    portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba, saját névvel.',
+    portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba.',
     save: 'Módosítás mentése',
     cancel: 'Mégsem',
     pickerTitle: (slot: string) => slot + ' választása',
@@ -138,7 +148,6 @@ export const strings = {
   cart: {
     title: 'A rendelésed erre a napra',
     menuNumber: (n: number) => n + '. menü',
-    anonymous: 'Név nélkül',
     edit: 'Módosítás',
     remove: 'Törlés',
     addAnother: 'Még egy menü ehhez a naphoz',
@@ -151,6 +160,10 @@ export const strings = {
     hint: 'Naponta, az adott nap rendeléséhez.',
     less: 'Kevesebb',
     more: 'Több',
+    lessOf: (name: string) => 'Kevesebb: ' + name,
+    moreOf: (name: string) => 'Több: ' + name,
+    unitPrice: (p: string) => p + ' / db',
+    change: 'Extrák módosítása',
   },
   summary: {
     title: 'Összegzés',
@@ -174,6 +187,7 @@ export const strings = {
     back: 'Vissza a menühöz',
     contact: 'Elérhetőség',
     orderTitle: 'A rendelésed',
+    cartValue: 'Kosár értéke',
     name: 'Név',
     namePlaceholder: 'Teljes név',
     phone: 'Telefonszám',
@@ -246,7 +260,9 @@ export const strings = {
 - **Informal `te`, never `ön`.** These are regulars ordering lunch, and the old site is informal too.
 - **Errors say what to do next.** `errors.submitFailedBody` names a phone number, because a guest
   who cannot order by 9:30 has lost their lunch, not just a form submission.
-- **"Kinek lesz?" instead of "Címzett".** Group ordering is nine colleagues, not a shipping label.
+- **A menu has no name.** Several menus a day is still the normal case, but a menu belongs to no
+  one: the day's order numbers them (`cart.menuNumber`). Decided 2026-09-07; PLAN.md §2 and §3 have
+  not caught up yet — see README.md.
 - **"Elfogyott", not "Nem elérhető".** It is what the kitchen says on the phone.
 - **`composer.portions` is `adag`, not `db`.** You order portions of a lunch, not pieces of a
   product. `addMany(3)` reads "3 adag hozzáadása" — it says what the button will do, in the plural

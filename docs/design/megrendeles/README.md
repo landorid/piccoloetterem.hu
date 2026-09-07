@@ -8,7 +8,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
 | Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
-| One-screen overview | [`overview.png`](overview.png) — all 21 states at mobile width |
+| One-screen overview | [`overview.png`](overview.png) — all 22 states at mobile width |
 
 ## How to read it
 
@@ -119,7 +119,8 @@ What O6/O7 need to build, in the order they appear:
 | `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
 | `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
 | `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
-| `ComposerSheet` | five slots across two steps, variation cards, live price box, footer with price + portions + actions |
+| `ComposerSheet` | **two steps.** Step 1 is the plate: main, variation, soup, side. Step 2 is what goes beside it: dessert, pickle, then sauce and bread with quantity steppers. A two-segment bar in the head says where you are; the footer carries the live price, the portions stepper and the step's actions |
+| `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
 | `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
 | `SlotPicker` | the same row, joined into one list with group headers: "Nem kérek" first, sold-out disabled — main course only |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
@@ -132,7 +133,7 @@ What O6/O7 need to build, in the order they appear:
 
 ## The states in the mockup
 
-Scope 2a–2h of the issue, one entry each. All 21 exist at both widths.
+Scope 2a–2h of the issue, one entry each. All 22 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
@@ -145,6 +146,7 @@ Scope 2a–2h of the issue, one entry each. All 21 exist at both widths.
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Összeállító — kész menü | 2b | full price breakdown with the soup surcharge explained |
 | Összeállító — több adag | 2b | one composition, three cart rows |
+| Összeállító — 2. lépés | 2b | dessert, pickle, sauce and bread after "Tovább" |
 | Összeállító — csak leves | 2b | a soup in the soup slot, no main, the +650 Ft surcharge explained |
 | Összegzés kibontva | 2d | per-day subtotals, delivery fee line, grand total |
 | Minimum alatt | 2d | warning per day, "Tovább" blocked |
@@ -304,6 +306,37 @@ confirm or reject:
     a nested `<button>` is markup the HTML parser rewrites, which tears the row apart. **For O6 this
     is the one thing to build differently**: make the row a container with a stretched action button
     so the chips can be real sibling buttons. The design does not change; the markup does.
+
+### The order flow, end to end
+
+1. Tap a dish in the offer list — a main, or a soup.
+2. **Step 1, the plate.** The dish arrives in its slot. Variation and side appear only when that
+   dish needs them, and they are the only things that can block "Tovább". The soup rows carry the
+   adjustment they would cause, so the −100 / +650 is visible before the tap.
+3. **Step 2, what goes beside it.** Dessert, pickle, then sauce and bread. All optional; the guest
+   can walk straight through.
+4. **Hozzáadás** commits the whole composition to the active day — N copies if the portions stepper
+   says N, with the sauce and bread scaled by the same N.
+5. The day's order and the sticky summary update; repeat for the next lunch or the next day.
+6. **Tovább a rendeléshez** → checkout: the form on the left, the whole order beside it on the right.
+
+11. **The composer is two steps, not one long sheet.** Dávid asked for it, and it matches how the
+    decision actually splits: step 1 is the plate and is the only place anything can be *required*;
+    step 2 is what goes beside it and is entirely optional. The split also keeps the required
+    blocks — variation and side — above the fold on a phone, which one long sheet could not.
+    The cost is a tap that a single sheet would not need, paid by everyone; the two-segment bar in
+    the head is there so it never feels like an unbounded wizard.
+12. **Sauce and bread are offered inside the composer but land on the day.** They are
+    `order_extras` rows with a quantity, not menu slots, so the composer holds them until
+    "Hozzáadás" and then merges them into the active day, multiplied by the portions count — three
+    identical lunches want three breads. The box is not offered here: it is packaging, it belongs to
+    the day, and it already has its own row in the extras category.
+13. **Checkout puts the form and the order side by side, with the rail on the right.** The reference
+    image has the summary on the left; ours stays on the right because that is where this design's
+    rail already lives on the menu screen, and a sidebar that changes sides between screens costs
+    more than it gains. On a phone the order flips: the **form comes first** and the recap follows,
+    because filling it in is the job of that screen and the reference's arrangement is a tablet
+    layout. One line of CSS moves the rail to the left if Dávid prefers the reference exactly.
 
 ## Follow-ups this mockup suggests
 
