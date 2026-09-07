@@ -8,7 +8,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
 | Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
-| One-screen overview | [`overview.png`](overview.png) — all 20 states at mobile width |
+| One-screen overview | [`overview.png`](overview.png) — all 21 states at mobile width |
 
 ## How to read it
 
@@ -66,7 +66,8 @@ like a menu rather than like a table of SKUs. It never runs longer than a dish n
 nothing in legibility at 07:40 on a phone.
 
 Scale, in rem against a 16 px base: `12 · 13 · 15 · 16 · 18 · 20 · 24 · 30`. Body is 16, the
-smallest text that carries meaning is 13, and 12 is reserved for allergen codes and badges. Every
+smallest text that carries meaning is 13, and 12 is reserved for badges and the collapsed allergen
+chip. Every
 column of digits carries `font-variant-numeric: tabular-nums`.
 
 > **Production note.** Both faces must be **self-hosted** in the Astro build (`latin-ext` subset —
@@ -113,7 +114,8 @@ What O6/O7 need to build, in the order they appear:
 | `DishList` + `Dish` | tile, name, description, price (with the Saturday price when it differs), allergen chips, tags (`Elfogyott`, `Választható`, `Körettel`); the whole row is the tap target |
 | `RailCard` | the same item as a card in a horizontal rail: tile, price above name |
 | `Tile` | the leading 48px square — a photo where one exists, the dish's initial where none does, empty where the choice is not a dish ("Nem kérek") |
-| `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14; codes render as round chips |
+| `AllergenChip` + `AllergenTip` | a round tinted disc with a hand-drawn pictogram, one per EU allergen; hover, focus or tap names it in a bubble that gives the number too. Three chips per dish, then a `+N` chip that names the rest in its bubble. Used by `Dish`, `RailCard` and `SlotPicker` |
+| `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14, each line carrying its pictogram next to the number |
 | `DayCart` | composed menus with recipient, per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
 | `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
 | `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
@@ -130,14 +132,15 @@ What O6/O7 need to build, in the order they appear:
 
 ## The states in the mockup
 
-Scope 2a–2h of the issue, one entry each. All 20 exist at both widths.
+Scope 2a–2h of the issue, one entry each. All 21 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
 | Menü — üres kosár | 2a | past days disabled, soups at 0, sold-out dish, allergen notice |
 | Menü — kosárral | 2a, 2c | three menus with names, both price adjustments, day badges |
 | Extrák saját kategóriában | 2a, 2d | the extras section with two non-zero quantities, a day that holds extras and no menu, the minimum warning |
-| Allergén tájékoztató | 2a | the 14-item list |
+| Allergén — ikon és buborék | 2a | a bubble open on a milk chip, and the lasagne's `+2` |
+| Allergén tájékoztató | 2a | the 14-item list, each with its pictogram |
 | Összeállító — kötelező mezők | 2b | missing variation and missing side, add disabled |
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Összeállító — kész menü | 2b | full price breakdown with the soup surcharge explained |
@@ -173,6 +176,7 @@ as a flow he likes. It is a per-item marketplace, not a weekly menu, so what tra
 | **A sticky category chip row** | Jump to a section without scrolling past the whole day. |
 | **The delivery fee stated in the header** — their "Mindössze 190 Ft kényelmi díj" | `order.terms`, under the week label. Ours was buried in the footer and the summary. |
 | **A closed-state banner that names the next opening** | We already had this for the cutoff; their version confirmed it earns the space. |
+| **Allergens as pictogram chips, not bare numbers** | `AllergenChip`. Dávid's fourth request from that reference. Fourteen glyphs drawn by hand in the mockup file; the name arrives on hover, on focus and on tap — see decision 10. We took the *pictogram*, not their per-allergen hues. |
 
 What we deliberately did **not** take:
 
@@ -271,6 +275,33 @@ confirm or reject:
    `+650 Ft` line with its reason the moment the soup stands alone. The soup row keeps its
    `0 Ft · A menü ára tartalmazza`, because that price is a property of the *menu*, not of the soup;
    the hint directly above the rows names the other case.
+10. **Allergens are pictograms in one tint, and the number moved into the bubble.** Dávid asked for
+    Gasty's icon chips. Three calls follow from taking them.
+    **(a) One tint, not fourteen.** The reference gives each allergen its own hue. Here the glyph
+    already does the distinguishing — that is the whole reason to draw one — so a second encoding
+    buys nothing and costs a lot: fourteen tints, each needing its own 4.5:1 pairing, in a palette
+    whose rule is that the brown is the only saturated colour on the page, and all of it on the same
+    line as the red `Elfogyott` tag and the `Választható` tags. Warning colours were the other
+    temptation and are worse: most dishes carry an allergen, so a row of red discs on every dish is
+    crying wolf. The chips are `--brand-700` on `--brand-100`, the tint the page already spends on
+    quiet informational marks.
+    **(b) The number is in the bubble and in the sheet, not on the disc.** A 28 px disc holds a
+    glyph or two digits, not both legibly. A guest with a real allergy scans for the shape, not for
+    "7"; the number exists only to tie the row back to the numbered legend, which is exactly what
+    the bubble (`7 · Tej és tejtermék (laktóz)`) and the sheet do. The sheet now carries the
+    pictogram beside each number, so the two representations teach each other.
+    **(c) Three chips, then `+N`.** Three is the widest ordinary dish in the fixture, and three
+    discs are what a 150 px rail card holds on one line. Beyond that the rest collapse into one
+    `+N` chip that names them in its own bubble — the lasagne is given five so the guard is visible
+    somewhere.
+    Two honest costs. The bubble opens on hover, on focus **and on tap**, because touch has no
+    hover — so a tap on a chip shows the name instead of opening the composer, on a 28 px disc
+    inside a 72 px row. Its hit area is 32 × 44 px, the 44 taken vertically with a negative margin
+    so that no row grows. And the chip is a `span` with `role="button"`, not a real `<button>`:
+    every place it appears — the dish row, the rail card, the picker row — is *itself* a button, and
+    a nested `<button>` is markup the HTML parser rewrites, which tears the row apart. **For O6 this
+    is the one thing to build differently**: make the row a container with a stretched action button
+    so the chips can be real sibling buttons. The design does not change; the markup does.
 
 ## Follow-ups this mockup suggests
 
