@@ -346,6 +346,28 @@ confirm or reject:
     because filling it in is the job of that screen and the reference's arrangement is a tablet
     layout. One line of CSS moves the rail to the left if Dávid prefers the reference exactly.
 
+14. **Nothing is pre-selected, and "Nem kérek" is the last option.** Dávid's call, 2026-09-07.
+    Soup, dessert and pickle each open unanswered; the guest picks a dish *or* picks "Nem kérek",
+    and until every one is settled the block's label reads `· válassz` in red and "Hozzáadás" is
+    disabled. Three things follow.
+    **(a) Why it is likely to lift the order.** A pre-checked "Nem kérek" sitting first is a default
+    nobody reads — it answers the question before it is asked, and the eye moves on. Removing it
+    forces the options into view once per menu. The strongest case is the **soup**: beside a daily
+    main it is included, and declining it only takes 100 Ft off, so a guest who skipped past a
+    pre-checked "Nem kérek" was leaving a nearly free course on the table. Dessert (590–690 Ft) and
+    pickle (250 Ft) are straight upsell, and that is where the revenue would come from.
+    **(b) What it costs.** Three taps per menu that nobody paid before, on a page whose users are
+    regulars ordering the same lunch inside a two-hour window. Forced choice hurts habitual repeat
+    users most, which is exactly this audience. The number to watch is not attach rate on its own
+    but attach rate *against* completed orders per week — analytics is on the backlog.
+    **(c) The cheaper half, if it turns out to hurt.** Keep the forced answer on the soup, where a
+    real price consequence hangs on it, and let dessert and pickle open unanswered without blocking.
+    That keeps the attention effect and gives back two of the three taps. It is one line: drop those
+    two slots from the `unanswered:` check in `priceMenu`.
+15. **The main course prompts "Válassz", not "Nem kérek".** The row is not offering to decline a
+    main; it is asking for one. A menu without a main is still valid — the soup-only case in
+    decision 9 — but that is reached by choosing a soup, not by declining the main.
+
 ## Follow-ups this mockup suggests
 
 Not in scope for #30 — listed so they are not lost:

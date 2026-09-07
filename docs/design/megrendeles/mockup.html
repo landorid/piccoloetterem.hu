@@ -1301,6 +1301,12 @@
         background: var(--paper);
         border-top: 1px solid var(--line);
       }
+      .block-hint {
+        margin: calc(var(--s-1) * -1) 0 var(--s-2);
+        font-size: var(--t-sm);
+        line-height: 1.4;
+        color: var(--ink-500);
+      }
       .extra-note {
         font-size: var(--t-sm);
         color: var(--ink-500);
@@ -2116,8 +2122,10 @@
           choose: 'Válassz',
           variationLabel: 'Változat',
           requiredSuffix: 'kötelező',
+          answerSuffix: 'válassz',
+          unanswered: 'Válaszolj a jelölt kérdésekre — a „Nem kérek” is válasz.',
           formTitle: (n) => n + '. menü összeállítása',
-          formHint: 'Válaszd ki, mit kérsz. Amit nem jelölsz be, azt nem kérjük.',
+          formHint: 'Minden kérdésre válaszolj — a „Nem kérek” is válasz.',
           reset: 'Ürítés',
           mealExtras: 'Szósz, kenyér',
           mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
@@ -2549,6 +2557,12 @@
 
         if (mainItem && mainItem.variations && !m.variation) errors.push('variation');
         if (mainItem && mainItem.requiresSide && !m.side) errors.push('side');
+        /* Soup, pickle and dessert carry no default. The guest answers each one —
+           picking a dish or picking "Nem kérek" — so nothing is ordered, or skipped,
+           by a checkbox nobody looked at. */
+        for (const slot of ['soup', 'pickle', 'dessert']) {
+          if (m[slot] === undefined) errors.push('unanswered:' + slot);
+        }
         if (!soupItem && !mainItem && !m.side && !m.pickle && !m.dessert) errors.push('empty');
 
         return { lines, total: lines.reduce((s, l) => s + l.amount, 0), errors };
@@ -3276,7 +3290,7 @@
             (item
               ? '<span class="picked">' + esc(item.name) + '</span>'
               : '<span class="placeholder">' +
-                esc(opts.required ? S.composer.choose : S.composer.none) +
+                esc(opts.placeholder || S.composer.choose) +
                 '</span>') +
             '</span><span class="amt num">' +
             esc(amt) +
@@ -3303,11 +3317,17 @@
          * "Csirkecomb" would both draw a C.
          */
         const choiceRows = (slotLabel, opts) => {
-          const label = opts.required ? slotLabel + ' · ' + S.composer.requiredSuffix : slotLabel;
+          const unanswered = opts.answerable && c[opts.slot] === undefined;
+          const label = opts.required
+            ? slotLabel + ' · ' + S.composer.requiredSuffix
+            : unanswered
+              ? slotLabel + ' · ' + S.composer.answerSuffix
+              : slotLabel;
           const rows = opts.options
             .map((o) => {
               const item = o.id ? ITEMS[o.id] : null;
-              const checked = (o.id || null) === (c[opts.slot] || null);
+              const chosen = c[opts.slot];
+              const checked = chosen !== undefined && (o.id || null) === (chosen || null);
               const soldOut = !!(item && item.soldOut);
               return (
                 '<button type="button" class="pickrow choicerow" role="radio" aria-checked="' +
@@ -3331,11 +3351,11 @@
             .join('');
           return (
             '<div><p class="' +
-            cls('field-label', opts.required && 'is-required') +
+            cls('field-label', (opts.required || unanswered) && 'is-required') +
             '">' +
             esc(label) +
             '</p>' +
-            (opts.hint ? '<p class="extra-note" style="margin-top:calc(var(--s-2) * -1)">' + esc(opts.hint) + '</p>' : '') +
+            (opts.hint ? '<p class="block-hint">' + esc(opts.hint) + '</p>' : '') +
             '<div class="choicerows" role="radiogroup" aria-label="' +
             esc(S.composer.slots[opts.slot] || label) +
             '">' +
@@ -3352,14 +3372,15 @@
 
         const soupBlock = choiceRows(S.composer.slots.soup, {
           slot: 'soup',
+          answerable: true,
           hint: mainItem ? null : S.sections.soupsHint,
           options: [
-            { id: null, name: S.composer.none, amount: soupAmount(null) },
             ...WEEK.byDate[date].soups.map((s) => ({
               id: s.id,
               name: s.name,
               amount: soupAmount(s.id),
             })),
+            { id: null, name: S.composer.none, amount: soupAmount(null) },
           ],
         });
 
@@ -3457,24 +3478,26 @@
           sideBlock +
           choiceRows(S.composer.slots.dessert, {
             slot: 'dessert',
+            answerable: true,
             options: [
-              { id: null, name: S.composer.none, amount: money(0) },
               ...WEEK.desserts.map((i) => ({
                 id: i.id,
                 name: i.name,
                 amount: money(priceOf(i, date)),
               })),
+              { id: null, name: S.composer.none, amount: money(0) },
             ],
           }) +
           choiceRows(S.composer.slots.pickle, {
             slot: 'pickle',
+            answerable: true,
             options: [
-              { id: null, name: S.composer.none, amount: money(0) },
               ...WEEK.pickles.map((i) => ({
                 id: i.id,
                 name: i.name,
                 amount: money(priceOf(i, date)),
               })),
+              { id: null, name: S.composer.none, amount: money(0) },
             ],
           }) +
           '<div><p class="field-label">' +
@@ -3509,7 +3532,9 @@
           ? S.composer.variationMissing
           : p.errors.includes('side')
             ? S.composer.sideMissing
-            : S.composer.emptyMenu;
+            : p.errors.some((e) => e.startsWith('unanswered:'))
+              ? S.composer.unanswered
+              : S.composer.emptyMenu;
 
         const addTotal = (p.total + extrasTotal) * portions;
         const foot =
@@ -3564,7 +3589,7 @@
         const groups = slotOptions(slot, date);
         const none =
           '<button type="button" class="pickrow option" role="radio" aria-checked="' +
-          !c[slot] +
+          (c[slot] === null) +
           '" data-pick="" data-slot="' +
           slot +
           '">' +
@@ -3621,7 +3646,7 @@
         return Sheet(
           S.composer.pickerTitle(S.composer.slots[slot]),
           cap(dayFull(date)),
-          '<div class="options" role="radiogroup">' + none + body + '</div>',
+          '<div class="options" role="radiogroup">' + body + none + '</div>',
           '',
         );
       }
@@ -4002,15 +4027,20 @@
         [...WEEK.featured, ...WEEK.allWeek, ...WEEK.sides, ...WEEK.sideExtras, ...WEEK.pickles, ...WEEK.desserts].find(
           (i) => i.name === name,
         ).id;
+      /**
+       * `undefined` on a slot means "not answered yet"; `null` means the guest chose
+       * "Nem kérek". Only that distinction lets the form open with nothing selected
+       * and still know when every question has been put to rest.
+       */
+      /** A menu that is already in the cart: every question answered. */
+      const addedMenu = (o) => composedMenu({ soup: null, pickle: null, dessert: null, ...o });
+
       const composedMenu = (o) => ({
         portions: 1,
         extras: {},
-        soup: null,
         main: null,
         variation: null,
         side: null,
-        pickle: null,
-        dessert: null,
         ...o,
       });
 
@@ -4029,19 +4059,19 @@
         {
           date: WED,
           menus: [
-            composedMenu({
+            addedMenu({
               soup: dayItem(WED, 'Húsleves cérnametélttel'),
               main: dayItem(WED, 'Rántott szelet'),
               variation: 'Csirkemell',
               side: permItem('Párolt rizs'),
               pickle: permItem('Vegyes vágott'),
             }),
-            composedMenu({
+            addedMenu({
               soup: dayItem(WED, 'Brokkolikrémleves'),
               main: permItem('Rántott trapista sajt'),
               side: permItem('Hasábburgonya'),
             }),
-            composedMenu({ main: dayItem(WED, 'Paprikás csirke') }),
+            addedMenu({ main: dayItem(WED, 'Paprikás csirke') }),
           ],
           extras: [
             { key: 'box', qty: 3 },
@@ -4051,12 +4081,12 @@
         {
           date: THU,
           menus: [
-            composedMenu({
+            addedMenu({
               soup: dayItem(THU, 'Gulyásleves'),
               main: dayItem(THU, 'Sült oldalas'),
               side: permItem('Steak burgonya'),
             }),
-            composedMenu({
+            addedMenu({
               soup: dayItem(THU, 'Sárgaborsó-krémleves'),
               main: dayItem(THU, 'Csirkepaprikás'),
               dessert: permItem('Túrógombóc'),
@@ -4068,7 +4098,7 @@
 
       const cartBelowMinimum = () => {
         const c = cartFull();
-        c[1].menus = [composedMenu({ main: dayItem(THU, 'Csirkepaprikás') })];
+        c[1].menus = [addedMenu({ main: dayItem(THU, 'Csirkepaprikás') })];
         c[1].extras = [{ key: 'box', qty: 1 }];
         return c;
       };
@@ -4099,7 +4129,7 @@
         {
           id: 'menu-empty',
           label: '2a+2b · Az első képernyő — üres űrlap',
-          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. Alatta megmarad a kínálat böngészhető listája: ott is koppinthatsz egy fogásra, és beleesik az űrlapba. Hétfő és kedd már lezárult (áthúzva), a kiszállítási díj és a minimum a fejlécben.',
+          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. Alatta megmarad a kínálat böngészhető listája: ott is koppinthatsz egy fogásra, és beleesik az űrlapba. <b>Semmi nincs előre bejelölve</b>: a levesre, a desszertre és a savanyúságra külön-külön válaszolni kell, és a „Nem kérek” a lista <i>végén</i> áll, nem az elején. Amíg egy kérdés nyitva van, a címkéje pirosan „· válassz”, és a „Hozzáadás” tiltva. Hétfő és kedd már lezárult (áthúzva), a kiszállítási díj és a minimum a fejlécben.',
           vm: () => baseVm({}),
         },
         {
@@ -4169,10 +4199,11 @@
             baseVm({
               cart: cartFull(),
               composer: composedMenu({
-                  soup: dayItem(WED, 'Húsleves cérnametélttel'),
+                soup: dayItem(WED, 'Húsleves cérnametélttel'),
                 main: permItem('Csirkemellcsíkok'),
                 side: permItem('Steak burgonya'),
                 dessert: permItem('Almás pite'),
+                pickle: null,
               }),
             }),
         },
@@ -4188,6 +4219,7 @@
                 main: dayItem(WED, 'Sertéssült'),
                 side: permItem('Főtt burgonya'),
                 pickle: permItem('Csemege uborka'),
+                dessert: null,
                 portions: 3,
               }),
             }),
@@ -4200,7 +4232,9 @@
             baseVm({
               cart: cartFull(),
               composer: composedMenu({
-                  soup: dayItem(WED, 'Brokkolikrémleves'),
+                soup: dayItem(WED, 'Brokkolikrémleves'),
+                pickle: null,
+                dessert: null,
               }),
             }),
         },
@@ -4678,6 +4712,9 @@
           const day = cartDay();
           for (let k = 0; k < n; k++) {
             const menu = { ...vm.composer, portions: 1 };
+            for (const slot of ['soup', 'pickle', 'dessert']) {
+              if (menu[slot] === undefined) menu[slot] = null;
+            }
             menu.extras = undefined;
             day.menus.push(menu);
           }
