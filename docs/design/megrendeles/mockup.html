@@ -2078,12 +2078,10 @@
           choose: 'Válassz',
           variationLabel: 'Változat',
           requiredSuffix: 'kötelező',
-          soupFreeWithMain: 'Napi főétel mellé ingyen',
-          soupHint: 'A napi főételek ára tartalmazza a levest. Leves önmagában 650 Ft.',
+          soupHint: 'A napi főételek ára tartalmazza a levest.',
           answerSuffix: 'válassz',
           unanswered: 'Válaszolj a jelölt kérdésekre — a „Nem kérek” is válasz.',
           formTitle: (n) => n + '. menü összeállítása',
-          formHint: 'Minden kérdésre válaszolj — a „Nem kérek” is válasz.',
           reset: 'Ürítés',
           mealExtras: 'Extra',
           mealExtrasHint: 'Ezek a nap rendeléséhez adódnak hozzá, nem a menü ára részei.',
@@ -3313,9 +3311,9 @@
                 '<span class="pbody"><span class="pname">' +
                 esc(o.name) +
                 (soldOut ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
-                '</span><span class="pamt num">' +
-                esc(o.amount) +
-                '</span></span><span class="pmark" aria-hidden="true">✓</span></button>'
+                '</span>' +
+                (o.amount ? '<span class="pamt num">' + esc(o.amount) + '</span>' : '') +
+                '</span><span class="pmark" aria-hidden="true">✓</span></button>'
               );
             })
             .join('');
@@ -3336,13 +3334,13 @@
 
         /**
          * What the receipt would say if this soup (or none) were chosen. Before a
-         * main is picked the honest answer is a condition, not a number: the same
-         * soup is free beside a daily main and 650 Ft on its own. Printing the worst
-         * case at the one moment the guest cannot yet improve it is what made the
-         * old system read as expensive, so the row states the rule instead.
+         * main is picked there is no honest number: the same soup is free beside a
+         * daily main and 650 Ft on its own. Printing the worst case at the one
+         * moment the guest cannot yet improve it is what made the old system read as
+         * expensive, so the row carries no amount at all until a main decides it.
          */
         const soupAmount = (id) => {
-          if (id && !mainItem) return S.composer.soupFreeWithMain;
+          if (id && !mainItem) return '';
           const adj = priceMenu({ ...c, soup: id }, date).lines.find((l) => l.adj);
           return adj ? signed(adj.amount) : money(0);
         };
@@ -3546,9 +3544,7 @@
         return (
           '<section class="composer-form" data-sec="compose"><div class="cf-head"><h2>' +
           esc(S.composer.formTitle(menuNo)) +
-          '</h2><p class="hint">' +
-          esc(S.composer.formHint) +
-          '</p></div><div class="cf-body">' +
+          '</h2></div><div class="cf-body">' +
           body +
           '</div><div class="cf-foot">' +
           foot +

@@ -207,20 +207,25 @@ What we deliberately did **not** take:
 
 A required block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
 
-### The soup comes first, and before a main it quotes a rule, not a price
+### The soup comes first, and carries no price until a main decides it
 
 The form follows course order — soup, main, its variation and side, pickle, dessert — which is how a
-Hungarian menu reads and how the old form was laid out. That ordering has one hazard, and the block
-is built around it: **the soup's price depends on the main.** Beside a daily main it is included;
-beside an all-week dish, or on its own, it is 650 Ft.
+Hungarian menu reads and how the old form was laid out. That ordering has one hazard, and the soup
+block is built around it: **the soup's price depends on the main.** Beside a daily main it is
+included; beside an all-week dish, or on its own, it is 650 Ft.
 
 Put the soup first and the naive rendering shows `+650 Ft` on every soup at the exact moment the
 guest has no main yet and so no way to improve it. That is the worst case presented as the price,
-and it is a good way to talk someone out of a soup that would have been free. So while no main is
-chosen the amount states the rule instead — **`Napi főétel mellé ingyen`** — with the block hint
-carrying the other half (`Leves önmagában 650 Ft`). The moment a main is picked the rows switch back
-to real figures: `0 Ft` beside a daily main, `−100 Ft` on "Nem kérek", `+650 Ft` beside an all-week
-dish.
+and it is a good way to talk someone out of a soup that would have been free. So until a main is
+chosen the soup rows carry **no amount at all** — there is no honest number to print yet, and the
+block hint says the part that is true regardless (`A napi főételek ára tartalmazza a levest`). Pick a
+main and the rows fill in with real figures: `0 Ft` beside a daily main, `−100 Ft` on "Nem kérek",
+`+650 Ft` beside an all-week dish.
+
+Two consequences worth knowing. A guest ordering **soup alone** does not see its 650 Ft until the
+price box below totals it — acceptable, because the price box is on the same screen and itemises it.
+And the soup is the one block whose rows can lack an amount, which is a deliberate asymmetry, not an
+oversight: `choiceRows` omits the element entirely rather than rendering an empty one.
 
 **All seven side options stack; the block does not scroll on its own.** The sheet body already
 scrolls, and a scroller nested inside it is the gesture people lose on a phone — you swipe to reach
