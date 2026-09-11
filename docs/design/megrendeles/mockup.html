@@ -1332,26 +1332,13 @@
         box-shadow: var(--shadow-bar);
       }
 
-      /* Once a main is chosen it stops being a prompt and becomes the plate: the
-         same row shape as every other chosen course, with its tile, allergens and
-         price. It keeps a chevron because, unlike those rows, it still opens the
-         picker — 11 mains across three categories do not fit on the page. */
-      .mainrow {
-        padding: var(--s-2) var(--s-3);
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--paper);
-      }
-      .mainrow.is-picked {
-        border-color: var(--brand-600);
-        background: var(--brand-50);
-      }
-      .mainrow.is-picked .pamt {
-        color: var(--brand-700);
-      }
-      button.mainrow:hover {
-        background: var(--brand-50);
-      }
+      /* Once a main is chosen it stops being a prompt and becomes the plate, drawn
+         exactly like any other chosen course — so it wears .choicerow and inherits
+         the border, the tint and the filled mark rather than restating them.
+         .mainrow carries only what differs: the prompt text and the chevron of the
+         unanswered state, which is there because this is the one row that opens a
+         picker (11 mains across three categories do not fit on the page). The picked
+         row is still a button; its aria-label, not a second glyph, says so. */
       .mainrow .placeholder {
         font-family: var(--font-display);
         font-size: var(--t-base);
@@ -1408,7 +1395,8 @@
         font-weight: 600;
         color: var(--ink-500);
       }
-      .pickrow[aria-checked='true'] .pamt {
+      .pickrow[aria-checked='true'] .pamt,
+      .pickrow.is-picked .pamt {
         color: var(--brand-700);
       }
       .pickrow .psub {
@@ -1440,7 +1428,8 @@
         background: var(--paper);
         color: transparent;
       }
-      .pickrow[aria-checked='true'] .pmark {
+      .pickrow[aria-checked='true'] .pmark,
+      .pickrow.is-picked .pmark {
         display: grid;
         place-items: center;
         border-color: var(--brand-600);
@@ -1478,12 +1467,16 @@
         border-radius: var(--radius);
         background: var(--paper);
       }
-      .choicerow[aria-checked='true'] {
+      .choicerow[aria-checked='true'],
+      .choicerow.is-picked {
         border-color: var(--brand-600);
         background: var(--brand-50);
       }
-      button.choicerow:not([aria-checked='true']):not([disabled]):hover {
+      button.choicerow:not([aria-checked='true']):not(.is-picked):not([disabled]):hover {
         background: var(--brand-50);
+      }
+      button.choicerow.is-picked:hover {
+        border-color: var(--brand-700);
       }
       .field-label {
         font-size: var(--t-xs);
@@ -3261,10 +3254,15 @@
             '<div><p class="field-label">' +
             esc(S.composer.slots.main) +
             '</p><button type="button" class="' +
-            cls('pickrow', 'mainrow', item && 'is-picked') +
-            '" data-slot="main">' +
+            cls('pickrow', 'choicerow', 'mainrow', item && 'is-picked') +
+            '" data-slot="main"' +
+            (item ? ' aria-label="' + esc(item.name + ' \u2014 ' + S.cart.edit) + '"' : '') +
+            '>' +
             inner +
-            '<span class="chev" aria-hidden="true">\u203a</span></button></div>'
+            (item
+              ? '<span class="pmark" aria-hidden="true">\u2713</span>'
+              : '<span class="chev" aria-hidden="true">\u203a</span>') +
+            '</button></div>'
           );
         };
 

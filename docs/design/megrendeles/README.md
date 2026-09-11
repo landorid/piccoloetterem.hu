@@ -200,7 +200,7 @@ What we deliberately did **not** take:
 | Slot | Options | Treatment |
 |---|---|---|
 | Leves | 2 + "Nem kérek" | **choice rows** — and the row carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
-| Főétel | 11, across three categories | **its own row + picker** — too many to inline. The row has two faces: a prompt before it is answered, and the dish itself afterwards, with its tile, allergens and price, the way every chosen course is shown. It keeps a chevron because it is the only row that still opens a picker. |
+| Főétel | 11, across three categories | **its own row + picker** — too many to inline. The row has two faces: a prompt before it is answered, and afterwards the dish itself, drawn exactly like any other chosen course — same border, tint and filled check. Only the prompt carries a chevron, since that is where it helps: this is the one row that opens a picker. |
 | Változat | 2–3 | **choice rows**, without tiles — a variation is a property of the main course above it, not a dish of its own, and `Csirkemell` / `Csirkecomb` would both draw a `C`. |
 | Köret | 7 | **choice rows** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
 | Savanyúság, Desszert | 3 + "Nem kérek" each | **choice rows**, open on the page like the rest. Neither carries a default, so each has to be answered — see the forced-choice note below. |
