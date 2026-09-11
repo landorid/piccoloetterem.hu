@@ -78,7 +78,7 @@ column of digits carries `font-variant-numeric: tabular-nums`.
 ### Spacing and shape
 
 4 px base: `4 · 8 · 12 · 16 · 20 · 24 · 32 · 40`. Radius `8` on controls, `12` on cards, `18` on
-sheets. Every tappable target is at least 44 px tall — the steppers, the day tabs and the slot rows
+sheets. Every tappable target is at least 44 px tall — the steppers, the day tabs and the choice rows
 are all sized to it, because this page is used one-handed on a tram.
 
 Border, fill, radius and shadow are spent by role, not stamped on everything: dish lists are one
@@ -121,10 +121,10 @@ What O6/O7 need to build, in the order they appear:
 | `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
 | `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
 | `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
-| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu: main as a compact row, then variation, soup, side, dessert, pickle and the sauce/bread steppers, all open. The head names which menu you are building; the foot carries the live price, the portions stepper, "Ürítés" and "Hozzáadás" |
+| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu: the main's row, then variation, soup, side, dessert, pickle and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, the portions stepper, "Ürítés" and "Hozzáadás" |
 | `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
 | `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
-| `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" first, sold-out disabled |
+| `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" last, sold-out disabled |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
 | `Totals` | per day: food, delivery fee, minimum warning; then the grand total |
 | `SummaryBar` | sticky bar on mobile, card in the rail on desktop; collapsed/expanded; blocker state |
@@ -200,10 +200,10 @@ What we deliberately did **not** take:
 | Slot | Options | Treatment |
 |---|---|---|
 | Leves | 2 + "Nem kérek" | **choice rows** — and the row carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
-| Főétel | 11, across three categories | **slot row + picker** — too many to inline, and the composer is usually entered from a main anyway, so the slot arrives filled. |
+| Főétel | 11, across three categories | **its own row + picker** — too many to inline. The row has two faces: a prompt before it is answered, and the dish itself afterwards, with its tile, allergens and price, the way every chosen course is shown. It keeps a chevron because it is the only row that still opens a picker. |
 | Változat | 2–3 | **choice rows**, without tiles — a variation is a property of the main course above it, not a dish of its own, and `Csirkemell` / `Csirkecomb` would both draw a `C`. |
 | Köret | 7 | **choice rows** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
-| Savanyúság, Desszert | 3 + "Nem kérek" each | **slot rows + picker** — afterthoughts. They keep the sheet short, and the collapsed row signals "optional". Either becomes choice rows with one more `choiceRows()` call if Dávid wants it. |
+| Savanyúság, Desszert | 3 + "Nem kérek" each | **choice rows**, open on the page like the rest. Neither carries a default, so each has to be answered — see the forced-choice note below. |
 
 A required block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
 

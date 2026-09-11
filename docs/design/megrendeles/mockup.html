@@ -1332,73 +1332,36 @@
         box-shadow: var(--shadow-bar);
       }
 
-      .slots {
-        background: var(--paper);
+      /* Once a main is chosen it stops being a prompt and becomes the plate: the
+         same row shape as every other chosen course, with its tile, allergens and
+         price. It keeps a chevron because, unlike those rows, it still opens the
+         picker — 11 mains across three categories do not fit on the page. */
+      .mainrow {
+        padding: var(--s-2) var(--s-3);
         border: 1px solid var(--line);
         border-radius: var(--radius);
-        overflow: hidden;
+        background: var(--paper);
       }
-      .slot-row {
-        display: flex;
-        align-items: center;
-        gap: var(--s-3);
-        width: 100%;
-        min-height: 56px;
-        padding: var(--s-2) var(--s-4);
-        border: 0;
-        border-top: 1px solid var(--line);
-        background: none;
-        text-align: left;
+      .mainrow.is-picked {
+        border-color: var(--brand-600);
+        background: var(--brand-50);
       }
-      .slot-row:first-child {
-        border-top: 0;
+      .mainrow.is-picked .pamt {
+        color: var(--brand-700);
       }
-      .slot-row .label {
-        flex: none;
-        width: 84px;
-        font-size: var(--t-sm);
-        font-weight: 700;
-        color: var(--ink-500);
-        letter-spacing: 0.02em;
+      button.mainrow:hover {
+        background: var(--brand-50);
       }
-      .slot-row .value {
-        flex: 1;
-        min-width: 0;
-      }
-      .slot-row .value .picked {
+      .mainrow .placeholder {
         font-family: var(--font-display);
         font-size: var(--t-base);
-        font-weight: 500;
-      }
-      .slot-row .value .placeholder {
         color: var(--ink-500);
       }
-      .slot-row .value .sub {
-        display: block;
-        font-size: var(--t-sm);
-        color: var(--ink-500);
-      }
-      .slot-row .amt {
-        font-weight: 600;
-        font-size: var(--t-md);
-        white-space: nowrap;
-      }
-      .slot-row .chev {
-        color: var(--ink-400);
-        font-size: 18px;
+      .mainrow .chev {
         flex: none;
-      }
-      .slot-row.is-required {
-        background: var(--danger-100);
-      }
-      .slot-row.is-required .label {
-        color: var(--danger-700);
-      }
-      .slot-req {
-        display: block;
-        font-size: var(--t-sm);
-        font-weight: 700;
-        color: var(--danger-700);
+        color: var(--ink-400);
+        font-size: 20px;
+        line-height: 1;
       }
 
       .options {
@@ -3267,35 +3230,41 @@
         const needsSide = !!(mainItem && mainItem.requiresSide);
         const portions = c.portions || 1;
 
-        const slotRow = (slot, opts = {}) => {
-          const item = c[slot] ? ITEMS[c[slot]] : null;
-          const missing = opts.required && !item;
-          const amountLine = p.lines.find((l) => l.slot === S.composer.slots[slot]);
-          let amt = '';
-          if (item) {
-            if (slot === 'soup') {
-              const surcharge = p.lines.find((l) => l.adj && l.amount > 0);
-              amt = surcharge ? signed(surcharge.amount) : money(0);
-            } else {
-              amt = money(amountLine ? amountLine.amount : 0);
-            }
-          }
+        /**
+         * The main is the only slot that still opens a picker, so it is the only one
+         * whose row has two faces: a prompt before it is answered, and the dish
+         * itself afterwards — tile, allergens and price, the way every other chosen
+         * course is shown. Seeing the plate you picked is the point of the form.
+         */
+        const mainBlock = () => {
+          const item = c.main ? ITEMS[c.main] : null;
+          const line = p.lines.find((l) => l.slot === S.composer.slots.main);
+          const inner = item
+            ? Tile(item) +
+              '<span class="pbody"><span class="pname">' +
+              esc(item.name) +
+              (item.soldOut
+                ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>'
+                : '') +
+              '</span><span class="pamt num">' +
+              money(line ? line.amount : priceOf(item, date)) +
+              '</span>' +
+              (item.allergens && item.allergens.length
+                ? '<span class="psub">' + allergenCodes(item, 'pick') + '</span>'
+                : '') +
+              '</span>'
+            : Tile(null) +
+              '<span class="pbody"><span class="placeholder">' +
+              esc(S.composer.choose) +
+              '</span></span>';
           return (
-            '<button type="button" class="' +
-            cls('slot-row', missing && 'is-required') +
-            '" data-slot="' +
-            slot +
-            '"><span class="label">' +
-            esc(S.composer.slots[slot]) +
-            '</span><span class="value">' +
-            (item
-              ? '<span class="picked">' + esc(item.name) + '</span>'
-              : '<span class="placeholder">' +
-                esc(opts.placeholder || S.composer.choose) +
-                '</span>') +
-            '</span><span class="amt num">' +
-            esc(amt) +
-            '</span><span class="chev" aria-hidden="true">›</span></button>'
+            '<div><p class="field-label">' +
+            esc(S.composer.slots.main) +
+            '</p><button type="button" class="' +
+            cls('pickrow', 'mainrow', item && 'is-picked') +
+            '" data-slot="main">' +
+            inner +
+            '<span class="chev" aria-hidden="true">\u203a</span></button></div>'
           );
         };
 
@@ -3471,9 +3440,7 @@
          * only one place where a menu is built.
          */
         const body =
-          '<div class="slots">' +
-          slotRow('main') +
-          '</div>' +
+          mainBlock() +
           variationBlock +
           soupBlock +
           sideBlock +
@@ -4705,7 +4672,7 @@
             const picked = d.pick ? ITEMS[d.pick] : null;
             if (!picked || !picked.requiresSide) vm.composer.side = null;
           }
-        } else if (d.slot && el.classList.contains('slot-row')) {
+        } else if (d.slot && el.classList.contains('mainrow')) {
           vm.picker = { slot: d.slot };
           vm.overlay = 'picker';
         } else if (d.add) {
