@@ -22,7 +22,7 @@ Merge it with what is already in `strings.ts`: keep `siteName`, replace the `ord
    | extras names (`Éthordó doboz`, `Kenyér`, `Ketchup`, `Tartármártás`) | `config.extras[].name` |
    | `order.phone`, `order.address`, `order.intake`, `footer.opening`, `footer.delivery` | restaurant identity — **not yet in `RestaurantConfig`**, see README.md §Follow-ups |
 3. **Numbers written into sentences.** `order.terms`, `summary.minimumWarning`, `summary.minimumBlocked`,
-   `sections.soupsHint` and `footer.delivery` currently spell out 2 200 Ft, 150 Ft and 650 Ft. They
+   `sections.soupsHint`, `composer.soupHint` and `footer.delivery` currently spell out 2 200 Ft, 150 Ft and 650 Ft. They
    must be interpolated from `config.pricing` instead of typed, or the copy lies the day a price
    changes. Left as prose here so the sentences read naturally in review; O6 wires them up.
 4. **Formatting is not copy.** `common.currency` is a formatter, not a string. Put it in a
@@ -120,6 +120,8 @@ export const strings = {
     choose: 'Válassz',
     variationLabel: 'Változat',
     requiredSuffix: 'kötelező',
+    soupFreeWithMain: 'Napi főétel mellé ingyen',
+    soupHint: 'A napi főételek ára tartalmazza a levest. Leves önmagában 650 Ft.',
     answerSuffix: 'válassz',
     unanswered: 'Válaszolj a jelölt kérdésekre — a „Nem kérek” is válasz.',
     formTitle: (n: number) => n + '. menü összeállítása',

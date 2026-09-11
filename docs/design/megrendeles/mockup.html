@@ -2078,6 +2078,8 @@
           choose: 'Válassz',
           variationLabel: 'Változat',
           requiredSuffix: 'kötelező',
+          soupFreeWithMain: 'Napi főétel mellé ingyen',
+          soupHint: 'A napi főételek ára tartalmazza a levest. Leves önmagában 650 Ft.',
           answerSuffix: 'válassz',
           unanswered: 'Válaszolj a jelölt kérdésekre — a „Nem kérek” is válasz.',
           formTitle: (n) => n + '. menü összeállítása',
@@ -3332,8 +3334,15 @@
           );
         };
 
-        /** What the receipt would say if this soup (or none) were chosen. */
+        /**
+         * What the receipt would say if this soup (or none) were chosen. Before a
+         * main is picked the honest answer is a condition, not a number: the same
+         * soup is free beside a daily main and 650 Ft on its own. Printing the worst
+         * case at the one moment the guest cannot yet improve it is what made the
+         * old system read as expensive, so the row states the rule instead.
+         */
         const soupAmount = (id) => {
+          if (id && !mainItem) return S.composer.soupFreeWithMain;
           const adj = priceMenu({ ...c, soup: id }, date).lines.find((l) => l.adj);
           return adj ? signed(adj.amount) : money(0);
         };
@@ -3341,7 +3350,7 @@
         const soupBlock = choiceRows(S.composer.slots.soup, {
           slot: 'soup',
           answerable: true,
-          hint: mainItem ? null : S.sections.soupsHint,
+          hint: mainItem ? null : S.composer.soupHint,
           options: [
             ...WEEK.byDate[date].soups.map((s) => ({
               id: s.id,
@@ -3438,15 +3447,15 @@
          * only one place where a menu is built.
          */
         const body =
+          soupBlock +
           mainBlock() +
           variationBlock +
-          soupBlock +
           sideBlock +
-          choiceRows(S.composer.slots.dessert, {
-            slot: 'dessert',
+          choiceRows(S.composer.slots.pickle, {
+            slot: 'pickle',
             answerable: true,
             options: [
-              ...WEEK.desserts.map((i) => ({
+              ...WEEK.pickles.map((i) => ({
                 id: i.id,
                 name: i.name,
                 amount: money(priceOf(i, date)),
@@ -3454,11 +3463,11 @@
               { id: null, name: S.composer.none, amount: money(0) },
             ],
           }) +
-          choiceRows(S.composer.slots.pickle, {
-            slot: 'pickle',
+          choiceRows(S.composer.slots.dessert, {
+            slot: 'dessert',
             answerable: true,
             options: [
-              ...WEEK.pickles.map((i) => ({
+              ...WEEK.desserts.map((i) => ({
                 id: i.id,
                 name: i.name,
                 amount: money(priceOf(i, date)),

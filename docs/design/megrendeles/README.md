@@ -121,7 +121,7 @@ What O6/O7 need to build, in the order they appear:
 | `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
 | `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
 | `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
-| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu: the main's row, then variation, soup, side, dessert, pickle and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, the portions stepper, "Ürítés" and "Hozzáadás" |
+| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main, its variation and side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, the portions stepper, "Ürítés" and "Hozzáadás" |
 | `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
 | `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
 | `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" last, sold-out disabled |
@@ -199,13 +199,28 @@ What we deliberately did **not** take:
 
 | Slot | Options | Treatment |
 |---|---|---|
-| Leves | 2 + "Nem kérek" | **choice rows** — and the row carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
+| Leves | 2 + "Nem kérek" | **choice rows, first in the form** — and the row carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
 | Főétel | 11, across three categories | **its own row + picker** — too many to inline. The row has two faces: a prompt before it is answered, and afterwards the dish itself, drawn exactly like any other chosen course — same border, tint and filled check. Only the prompt carries a chevron, since that is where it helps: this is the one row that opens a picker. |
 | Változat | 2–3 | **choice rows**, without tiles — a variation is a property of the main course above it, not a dish of its own, and `Csirkemell` / `Csirkecomb` would both draw a `C`. |
 | Köret | 7 | **choice rows** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
 | Savanyúság, Desszert | 3 + "Nem kérek" each | **choice rows**, open on the page like the rest. Neither carries a default, so each has to be answered — see the forced-choice note below. |
 
 A required block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
+
+### The soup comes first, and before a main it quotes a rule, not a price
+
+The form follows course order — soup, main, its variation and side, pickle, dessert — which is how a
+Hungarian menu reads and how the old form was laid out. That ordering has one hazard, and the block
+is built around it: **the soup's price depends on the main.** Beside a daily main it is included;
+beside an all-week dish, or on its own, it is 650 Ft.
+
+Put the soup first and the naive rendering shows `+650 Ft` on every soup at the exact moment the
+guest has no main yet and so no way to improve it. That is the worst case presented as the price,
+and it is a good way to talk someone out of a soup that would have been free. So while no main is
+chosen the amount states the rule instead — **`Napi főétel mellé ingyen`** — with the block hint
+carrying the other half (`Leves önmagában 650 Ft`). The moment a main is picked the rows switch back
+to real figures: `0 Ft` beside a daily main, `−100 Ft` on "Nem kérek", `+650 Ft` beside an all-week
+dish.
 
 **All seven side options stack; the block does not scroll on its own.** The sheet body already
 scrolls, and a scroller nested inside it is the gesture people lose on a phone — you swipe to reach
