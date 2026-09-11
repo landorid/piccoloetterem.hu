@@ -346,80 +346,96 @@
         font-weight: 600;
         font-size: var(--t-xs);
       }
+      /* The week strip reads like the iOS calendar header: weekday caps, the date in
+         a circle, an event mark below. Six days divide the width evenly, so nothing
+         scrolls and nothing is cut off at the right edge — a strip you have to swipe
+         hides the very days you are deciding between. */
       .daybar {
         position: sticky;
         top: 72px;
         z-index: 5;
         background: var(--paper);
         border-bottom: 1px solid var(--line);
-        overflow-x: auto;
-        scrollbar-width: none;
-      }
-      .daybar::-webkit-scrollbar {
-        display: none;
       }
       .daybar ul {
-        display: flex;
-        gap: var(--s-1);
-        padding: var(--s-2) var(--s-4) 0;
-        min-width: max-content;
+        display: grid;
+        grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
+        padding: var(--s-2);
       }
       .day {
-        position: relative;
-        min-width: 60px;
-        min-height: var(--tap);
-        padding: var(--s-2) var(--s-3) 10px;
-        border: 0;
-        background: none;
-        border-bottom: 3px solid transparent;
-        color: var(--ink-700);
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1px;
-        border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        gap: 3px;
+        min-height: var(--tap);
+        padding: 2px 0 4px;
+        border: 0;
+        background: none;
+        color: var(--ink-700);
+        border-radius: var(--radius-sm);
       }
       .day .dow {
-        font-size: var(--t-sm);
+        font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.02em;
-      }
-      .day .dnum {
-        font-size: var(--t-xs);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
         color: var(--ink-500);
       }
-      .day[aria-selected='true'] {
-        color: var(--brand-700);
-        border-bottom-color: var(--brand-600);
+      .day .dnum {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: var(--t-md);
+        font-weight: 600;
+        line-height: 1;
+      }
+      /* The mark slot is always present, badge or not, so the circles stay on one
+         baseline across the week. */
+      .day .dmark {
+        display: grid;
+        place-items: center;
+        min-height: 16px;
       }
       .day[aria-selected='true'] .dnum {
-        color: var(--brand-600);
+        background: var(--brand-600);
+        color: #fff;
+      }
+      .day[aria-selected='true'] .dow {
+        color: var(--brand-700);
+      }
+      button.day:not([aria-selected='true']):not([disabled]):hover .dnum {
+        background: var(--brand-50);
       }
       .day[disabled] {
-        color: var(--ink-400);
         cursor: not-allowed;
       }
-      .day[disabled] .dow {
-        text-decoration: line-through;
-        text-decoration-thickness: 1px;
+      /* A closed day you are looking at still gets its circle — it says "you are
+         here" — but in ink, not brand, so it does not promise you can order. */
+      .day[disabled][aria-selected='true'] .dnum {
+        background: var(--ink-400);
+        color: #fff;
+      }
+      .day[disabled] .dow,
+      .day[disabled] .dnum {
+        color: var(--ink-400);
       }
       .day .dbadge {
-        position: absolute;
-        top: 2px;
-        right: 4px;
-        min-width: 18px;
-        height: 18px;
-        padding: 0 5px;
+        display: grid;
+        place-items: center;
+        min-width: 16px;
+        height: 16px;
+        padding: 0 4px;
         border-radius: 999px;
         background: var(--brand-600);
         color: #fff;
-        font-size: 11px;
+        font-size: 10px;
         font-weight: 700;
-        line-height: 18px;
-        text-align: center;
+        line-height: 1;
       }
       .day .dclosed {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -1827,17 +1843,14 @@
           padding: 0 var(--s-8);
         }
         .daybar ul {
+          grid-template-columns: repeat(var(--daycols, 6), 84px);
+          justify-content: start;
           padding-inline: 0;
-          gap: var(--s-2);
         }
-        .day {
-          min-width: 104px;
-          flex-direction: row;
-          gap: var(--s-2);
-          align-items: baseline;
-        }
-        .day .dbadge {
-          position: static;
+        .day .dnum {
+          width: 40px;
+          height: 40px;
+          font-size: var(--t-lg);
         }
         .screen {
           display: grid;
@@ -2779,17 +2792,24 @@
               : '') +
             '><span class="dow">' +
             esc(dayShort(d.date)) +
-            '</span>' +
-            (state === 'closed'
-              ? '<span class="dclosed">' + esc(S.days.closed) + '</span>'
-              : '<span class="dnum num">' + esc(dateNum(d.date)) + '.</span>') +
+            '</span><span class="dnum num">' +
+            esc(dateNum(d.date)) +
+            '</span><span class="dmark">' +
             (n
               ? '<span class="dbadge num" title="' + esc(S.days.badgeTitle(n)) + '">' + n + '</span>'
-              : '') +
-            '</button></li>'
+              : state === 'closed'
+                ? '<span class="dclosed">' + esc(S.days.closed) + '</span>'
+                : '') +
+            '</span></button></li>'
           );
         }).join('');
-        return '<nav class="daybar"><ul role="tablist">' + items + '</ul></nav>';
+        return (
+          '<nav class="daybar"><ul role="tablist" style="--daycols: ' +
+          DAYS.length +
+          '">' +
+          items +
+          '</ul></nav>'
+        );
       }
 
       function Banner(b) {

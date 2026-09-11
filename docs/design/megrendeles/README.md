@@ -110,7 +110,7 @@ What O6/O7 need to build, in the order they appear:
 |---|---|
 | `Masthead` | logo, intake window, tap-to-call number |
 | `WeekBar` | week number pill, date range, cutoff sentence |
-| `DayRail` | six tabs; disabled for past days and holidays; cart-count badge; horizontally scrollable |
+| `DayRail` | the week strip, built like the iOS calendar header: weekday caps, the date in a circle, a mark below. Six equal columns fill the width — no horizontal scrolling. Filled brand circle for the selected day, ink circle when that day is closed, cart-count badge or `ZÁRVA` in the mark slot |
 | `Banner` | info / warn / danger / ok; title, body, optional list, optional action |
 | `ChipRail` | sticky category chips that jump to a section |
 | `DishList` + `Dish` | tile, name, description, price (with the Saturday price when it differs), allergen chips, tags (`Elfogyott`, `Választható`, `Körettel`); the whole row is the tap target |
@@ -226,6 +226,21 @@ Two consequences worth knowing. A guest ordering **soup alone** does not see its
 price box below totals it — acceptable, because the price box is on the same screen and itemises it.
 And the soup is the one block whose rows can lack an amount, which is a deliberate asymmetry, not an
 oversight: `choiceRows` omits the element entirely rather than rendering an empty one.
+
+### The week strip does not scroll
+
+Six days divide the width evenly, so every day is on screen at once — on a 320 px phone that is
+still 53 px a column. The old strip was a flex row of 60 px minimum-width tabs with padding, which
+came to roughly 530 px and pushed Saturday off the right edge. A strip you have to swipe hides the
+very days you are deciding between, and a half-visible last day reads as a rendering fault rather
+than an invitation to scroll.
+
+The shape is the iOS calendar header: weekday letters in small caps, the date in a circle below, and
+a mark under that. The circle replaces the old underline — it is the same "you are here" signal in
+less vertical space, and it gives the closed state somewhere to live (ink circle instead of brand,
+so a day you are looking at is marked without promising you can order on it). The mark slot is
+always rendered, badge or not, so the circles sit on one baseline across the week. The date loses
+its Hungarian trailing dot inside the circle, as it does in every calendar grid.
 
 **All seven side options stack; the block does not scroll on its own.** The sheet body already
 scrolls, and a scroller nested inside it is the gesture people lose on a phone — you swipe to reach
