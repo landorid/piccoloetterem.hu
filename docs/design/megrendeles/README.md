@@ -115,7 +115,7 @@ What O6/O7 need to build, in the order they appear:
 | `Tile` | the leading 48px square — a photo where one exists, the dish's initial where none does, empty where the choice is not a dish ("Nem kérek") |
 | `AllergenChip` + `AllergenTip` | a round tinted disc with a hand-drawn pictogram, one per EU allergen; hover, focus or tap names it in a bubble that gives the number too. Three chips per dish, then a `+N` chip that names the rest in its bubble. Used by `ChoiceRows`, the main-course row and `SlotPicker` |
 | `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14, each line carrying its pictogram next to the number |
-| `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then every extra of the day, the box included, as a stepper — shown even while the day is empty |
+| `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then every extra of the day, the box included, as a stepper — shown only once the day holds a menu |
 | `ExtrasRow` | name, unit price, stepper, line total — with the stepper in the day's order, as a priced line (`name × qty`) where it is only read |
 | `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main, its variation and side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, "Ürítés" and "Hozzáadás" |
 | `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
@@ -137,7 +137,7 @@ Scope 2a–2h of the issue, one entry each. All 20 exist at both widths.
 |---|---|---|
 | Az első képernyő — üres űrlap | 2a, 2b | the empty form for menu 1, the allergen notice below it, past days disabled |
 | Menü — kosárral | 2a, 2c | three numbered menus, both price adjustments, day badges |
-| Extrák a nap rendelésében | 2c | every extra as a stepper in the day's order, a day that holds extras and no menu |
+| Extrák a nap rendelésében | 2c | every extra as a stepper in the day's order, under the day's menu |
 | Allergén — ikon és buborék | 2a | a bubble open on a milk chip in the main-course row |
 | Allergén tájékoztató | 2a | the 14-item list, each with its pictogram |
 | Űrlap — kötelező mezők | 2b | missing variation and missing side, add disabled |
@@ -269,12 +269,15 @@ confirm or reject:
 4. **The soup surcharge is explained where it happens.** "+650 Ft leves felár" carries a one-line
    reason under it. In the old system this was the single most confusing price, and it was charged
    at 450 while the site advertised 650.
-5. **Extras live in the day's order.** Revised 2026-09-13. For a while they were a category at the
-   end of the offer list, so they could be added while browsing and on a day with no menu yet. The
-   offer list is gone (decision 17), and both needs are now met in the day's order: every extra, the
-   box included, is a stepper there, shown even while the day holds nothing. A vertical list, not a
-   rail — each row carries two 44 px buttons, a unit price and a line total. The known cost stays: a
-   day that holds only extras gets no badge on its day tab, because the badge counts menus.
+5. **Extras live in the day's order, beside a menu.** Revised twice on 2026-09-13. For a while they
+   were a category at the end of the offer list. The offer list is gone (decision 17), so every
+   extra, the box included, is now a stepper in the day's order. Dávid then asked for the steppers
+   to leave the empty day: they appear **only once the day holds a menu**, and an empty day's card
+   says just "Erre a napra még nincs összeállított menüd." Two rules keep that honest. Removing the
+   day's last menu takes its extras with it, so no counted line is left that the card cannot show;
+   "Módosítás" does not, because the menu is coming back. The form's Extra block is unaffected. A
+   vertical list, not a rail — each row carries two 44 px buttons, a unit price and a line total. The
+   old known cost is gone with it: a day can no longer hold only extras, so no day tab lacks a badge.
 6. **No payment section at all** — one sentence at the bottom of checkout says the courier is paid
    on delivery. Adding a payment block would imply a choice that does not exist.
 7. **Pickup is not drawn.** `pickupEnabled` is false for Piccolo; drawing an unreachable branch

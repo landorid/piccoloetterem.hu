@@ -2655,10 +2655,9 @@
           esc(cap(dayFull(vm.activeDate))) +
           '</span></div>';
 
-        // The weekly menu is no longer listed on this page (#58), so the day's order is
-        // where extras live: every one, the box included, as a stepper for the active
-        // day — rendered even while the day holds nothing, so a bread can come before
-        // a menu. A day carrying only extras is not an empty day either.
+        // The day's order is where extras live (#58): every one, the box included, as a
+        // stepper for the active day — but only once the day holds a menu. An empty
+        // day's card says one thing, and a box or a bread belongs to a lunch.
         const qtyOf = (key) =>
           (((day && day.extras) || []).find((e) => e.key === key) || {}).qty || 0;
         const extras =
@@ -2675,8 +2674,8 @@
           '</b></p><p>' +
           esc(S.cart.emptyCta) +
           '</p></div>';
-        if (!priced || (!priced.menus.length && !priced.extras.length)) {
-          return '<div class="card">' + head + empty + extras + '</div>';
+        if (!priced || !priced.menus.length) {
+          return '<div class="card">' + head + empty + '</div>';
         }
 
         const menus = priced.menus
@@ -2723,7 +2722,7 @@
         return (
           '<div class="card">' +
           head +
-          (priced.menus.length ? menus : empty) +
+          menus +
           extras +
           '<div class="card-body" style="border-top:1px solid var(--line);display:flex;gap:12px;font-weight:700"><span>' +
           esc(S.cart.foodSubtotal) +
@@ -3723,15 +3722,16 @@
         {
           id: 'menu-extras',
           label: '2c · Extrák a nap rendelésében',
-          note: 'A heti kínálat lekerült az oldalról, ezért az extrák — a doboz is — <b>a nap rendelésében</b> kaptak léptetőt: ott adod hozzá és ott módosítod őket, menü nélkül is. Csütörtökre itt <b>csak extrák</b> kerültek. A nap kártyája ezért nem mondja magát üresnek: kiírja, hogy még nincs összeállított menü, alatta a léptetők és az ételek összege. Az 500 Ft a napi 2 200 Ft alatt van, de ez már nem tilt: a különbözetről a pénztár szól.',
+          note: 'Az extrák — a doboz is — <b>a nap rendelésében</b> kaptak léptetőt, és csak akkor jelennek meg, ha a napon <b>már van menü</b>. Üres napon a kártya egyetlen dolgot mond: még nincs összeállított menü. Ha törlöd a nap utolsó menüjét, a nap extrái is vele mennek, hogy ne maradjon olyan tétel az összegben, amit a kártya nem mutat; a „Módosítás” nem viszi el őket.',
           vm: () =>
             baseVm({
               activeDate: THU,
               cart: [
                 {
                   date: THU,
-                  menus: [],
+                  menus: [addedMenu({ main: dayItem(THU, 'Csirkepaprikás') })],
                   extras: [
+                    { key: 'box', qty: 1 },
                     { key: 'bread', qty: 2 },
                     { key: 'tartar', qty: 1 },
                   ],
@@ -4269,7 +4269,9 @@
         } else if (d.remove !== undefined) {
           const day = vm.cart.find((c) => c.date === vm.activeDate);
           day.menus.splice(Number(d.remove), 1);
-          dropDayIfEmpty(day);
+          // Extras only show beside a menu, so removing the day's last menu takes them
+          // with it instead of leaving counted lines nobody can see. Editing does not.
+          if (!day.menus.length) vm.cart = vm.cart.filter((c) => c !== day);
         } else if (d.extra) {
           const day = cartDay();
           let e = day.extras.find((x) => x.key === d.extra);
