@@ -37,12 +37,12 @@ Strict serial order, already checked against every `Blocked by` list. Run top to
 | 2 | #30 | O2 | — | Design mockup. Run early: Dávid's review has latency and #34 needs it. |
 | 3 | #53 | F1a | — | Wiring defects found reviewing PR #52. Must land before #18 and #19. |
 | 4 | #17 | F2 | 16 | Unblocks manual #41 on merge. |
-| 5 | #18 | F3 | 16, 53 | |
+| 5 | #18 | F3 | 16, 53 | **Held (2026-09-13):** needs a Neon branch Dávid has not set up yet. Skip it and take the next startable row until he says it exists. |
 | 6 | #19 | F4 | 16, 18, 53 | |
 | 7 | #20 | F5 | 19 | |
 | 8 | #21 | F6 | 19 | |
 | 9 | #22 | F7 | 19 | Unblocks manual #40 on merge. |
-| 10 | #23 | M1 | 17 | |
+| 10 | #23 | M1 | 17 | Pure `packages/core`, no database, so it can run while #18 is held. |
 | 11 | #24 | M2 | 18, 21, 23 | |
 | 12 | #25 | M3 | 24 | |
 | 13 | #26 | M4 | 20, 21 | |
