@@ -48,7 +48,7 @@ warm-biased, never pure grey, so nothing on the page reads as "default UI".
 
 Semantic colour is separate from the accent and never decorative:
 `--ok-700 #2c6e4a` on `--ok-100 #e3f1e8` (success), `--warn-700 #8a5300` on `--warn-100 #fdf0dc`
-(minimum not reached, cutoff passed), `--danger-700 #a3251d` on `--danger-100 #fbe8e5` (sold out,
+(minimum not reached on checkout, cutoff passed), `--danger-700 #a3251d` on `--danger-100 #fbe8e5` (sold out,
 field errors, failed submission).
 
 Every error state is carried by **shape and words as well as colour** — a red field also gets a
@@ -112,23 +112,19 @@ What O6/O7 need to build, in the order they appear:
 | `WeekBar` | week number pill, date range, cutoff sentence |
 | `DayRail` | the week strip, built like the iOS calendar header: weekday caps, the date in a circle, a mark below. Six equal columns fill the width — no horizontal scrolling. Filled brand circle for the selected day, ink circle when that day is closed, cart-count badge or `ZÁRVA` in the mark slot |
 | `Banner` | info / warn / danger / ok; title, body, optional list, optional action |
-| `ChipRail` | sticky category chips that jump to a section |
-| `DishList` + `Dish` | tile, name, description, price (with the Saturday price when it differs), allergen chips, tags (`Elfogyott`, `Választható`, `Körettel`); the whole row is the tap target |
-| `RailCard` | the same item as a card in a horizontal rail: tile, price above name |
 | `Tile` | the leading 48px square — a photo where one exists, the dish's initial where none does, empty where the choice is not a dish ("Nem kérek") |
-| `AllergenChip` + `AllergenTip` | a round tinted disc with a hand-drawn pictogram, one per EU allergen; hover, focus or tap names it in a bubble that gives the number too. Three chips per dish, then a `+N` chip that names the rest in its bubble. Used by `Dish`, `RailCard` and `SlotPicker` |
+| `AllergenChip` + `AllergenTip` | a round tinted disc with a hand-drawn pictogram, one per EU allergen; hover, focus or tap names it in a bubble that gives the number too. Three chips per dish, then a `+N` chip that names the rest in its bubble. Used by `ChoiceRows`, the main-course row and `SlotPicker` |
 | `AllergenNotice` + `AllergenSheet` | the notice text and the numbered list of 14, each line carrying its pictogram next to the number |
-| `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
-| `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
-| `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
+| `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then every extra of the day, the box included, as a stepper — shown even while the day is empty |
+| `ExtrasRow` | name, unit price, stepper, line total — with the stepper in the day's order, as a priced line (`name × qty`) where it is only read |
 | `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main, its variation and side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, "Ürítés" and "Hozzáadás" |
 | `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
-| `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
+| `ChoiceRows` | soup, variation, side, pickle and dessert: a stack of full-width rows — tile, name, the price effect and the dish's allergen chips under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
 | `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" last, sold-out disabled |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
-| `Totals` | per day: food, delivery fee, minimum warning; then the grand total |
-| `SummaryBar` | sticky bar on mobile, card in the rail on desktop; collapsed/expanded; blocker state |
-| `CheckoutForm` | five fields, inline errors, error summary, submitting state |
+| `Totals` | per day: food and delivery fee; then the grand total |
+| `SummaryBar` | sticky bar on mobile, card in the rail on desktop; collapsed/expanded; never blocked by the minimum |
+| `CheckoutForm` | five fields, inline errors, error summary, submitting state, and the minimum notice naming each day under 2 200 Ft with its difference |
 | `OrderRecap` | per-day card used on checkout and success |
 | `SuccessScreen` | per-day cards with their own order id, grand total, e-mail confirmation line |
 | `MessageScreen` | standalone message with contact details (week not published, empty week) |
@@ -139,17 +135,17 @@ Scope 2a–2h of the issue, one entry each. All 20 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
-| Az első képernyő — üres űrlap | 2a, 2b | the empty form for menu 1, the catalogue below it, past days disabled |
-| Menü — kosárral | 2a, 2c | three menus with names, both price adjustments, day badges |
-| Extrák saját kategóriában | 2a, 2d | the extras section with two non-zero quantities, a day that holds extras and no menu, the minimum warning |
-| Allergén — ikon és buborék | 2a | a bubble open on a milk chip, and the lasagne's `+2` |
+| Az első képernyő — üres űrlap | 2a, 2b | the empty form for menu 1, the allergen notice below it, past days disabled |
+| Menü — kosárral | 2a, 2c | three numbered menus, both price adjustments, day badges |
+| Extrák a nap rendelésében | 2c | every extra as a stepper in the day's order, a day that holds extras and no menu |
+| Allergén — ikon és buborék | 2a | a bubble open on a milk chip in the main-course row |
 | Allergén tájékoztató | 2a | the 14-item list, each with its pictogram |
 | Űrlap — kötelező mezők | 2b | missing variation and missing side, add disabled |
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Űrlap — kész menü | 2b | full price breakdown with the soup surcharge explained |
 | Összeállító — csak leves | 2b | a soup in the soup slot, no main, the +650 Ft surcharge explained |
 | Összegzés kibontva | 2d | per-day subtotals, delivery fee line, grand total |
-| Minimum alatt | 2d | warning per day, "Tovább" blocked |
+| Minimum alatt — pénztár | 2d, 2e | nothing blocks; checkout names each day under the minimum and the difference paid on delivery |
 | Pénztár | 2e | five fields, recap, totals |
 | Pénztár — mezőhibák | 2e | summary banner and inline errors |
 | Beküldés folyamatban | 2e | double-submit protection |
@@ -260,7 +256,8 @@ confirm or reject:
 
 1. **The minimum is shown per day, not per submission.** PLAN.md says "minimum 2 200 Ft per order",
    and one order is one delivery day — so a two-day submission must clear 2 200 Ft on *each* day.
-   The summary therefore warns per day and names the day.
+   Checkout therefore names each day under it, with its own difference — and since 2026-09-13
+   that is a notice, not a block (decision 16).
 2. **The composer is entered from a main course, not from a blank form.** The dominant action is
    "today's main, add, done"; a blank composer is one extra decision at 07:40. "Menü összeállítása"
    is still there for anyone who starts from the soup.
@@ -272,26 +269,12 @@ confirm or reject:
 4. **The soup surcharge is explained where it happens.** "+650 Ft leves felár" carries a one-line
    reason under it. In the old system this was the single most confusing price, and it was charged
    at 450 while the site advertised 650.
-5. **Extras are a category of the offer, and the day's order is where you check them.** They were
-   originally only a stepper block inside the day's order, on the argument that they only make sense
-   once something has been ordered. Dávid asked for ketchup, tartar sauce and bread to be addable
-   *from their own category*, the way a dish is — and he is right: the block was invisible while you
-   browsed, and unreachable on a day that had no menu yet. They now have a section at the end of the
-   offer list and a chip of their own. Three things follow.
-   **(a) A vertical list, not a rail.** The repeat-every-week sections are rails, but a rail card is
-   150 px wide and is itself the tap target; an extras row carries two 44 px buttons, a unit price
-   and a line total, and cannot be a rail card without shrinking one of them. Three rows also make a
-   very short rail.
-   **(b) Last in the order.** Bread, sauce and a takeaway box are what you add on the way out. Before
-   the daily mains they would compete with the reason the page exists; the chip makes "last" cost one
-   tap from anywhere.
-   **(c) One stepper per value.** The day's order keeps the extras, but as *priced lines* with a link
-   back to the section — the same treatment a composed menu already gets there, a receipt with an
-   edit route, not a second form. On desktop the rail and the offer list are on screen together, and
-   two live steppers writing one number read as two features.
-   The known cost: a day that holds only extras gets no badge on its day tab, because the badge
-   counts menus. The sticky summary still counts the day and warns that it is under the minimum, so
-   nothing is hidden — but if O6 wants the tab to mark it too, that is a badge variant, not a rule.
+5. **Extras live in the day's order.** Revised 2026-09-13. For a while they were a category at the
+   end of the offer list, so they could be added while browsing and on a day with no menu yet. The
+   offer list is gone (decision 17), and both needs are now met in the day's order: every extra, the
+   box included, is a stepper there, shown even while the day holds nothing. A vertical list, not a
+   rail — each row carries two 44 px buttons, a unit price and a line total. The known cost stays: a
+   day that holds only extras gets no badge on its day tab, because the badge counts menus.
 6. **No payment section at all** — one sentence at the bottom of checkout says the courier is paid
    on delivery. Adding a payment block would imply a choice that does not exist.
 7. **Pickup is not drawn.** `pickupEnabled` is false for Piccolo; drawing an unreachable branch
@@ -300,18 +283,11 @@ confirm or reject:
    three of the same lunch are composed three times. The model is unchanged either way:
    `order_menus` has no quantity column and should not get one, because three lunches are three
    rows — what the kitchen summary counts and the delivery list carries.
-9. **A soup on its own is possible, but not advertised.** PLAN.md §2 already prices a soup without a
-   main at 650 Ft, and the composer already accepted a menu with only a soup — the menu simply had no
-   way to start one, so the empty cart's "or compose a menu with a soup" was a promise the page could
-   not keep. Tapping a soup row now opens the same composer with the *soup* slot filled instead of the
-   main one. That is the whole change: one small mapping from the item's category to the slot it
-   belongs in (`slotOfItem`), not a second flow, and no new domain rule. It deliberately gets no
-   button and no second call-to-action next to the mains — these are people ordering lunch, the soup
-   is normally part of a menu, and a lone soup should be reachable, not loud. What it does get is the
-   price, twice: the section hint states it before the tap, and the composer's price box carries the
-   `+650 Ft` line with its reason the moment the soup stands alone. The soup row keeps its
-   `0 Ft · A menü ára tartalmazza`, because that price is a property of the *menu*, not of the soup;
-   the hint directly above the rows names the other case.
+9. **A soup on its own is possible, but not advertised.** PLAN.md §2 prices a soup without a main at
+   650 Ft, and the form accepts a menu with only a soup. It gets no button of its own — these are
+   people ordering lunch, and a lone soup should be reachable, not loud. What it does get is the
+   price: before a main is chosen the soup block quotes the rule, and the price box carries the
+   `+650 Ft` line with its reason the moment the soup stands alone.
 10. **Allergens are pictograms in one tint, and the number moved into the bubble.** Dávid asked for
     Gasty's icon chips. Three calls follow from taking them.
     **(a) One tint, not fourteen.** The reference gives each allergen its own hue. Here the glyph
@@ -327,15 +303,14 @@ confirm or reject:
     "7"; the number exists only to tie the row back to the numbered legend, which is exactly what
     the bubble (`7 · Tej és tejtermék (laktóz)`) and the sheet do. The sheet now carries the
     pictogram beside each number, so the two representations teach each other.
-    **(c) Three chips, then `+N`.** Three is the widest ordinary dish in the fixture, and three
-    discs are what a 150 px rail card holds on one line. Beyond that the rest collapse into one
+    **(c) Three chips, then `+N`.** Three is the widest ordinary dish in the fixture, and three discs fit the narrowest row on one line. Beyond that the rest collapse into one
     `+N` chip that names them in its own bubble — the lasagne is given five so the guard is visible
     somewhere.
     Two honest costs. The bubble opens on hover, on focus **and on tap**, because touch has no
-    hover — so a tap on a chip shows the name instead of opening the composer, on a 28 px disc
+    hover — so a tap on a chip shows the name instead of selecting the row, on a 28 px disc
     inside a 72 px row. Its hit area is 32 × 44 px, the 44 taken vertically with a negative margin
     so that no row grows. And the chip is a `span` with `role="button"`, not a real `<button>`:
-    every place it appears — the dish row, the rail card, the picker row — is *itself* a button, and
+    every place it appears — a choice row, the main-course row, the picker row — is *itself* a button, and
     a nested `<button>` is markup the HTML parser rewrites, which tears the row apart. **For O6 this
     is the one thing to build differently**: make the row a container with a stretched action button
     so the chips can be real sibling buttons. The design does not change; the markup does.
@@ -343,33 +318,35 @@ confirm or reject:
 ### The order flow, end to end
 
 1. The page opens on **an empty form for menu 1**, under the day tabs. No browsing, no modal.
-2. Fill it top down: main (a row that opens the one remaining sheet), then variation and side if
-   that dish needs them, then soup, dessert, pickle and the Extra steppers — all open on the page. The
-   soup rows carry the adjustment they would cause, so the −100 / +650 is visible before the tap.
-3. Or scroll to the catalogue below and tap a dish there: it drops into the form and the page
-   scrolls back to it. Two ways in, one place where a menu is built.
+2. Fill it top down, in course order: soup, then the main (a row that opens the one remaining
+   sheet), its variation and side if that dish needs them, then pickle, dessert and the Extra
+   steppers — all open on the page. Before a main is chosen the soup quotes a rule, not a price.
+3. Every dish is in the form. The weekly menu as a browsable list is not on this page; it gets its
+   own page (#58).
 4. **Hozzáadás** commits the composition to the active day as one menu, and merges the Extra
    quantities into the day. The form empties and its head now reads
    "2. menü összeállítása".
 5. The day's order fills in beside the form (above it on a phone); "Módosítás" pulls a menu back
    into the form, where it was built.
 6. **Tovább a rendeléshez** → checkout: the form on the left, the whole order beside it on the right.
+   If a day is under the 2 200 Ft minimum, checkout says so and names the difference; nothing blocks.
 
 11. **The composer is the screen, not a modal.** Revised 2026-09-07. Dávid tried the
     browse → tap → modal → step → step route and said it had become harder than the old site, which
     opens on a form you simply fill in. It had. The page now opens on an empty form for menu 1 —
-    the same content the modal held — with the catalogue below it as a second way in. The two-step
+    the same content the modal held. The two-step
     split went with the modal: it existed to keep a sheet short, and a page has no such limit, so
     the "Tovább" was a tap everyone paid for nothing. The form is long on a phone, and that is the
     deliberate trade: everything visible with nothing to discover beats a short screen you have to
     travel through. The main course keeps its sheet — 11 dishes across three categories do not
-    belong inline, and the catalogue below already lists them all.
+    belong inline.
 12. **The sauces and bread are offered inside the form but land on the day.** They are `order_extras`
     rows with a quantity, not menu slots, so the form holds them until "Hozzáadás" and then merges
-    them into the active day. The box is not offered here: it is packaging, it belongs to the day, and it already has
-    its own row in the extras category. **Watch this in O6:** those same two extras can also be
-    changed from the extras category below, so two controls write one number. They agree, because
-    they write the same state — but if it grates, the form's copies are the ones to drop.
+    them into the active day. The box is not offered here: it is packaging, and it belongs to the day. **Watch this in O6:** the
+    day's order also has steppers for these extras. The form's steppers hold what this menu will add;
+    the day's steppers show what the day already has. They are different numbers, but two controls
+    for one product can still read as a duplicate — if it grates, the form's copies are the ones to
+    drop.
 13. **Checkout puts the form and the order side by side, with the rail on the right.** The reference
     image has the summary on the left; ours stays on the right because that is where this design's
     rail already lives on the menu screen, and a sidebar that changes sides between screens costs
@@ -397,6 +374,26 @@ confirm or reject:
     main; it is asking for one. A menu without a main is still valid — the soup-only case in
     decision 9 — but that is reached by choosing a soup, not by declining the main.
 
+16. **The minimum warns on checkout and never blocks.** Decided by Dávid on 2026-09-13, revising
+    PLAN.md §2 ("below it the submission is rejected"); tracked in
+    [#57](https://github.com/landorid/piccoloetterem.hu/issues/57). The old site worked this way in
+    practice: an advisory warning, the order accepted, the difference collected on delivery. Nothing
+    on the order page mentions the minimum any more — the summary does not warn and "Tovább" is
+    never disabled by it. Checkout shows one warning banner listing each day under 2 200 Ft with its
+    difference. The totals do not change. Whether the difference becomes a priced line, what the
+    courier's list shows and whether the e-mail repeats it are open questions in #57, not design
+    calls.
+17. **The weekly menu is not listed on this page.** Decided by Dávid on 2026-09-13; tracked in
+    [#58](https://github.com/landorid/piccoloetterem.hu/issues/58), because PLAN.md §1 says "the
+    weekly menu **is** the order page". The chip rail, the dish sections, the rails and the extras
+    category are gone; the menu will have its own page. Nothing orderable is lost — every dish is in
+    the form or the main-course picker. Two things moved so that nothing required went with the
+    list. **Allergens:** distance selling must make allergen information available before the
+    purchase (EU Regulation 1169/2011, Art. 14), and the list was where soups, sides, pickles and
+    desserts showed theirs — so every choice row now carries its dish's allergen chips, and the
+    allergen notice with its link stays on the page. **Extras:** the box could only be added from
+    the extras category, so the day's order now has a stepper for every extra (decision 5).
+
 ## Follow-ups this mockup suggests
 
 Not in scope for #30 — listed so they are not lost:
@@ -408,6 +405,12 @@ Not in scope for #30 — listed so they are not lost:
   **#31 / O3** should not accept it, and **#36–#38 / S1–S3** lose the per-person split in the
   kitchen summary and the delivery list — those now identify a menu by its number within the day.
   Tracked in [#56](https://github.com/landorid/piccoloetterem.hu/issues/56); this mockup is already built without the name.
+- **The minimum no longer blocks, and PLAN.md §2 still says it does.** Tracked in
+  [#57](https://github.com/landorid/piccoloetterem.hu/issues/57), with three open questions: is the
+  difference part of the order's price, does the courier's list show it, does the e-mail repeat it.
+- **The weekly menu leaves `/megrendeles`, and PLAN.md §1 still says the menu *is* the order page.**
+  Tracked in [#58](https://github.com/landorid/piccoloetterem.hu/issues/58), including whether the
+  new menu page is in release 1 and what it changes in #33 / O5 and #34 / O6.
 - **`RestaurantConfig` has no restaurant identity fields.** The masthead, the footer and three
   error messages need phone, address, opening hours and the intake window. They are hard-coded in
   the mockup. Recommend adding a `contact: { phone, address, openingHours, intakeWindow }` branch

@@ -21,8 +21,8 @@ Merge it with what is already in `strings.ts`: keep `siteName`, replace the `ord
    | `errors.emptyWeekBody` | new `config.messages.*` entry — see the note in README.md |
    | extras names (`Éthordó doboz`, `Kenyér`, `Ketchup`, `Tartármártás`) | `config.extras[].name` |
    | `order.phone`, `order.address`, `order.intake`, `footer.opening`, `footer.delivery` | restaurant identity — **not yet in `RestaurantConfig`**, see README.md §Follow-ups |
-3. **Numbers written into sentences.** `order.terms`, `summary.minimumWarning`, `summary.minimumBlocked`,
-   `sections.soupsHint` and `footer.delivery` currently spell out 2 200 Ft, 150 Ft and 650 Ft. They
+3. **Numbers written into sentences.** `order.terms`, `checkout.minimumBody` and `footer.delivery`
+   currently spell out 2 200 Ft and 150 Ft. They
    must be interpolated from `config.pricing` instead of typed, or the copy lies the day a price
    changes. Left as prose here so the sentences read naturally in review; O6 wires them up.
 4. **Formatting is not copy.** `common.currency` is a formatter, not a string. Put it in a
@@ -56,30 +56,17 @@ export const strings = {
     badgeTitle: (n: number) => n + ' menü a kosárban erre a napra',
     pastTitle: 'Erre a napra már lezárult a rendelésfelvétel',
   },
+  // Group headings of the main-course picker.
   sections: {
-    soups: 'Napi levesek',
     mains: 'Napi főételek',
     featured: 'Kiemelt ajánlat',
     allWeek: 'Egész héten rendelhető',
     sides: 'Köretek',
     sideExtras: 'Feláras köretek',
-    pickles: 'Savanyúságok',
-    desserts: 'Desszertek',
-    extras: 'Extrák',
-    weekendHint: 'Szombaton eltérő ár',
-    soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft. Koppints rá, és mellé választhatsz főételt.',
-    all: 'Összes',
-    jumpLabel: 'Ugrás a kínálaton belül',
   },
   dish: {
     soupIncluded: 'A menü ára tartalmazza',
     soldOut: 'Elfogyott',
-    hasVariations: 'Választható',
-    needsSide: 'Körettel',
-    compose: 'Összeállítom',
-    noPhoto: 'Ehhez a fogáshoz nincs kép',
-    composeBlank: 'Menü összeállítása',
-    weekendPrice: (p: string) => 'szombaton ' + p,
   },
   allergens: {
     link: 'Allergének',
@@ -149,7 +136,7 @@ export const strings = {
     remove: 'Törlés',
     addAnother: 'Még egy menü ehhez a naphoz',
     empty: 'Erre a napra még nincs összeállított menüd.',
-    emptyCta: 'Válassz egy főételt a lentiek közül, vagy állíts össze egy menüt levessel.',
+    emptyCta: 'Állíts össze egy menüt az űrlapon, vagy adj hozzá extrát.',
     foodSubtotal: 'Ételek összesen',
   },
   extras: {
@@ -160,7 +147,6 @@ export const strings = {
     lessOf: (name: string) => 'Kevesebb: ' + name,
     moreOf: (name: string) => 'Több: ' + name,
     unitPrice: (p: string) => p + ' / db',
-    change: 'Extrák módosítása',
   },
   summary: {
     title: 'Összegzés',
@@ -176,8 +162,6 @@ export const strings = {
     details: 'Részletek',
     hideDetails: 'Bezár',
     continue: 'Tovább a rendeléshez',
-    minimumWarning: (day: string, missing: string) => day + ': még ' + missing + ' hiányzik a 2 200 Ft-os minimumhoz.',
-    minimumBlocked: (days: string) => 'Naponta legalább 2 200 Ft értékben kell ételt rendelni. Még nem éred el: ' + days + '.',
   },
   checkout: {
     title: 'Rendelés véglegesítése',
@@ -198,6 +182,9 @@ export const strings = {
     note: 'Megjegyzés (opcionális)',
     notePlaceholder: 'Pl. a portán kérem leadni.',
     payment: 'A rendelést a futárnál fizeted, kiszállításkor.',
+    minimumTitle: 'Nem éred el a napi minimumot',
+    minimumBody: 'Naponta legalább 2 200 Ft értékben kell ételt rendelni. A rendelést így is elküldheted, de a hiányzó összeget kiszállításkor ki kell fizetned.',
+    minimumDay: (day: string, missing: string) => day + ': ' + missing + ' különbözet',
     submit: 'Rendelés elküldése',
     submitting: 'Küldés folyamatban…',
     required: '*',

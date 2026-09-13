@@ -518,15 +518,6 @@
       /* Card language adapted from market.gasty.io: a leading tile, the whole row
          tappable, the price hard right. The tile carries a photo when there is one
          and the dish's initial when there is not — the layout does not change. */
-      .dishes {
-        display: flex;
-        flex-direction: column;
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--paper);
-        overflow: hidden;
-        box-shadow: var(--shadow-1);
-      }
       .tile {
         flex: none;
         width: 48px;
@@ -549,187 +540,12 @@
         border-style: dashed;
         border-color: var(--line-strong);
       }
-      .dish {
-        display: flex;
-        align-items: flex-start;
-        gap: var(--s-3);
-        width: 100%;
-        min-height: 72px;
-        padding: var(--s-3) var(--s-4);
-        border: 0;
-        border-top: 1px solid var(--line);
-        background: none;
-        font: inherit;
-        color: inherit;
-        text-align: left;
-      }
-      .dish:first-child {
-        border-top: 0;
-      }
-      button.dish:hover {
-        background: var(--brand-50);
-      }
-      .dish-body {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        flex-direction: column;
-        gap: 3px;
-      }
-      .dish-name {
-        font-family: var(--font-display);
-        font-size: var(--t-lg);
-        font-weight: 500;
-        line-height: 1.2;
-        letter-spacing: -0.01em;
-      }
-      .dish-desc {
-        font-size: var(--t-md);
-        color: var(--ink-700);
-      }
-      .dish-meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: var(--s-1) var(--s-2);
-        margin-top: 2px;
-      }
-      .dish-price {
-        flex: none;
-        max-width: 92px;
-        text-align: right;
-        font-weight: 700;
-        white-space: nowrap;
-      }
-      .dish-price .weekend {
-        display: block;
-        font-size: var(--t-xs);
-        font-weight: 500;
-        line-height: 1.3;
-        color: var(--ink-500);
-        white-space: normal;
-      }
-      .dish-price .included {
-        display: block;
-        margin-top: 2px;
-        font-size: var(--t-xs);
-        font-weight: 600;
-        line-height: 1.25;
-        color: var(--ok-700);
-        white-space: normal;
-      }
-      .dish.is-soldout .dish-name,
-      .dish.is-soldout .dish-desc,
-      .dish.is-soldout .dish-price {
-        color: var(--ink-500);
-      }
-      .dish.is-soldout .dish-name {
-        text-decoration: line-through;
-        text-decoration-color: var(--line-strong);
-      }
-      .dish.is-soldout .tile {
-        opacity: 0.55;
-      }
 
       /* Horizontal rails for the secondary, repeat-every-week sections. The daily
          soups and mains stay a vertical list: hiding today's mains behind a swipe
          is exactly the wrong trade at 07:40. */
-      .rail-scroll {
-        display: flex;
-        gap: var(--s-3);
-        overflow-x: auto;
-        scrollbar-width: none;
-        scroll-snap-type: x proximity;
-        margin-inline: calc(var(--s-4) * -1);
-        padding: 2px var(--s-4) var(--s-2);
-      }
-      .rail-scroll::-webkit-scrollbar {
-        display: none;
-      }
-      .rail-card {
-        flex: none;
-        width: 150px;
-        scroll-snap-align: start;
-        display: flex;
-        flex-direction: column;
-        gap: var(--s-1);
-        padding: var(--s-2);
-        border: 1px solid var(--line);
-        border-radius: var(--radius);
-        background: var(--paper);
-        box-shadow: var(--shadow-1);
-        font: inherit;
-        color: inherit;
-        text-align: left;
-      }
-      .rail-card .tile {
-        width: 100%;
-        height: 76px;
-        font-size: 28px;
-      }
-      .rail-card .rc-price {
-        font-weight: 700;
-        font-size: var(--t-md);
-      }
-      .rail-card .rc-name {
-        font-family: var(--font-display);
-        font-size: var(--t-md);
-        line-height: 1.2;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-      .rail-card .rc-meta {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .rail-card.is-soldout .rc-name,
-      .rail-card.is-soldout .rc-price {
-        color: var(--ink-500);
-        text-decoration: line-through;
-        text-decoration-color: var(--line-strong);
-      }
 
       /* Category chips — jump to a section without scrolling past everything. */
-      .chiprail {
-        position: sticky;
-        top: 141px;
-        z-index: 4;
-        margin-inline: calc(var(--s-4) * -1);
-        padding: var(--s-2) 0;
-        background: var(--ground);
-        border-bottom: 1px solid var(--line);
-      }
-      .chiprail-scroll {
-        display: flex;
-        gap: var(--s-2);
-        overflow-x: auto;
-        scrollbar-width: none;
-        padding-inline: var(--s-4);
-      }
-      .chiprail-scroll::-webkit-scrollbar {
-        display: none;
-      }
-      .chip {
-        flex: none;
-        min-height: 38px;
-        padding: 0 var(--s-4);
-        border-radius: 999px;
-        border: 1px solid var(--line-strong);
-        background: var(--paper);
-        font-size: var(--t-md);
-        font-weight: 600;
-        color: var(--ink-700);
-        white-space: nowrap;
-      }
-      .chip[aria-pressed='true'] {
-        background: var(--brand-800);
-        border-color: var(--brand-800);
-        color: #fff;
-      }
       section[data-sec] {
         scroll-margin-top: 196px;
       }
@@ -816,8 +632,8 @@
         opacity: 0.55;
       }
 
-      /* The bubble that names the allergen. It cannot live next to its chip: .dishes,
-         .rail-scroll and the sheet body all clip their overflow. So there is exactly
+      /* The bubble that names the allergen. It cannot live next to its chip: the page's cards and
+         the sheet body all clip their overflow. So there is exactly
          one per app, position: fixed — and inside a device frame, which carries both a
          transform and container-type, "fixed" resolves against the frame itself. That
          is the box we want it kept inside, and it is the same trick .overlay uses.
@@ -1890,31 +1706,8 @@
           border-radius: var(--radius-lg);
           max-height: 86%;
         }
-        .dish {
-          padding: var(--s-4) var(--s-5);
-        }
-        .rail-scroll {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          overflow: visible;
-          margin-inline: 0;
-          padding-inline: 0;
-        }
-        .rail-card {
-          width: auto;
-        }
-        .rail-card .tile {
-          height: 104px;
-        }
-        .chiprail {
-          top: 149px;
-          margin-inline: 0;
-        }
         section[data-sec] {
           scroll-margin-top: 204px;
-        }
-        .chiprail-scroll {
-          padding-inline: 0;
         }
         .success h1 {
           font-size: var(--t-3xl);
@@ -1948,19 +1741,21 @@
         display: none;
       }
       @container app (min-width: 900px) {
-        .screen:not(.single) > .banners {
+        /* Row placement belongs to the menu screen only: checkout shares .col-main and
+           .rail, and inheriting row 3 pushed its form below the height of the recap. */
+        .screen-menu > .banners {
           grid-column: 1 / -1;
           grid-row: 1;
         }
-        .screen:not(.single) > .composer-form {
+        .screen-menu > .composer-form {
           grid-column: 1;
           grid-row: 2;
         }
-        .screen:not(.single) > .col-main {
+        .screen-menu > .col-main {
           grid-column: 1;
           grid-row: 3;
         }
-        .screen:not(.single) > .rail {
+        .screen-menu > .rail {
           grid-column: 2;
           grid-row: 2 / span 2;
         }
@@ -2023,30 +1818,17 @@
           badgeTitle: (n) => n + ' menü a kosárban erre a napra',
           pastTitle: 'Erre a napra már lezárult a rendelésfelvétel',
         },
+        // Group headings of the main-course picker.
         sections: {
-          soups: 'Napi levesek',
           mains: 'Napi főételek',
           featured: 'Kiemelt ajánlat',
           allWeek: 'Egész héten rendelhető',
           sides: 'Köretek',
           sideExtras: 'Feláras köretek',
-          pickles: 'Savanyúságok',
-          desserts: 'Desszertek',
-          extras: 'Extrák',
-          weekendHint: 'Szombaton eltérő ár',
-          soupsHint: 'Napi főétel mellé ingyen, önmagában 650 Ft. Koppints rá, és mellé választhatsz főételt.',
-          all: 'Összes',
-          jumpLabel: 'Ugrás a kínálaton belül',
         },
         dish: {
           soupIncluded: 'A menü ára tartalmazza',
           soldOut: 'Elfogyott',
-          hasVariations: 'Választható',
-          needsSide: 'Körettel',
-          compose: 'Összeállítom',
-          noPhoto: 'Ehhez a fogáshoz nincs kép',
-          composeBlank: 'Menü összeállítása',
-          weekendPrice: (p) => 'szombaton ' + p,
         },
         allergens: {
           link: 'Allergének',
@@ -2117,7 +1899,7 @@
           remove: 'Törlés',
           addAnother: 'Még egy menü ehhez a naphoz',
           empty: 'Erre a napra még nincs összeállított menüd.',
-          emptyCta: 'Válassz egy főételt a lentiek közül, vagy állíts össze egy menüt levessel.',
+          emptyCta: 'Állíts össze egy menüt az űrlapon, vagy adj hozzá extrát.',
           foodSubtotal: 'Ételek összesen',
         },
         extras: {
@@ -2128,7 +1910,6 @@
           lessOf: (name) => 'Kevesebb: ' + name,
           moreOf: (name) => 'Több: ' + name,
           unitPrice: (p) => p + ' / db',
-          change: 'Extrák módosítása',
         },
         summary: {
           title: 'Összegzés',
@@ -2144,10 +1925,6 @@
           details: 'Részletek',
           hideDetails: 'Bezár',
           continue: 'Tovább a rendeléshez',
-          minimumWarning: (day, missing) =>
-            day + ': még ' + missing + ' hiányzik a 2 200 Ft-os minimumhoz.',
-          minimumBlocked: (days) =>
-            'Naponta legalább 2 200 Ft értékben kell ételt rendelni. Még nem éred el: ' + days + '.',
         },
         checkout: {
           title: 'Rendelés véglegesítése',
@@ -2168,6 +1945,10 @@
           note: 'Megjegyzés (opcionális)',
           notePlaceholder: 'Pl. a portán kérem leadni.',
           payment: 'A rendelést a futárnál fizeted, kiszállításkor.',
+          minimumTitle: 'Nem éred el a napi minimumot',
+          minimumBody:
+            'Naponta legalább 2 200 Ft értékben kell ételt rendelni. A rendelést így is elküldheted, de a hiányzó összeget kiszállításkor ki kell fizetned.',
+          minimumDay: (day, missing) => day + ': ' + missing + ' különbözet',
           submit: 'Rendelés elküldése',
           submitting: 'Küldés folyamatban…',
           required: '*',
@@ -2702,8 +2483,8 @@
 
       /**
        * The bubble that names an allergen, one per app. It is rendered here rather than
-       * next to its chip because every place a chip appears — the dish list, a rail, a
-       * sheet — clips its own overflow; the viewer positions it against the frame.
+       * next to its chip because every place a chip appears — a choice row, the
+       * picker sheet — clips its own overflow; the viewer positions it against the frame.
        * `vm.tip` holds the anchor key of a chip so a STATE can capture the bubble open
        * in a still; hovering, focusing and tapping a chip drive the same element live.
        */
@@ -2829,132 +2610,10 @@
         );
       }
 
-      function Dish(item, date, opts = {}) {
-        const soldOut = !!item.soldOut;
-        const isSoup = item.cat === 'daily_soup';
-        const tappable = opts.action && !soldOut;
-        return (
-          '<' +
-          (tappable ? 'button type="button"' : 'div') +
-          ' class="' +
-          cls('dish', soldOut && 'is-soldout') +
-          '"' +
-          (tappable ? ' data-compose="' + item.id + '"' : '') +
-          '>' +
-          Tile(item) +
-          '<span class="dish-body"><span class="dish-name">' +
-          esc(item.name) +
-          '</span>' +
-          (item.desc ? '<span class="dish-desc">' + esc(item.desc) + '</span>' : '') +
-          '<span class="dish-meta">' +
-          (soldOut ? '<span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
-          (item.variations
-            ? '<span class="tag tag-choice">' +
-              esc(S.dish.hasVariations + ': ' + item.variations.join(' · ')) +
-              '</span>'
-            : '') +
-          (item.requiresSide
-            ? '<span class="tag tag-choice">' + esc(S.dish.needsSide) + '</span>'
-            : '') +
-          allergenCodes(item) +
-          '</span></span>' +
-          '<span class="dish-price num">' +
-          (isSoup
-            ? money(0) + '<span class="included">' + esc(S.dish.soupIncluded) + '</span>'
-            : money(priceOf(item, date)) +
-              (!isWeekend(date) && item.priceWeekend !== item.priceWeekday
-                ? '<span class="weekend">' +
-                  esc(S.dish.weekendPrice(money(item.priceWeekend))) +
-                  '</span>'
-                : '')) +
-          '</span>' +
-          '</' +
-          (tappable ? 'button' : 'div') +
-          '>'
-        );
-      }
-
-      /** A rail card: price above the name, the way the reference marketplace does it. */
-      function RailCard(item, date, opts = {}) {
-        const soldOut = !!item.soldOut;
-        const tappable = opts.action && !soldOut;
-        return (
-          '<' +
-          (tappable ? 'button type="button"' : 'div') +
-          ' class="' +
-          cls('rail-card', soldOut && 'is-soldout') +
-          '"' +
-          (tappable ? ' data-compose="' + item.id + '"' : '') +
-          '>' +
-          Tile(item, true) +
-          '<span class="rc-price num">' +
-          money(priceOf(item, date)) +
-          '</span><span class="rc-name">' +
-          esc(item.name) +
-          '</span><span class="rc-meta">' +
-          (soldOut ? '<span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
-          allergenCodes(item) +
-          '</span></' +
-          (tappable ? 'button' : 'div') +
-          '>'
-        );
-      }
-
-      function Section(title, items, date, opts = {}) {
-        if (!items.length) return '';
-        const body = opts.rail
-          ? '<div class="rail-scroll">' + items.map((i) => RailCard(i, date, opts)).join('') + '</div>'
-          : '<div class="dishes">' + items.map((i) => Dish(i, date, opts)).join('') + '</div>';
-        return (
-          '<section' +
-          (opts.sec ? ' data-sec="' + opts.sec + '"' : '') +
-          '><div class="section-h"><h2>' +
-          esc(title) +
-          '</h2>' +
-          (opts.hint ? '<span class="hint">' + esc(opts.hint) + '</span>' : '') +
-          '</div>' +
-          body +
-          '</section>'
-        );
-      }
-
-      function ChipRail(vm) {
-        const chips = [
-          { sec: '', label: S.sections.all },
-          { sec: 'soups', label: S.sections.soups },
-          { sec: 'mains', label: S.sections.mains },
-          { sec: 'featured', label: S.sections.featured },
-          { sec: 'allweek', label: S.sections.allWeek },
-          { sec: 'sides', label: S.sections.sideExtras },
-          { sec: 'pickles', label: S.sections.pickles },
-          { sec: 'desserts', label: S.sections.desserts },
-          { sec: 'extras', label: S.sections.extras },
-        ];
-        return (
-          '<div class="chiprail"><div class="chiprail-scroll" role="group" aria-label="' +
-          esc(S.sections.jumpLabel) +
-          '">' +
-          chips
-            .map(
-              (c) =>
-                '<button type="button" class="chip" aria-pressed="' +
-                ((vm.activeChip || '') === c.sec) +
-                '" data-jump="' +
-                c.sec +
-                '">' +
-                esc(c.label) +
-                '</button>',
-            )
-            .join('') +
-          '</div></div>'
-        );
-      }
-
       /**
-       * One extra, in the two places it appears: a stepper row in the offer list,
-       * where it is added, and a priced line in the day's order, where it is
-       * checked before paying. Same anatomy and the same strings — the stepper
-       * writes the state the cart line reads back, so the two can never disagree.
+       * One extra as a row: with a stepper in the day's order, where it is added and
+       * changed, or as a priced line (name × qty). Same anatomy and the same strings
+       * either way, so the two can never disagree.
        */
       function ExtraRow(x, qty, opts = {}) {
         const step = !!opts.stepper;
@@ -2986,29 +2645,6 @@
         );
       }
 
-      /**
-       * The extras as a category of their own in the offer list, last — they are
-       * things you add on the way out, and they must not compete with today's
-       * mains. A vertical list, not a rail: three rows, each carrying two 44 px
-       * buttons and two prices, do not fit a 150 px card, and a rail card whose
-       * whole surface is the tap target cannot hold controls of its own.
-       * They belong to the day whose tab is active, exactly like the menus do.
-       */
-      function ExtrasSection(vm) {
-        const day = vm.cart.find((c) => c.date === vm.activeDate);
-        const qtyOf = (key) =>
-          (((day && day.extras) || []).find((e) => e.key === key) || {}).qty || 0;
-        return (
-          '<section data-sec="extras"><div class="section-h"><h2>' +
-          esc(S.sections.extras) +
-          '</h2><span class="hint">' +
-          esc(S.extras.hint) +
-          '</span></div><div class="extra-list">' +
-          CFG.extras.map((x) => ExtraRow(x, qtyOf(x.key), { stepper: true })).join('') +
-          '</div></section>'
-        );
-      }
-
       function CartCard(vm) {
         const day = vm.cart.find((c) => c.date === vm.activeDate);
         const priced = day ? priceDay(day) : null;
@@ -3019,9 +2655,20 @@
           esc(cap(dayFull(vm.activeDate))) +
           '</span></div>';
 
-        // Extras can now be added from the offer list without a menu, so "empty"
-        // means neither — a day carrying two breads is not an empty day, and the
-        // card must not hide the lines that the food subtotal is counting.
+        // The weekly menu is no longer listed on this page (#58), so the day's order is
+        // where extras live: every one, the box included, as a stepper for the active
+        // day — rendered even while the day holds nothing, so a bread can come before
+        // a menu. A day carrying only extras is not an empty day either.
+        const qtyOf = (key) =>
+          (((day && day.extras) || []).find((e) => e.key === key) || {}).qty || 0;
+        const extras =
+          '<div class="extras"><div class="section-h"><h2 style="font-size:var(--t-base)">' +
+          esc(S.extras.title) +
+          '</h2><span class="hint">' +
+          esc(S.extras.hint) +
+          '</span></div><div class="extra-list">' +
+          CFG.extras.map((x) => ExtraRow(x, qtyOf(x.key), { stepper: true })).join('') +
+          '</div></div>';
         const empty =
           '<div class="cart-empty"><p><b>' +
           esc(S.cart.empty) +
@@ -3029,7 +2676,7 @@
           esc(S.cart.emptyCta) +
           '</p></div>';
         if (!priced || (!priced.menus.length && !priced.extras.length)) {
-          return '<div class="card">' + head + empty + '</div>';
+          return '<div class="card">' + head + empty + extras + '</div>';
         }
 
         const menus = priced.menus
@@ -3070,22 +2717,8 @@
           })
           .join('');
 
-        // The day's order is a receipt: composed menus appear here as priced lines
-        // with an edit button, not as editable forms. The extras now follow the
-        // same rule — they are added in their own section of the offer list, and
-        // this block states what that came to and offers the way back to it. One
-        // stepper per value: on desktop the rail and the offer list are on screen
-        // at the same time, and two live steppers for one number read as two
-        // features.
-        const extras = priced.extras.length
-          ? '<div class="extras"><div class="section-h"><h2 style="font-size:var(--t-base)">' +
-            esc(S.extras.title) +
-            '</h2></div>' +
-            priced.extras.map((x) => ExtraRow(x, x.qty)).join('') +
-            '<div class="cart-actions"><button type="button" class="btn-quiet" data-jump="extras">' +
-            esc(S.extras.change) +
-            '</button></div></div>'
-          : '';
+        // The day's order is a receipt for menus: priced lines with an edit button,
+        // not editable forms. Extras are the exception above — they have no other home.
 
         return (
           '<div class="card">' +
@@ -3128,11 +2761,6 @@
               '</span><span class="amt num">' +
               money(d.fee) +
               '</span></div>' +
-              (d.missing > 0
-                ? '<div class="row" style="color:var(--warn-700);font-weight:600"><span class="what">' +
-                  esc(S.summary.minimumWarning(cap(dayLong(d.date)), money(d.missing))) +
-                  '</span></div>'
-                : '') +
               '</div>',
           )
           .join('<div class="sep"></div>');
@@ -3153,9 +2781,7 @@
 
       function SummaryBar(vm, variant) {
         const p = priceCart(vm.cart);
-        const blocked = p.belowMinimum.length > 0;
         const open = variant === 'desktop' ? true : vm.summaryOpen;
-        const dayNames = p.belowMinimum.map((d) => dayLong(d.date)).join(', ');
         const header =
           variant === 'desktop'
             ? '<div class="line"><span class="total">' + esc(S.summary.title) + '</span></div>'
@@ -3176,13 +2802,8 @@
           '">' +
           header +
           (open ? '<div class="detail">' + Totals(vm.cart, { feeNote: true }) + '</div>' : '') +
-          (blocked
-            ? '<div class="banner banner-warn" role="status"><span class="icon" aria-hidden="true">!</span><div><p>' +
-              esc(S.summary.minimumBlocked(dayNames)) +
-              '</p></div></div>'
-            : '') +
           '<button type="button" class="btn btn-primary btn-block"' +
-          (blocked || !p.days.length ? ' aria-disabled="true" disabled' : ' data-go="checkout"') +
+          (!p.days.length ? ' aria-disabled="true" disabled' : ' data-go="checkout"') +
           '>' +
           esc(S.summary.continue) +
           '</button></div>'
@@ -3324,6 +2945,9 @@
                 (soldOut ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
                 '</span>' +
                 (o.amount ? '<span class="pamt num">' + esc(o.amount) + '</span>' : '') +
+                (item && item.allergens && item.allergens.length
+                  ? '<span class="psub">' + allergenCodes(item, 'pick') + '</span>'
+                  : '') +
                 '</span><span class="pmark" aria-hidden="true">✓</span></button>'
               );
             })
@@ -3648,31 +3272,11 @@
 
       /* --- screens --------------------------------------------------------- */
       function MenuScreen(vm) {
-        const d = WEEK.byDate[vm.activeDate];
-        const date = vm.activeDate;
+        // The weekly menu is no longer listed below the form (#58); every dish is in
+        // the form or the main-course picker. The allergen notice stays: distance
+        // selling must make allergen information available before the purchase
+        // (EU Regulation 1169/2011, Art. 14).
         const offer =
-          ChipRail(vm) +
-          Section(S.sections.soups, d.soups, date, {
-            sec: 'soups',
-            action: true,
-            hint: S.sections.soupsHint,
-          }) +
-          Section(S.sections.mains, d.mains, date, { sec: 'mains', action: true }) +
-          Section(S.sections.featured, WEEK.featured, date, {
-            sec: 'featured',
-            action: true,
-            rail: true,
-            hint: S.sections.weekendHint,
-          }) +
-          Section(S.sections.allWeek, WEEK.allWeek, date, {
-            sec: 'allweek',
-            action: true,
-            rail: true,
-          }) +
-          Section(S.sections.sideExtras, WEEK.sideExtras, date, { sec: 'sides', rail: true }) +
-          Section(S.sections.pickles, WEEK.pickles, date, { sec: 'pickles', rail: true }) +
-          Section(S.sections.desserts, WEEK.desserts, date, { sec: 'desserts', rail: true }) +
-          ExtrasSection(vm) +
           '<div class="allergen-note"><span aria-hidden="true">⚠</span><p>' +
           esc(S.allergens.notice) +
           ' <button type="button" data-open="allergens">' +
@@ -3680,7 +3284,7 @@
           '</button></p></div>';
 
         return (
-          '<div class="screen">' +
+          '<div class="screen screen-menu">' +
           '<div class="banners">' +
           (vm.banners || []).map(Banner).join('') +
           '</div>' +
@@ -3808,6 +3412,18 @@
           esc(S.checkout.title) +
           '</h1>' +
           (vm.banners || []).map(Banner).join('') +
+          /* Below the minimum nothing is blocked (#57): checkout is the one place that
+             says so, naming each day and the difference paid on delivery. */
+          (p.belowMinimum.length
+            ? Banner({
+                kind: 'warn',
+                title: S.checkout.minimumTitle,
+                body: S.checkout.minimumBody,
+                items: p.belowMinimum.map((d) =>
+                  S.checkout.minimumDay(cap(dayLong(d.date)), money(d.missing)),
+                ),
+              })
+            : '') +
           (Object.keys(e).length
             ? Banner({ kind: 'danger', title: S.checkout.errors.summary, body: '' })
             : '') +
@@ -4017,7 +3633,6 @@
        * the soup slot filled instead of the main one — the domain and the pricing always
        * allowed a soup without a main, only the menu had no way to say it.
        */
-      const slotOfItem = (id) => (ITEMS[id].cat === 'daily_soup' ? 'soup' : 'main');
 
       const WED = '2026-09-09';
       const THU = '2026-09-10';
@@ -4096,7 +3711,7 @@
         {
           id: 'menu-empty',
           label: '2a+2b · Az első képernyő — üres űrlap',
-          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. Alatta megmarad a kínálat böngészhető listája: ott is koppinthatsz egy fogásra, és beleesik az űrlapba. <b>A levest nem jelöljük be előre</b>: arra válaszolni kell, mert a válasz az árat is mozgatja — amíg nyitva van, a címkéje pirosan „· válassz”, és a „Hozzáadás” tiltva. A savanyúság és a desszert <b>„Nem kérek”-kel indul</b>. A „Nem kérek” mindenhol a lista <i>végén</i> áll. Hétfő és kedd már lezárult (szürke), a kiszállítási díj és a minimum a fejlécben.',
+          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. A heti kínálat nem listázódik alatta, az külön oldalra kerül; minden fogás elérhető az űrlapból. <b>A levest nem jelöljük be előre</b>: arra válaszolni kell, mert a válasz az árat is mozgatja — amíg nyitva van, a címkéje pirosan „· válassz”, és a „Hozzáadás” tiltva. A savanyúság és a desszert <b>„Nem kérek”-kel indul</b>. A „Nem kérek” mindenhol a lista <i>végén</i> áll. Hétfő és kedd már lezárult (szürke), a kiszállítási díj és a minimum a fejlécben.',
           vm: () => baseVm({}),
         },
         {
@@ -4107,8 +3722,8 @@
         },
         {
           id: 'menu-extras',
-          label: '2a+2d · Extrák saját kategóriában',
-          note: 'Az extrák a kínálat végén saját kategóriát kaptak, saját csippel — így böngészés közben is látszanak, és akkor is hozzáadhatók, ha a naphoz még nincs menü. Lista, nem vízszintes sín: egy sorba két 44 px-es gomb és két ár kell, az pedig nem fér egy 150 px-es kártyára. A lépegető ugyanazt az állapotot írja, amit a nap rendelése visszaolvas — csütörtökre itt <b>csak extrák</b> kerültek, menü nélkül. A nap kártyája ezért nem mondja magát üresnek: kiírja, hogy még nincs összeállított menü, és alatta ott a két tétel és az ételek összege. Az 500 Ft messze a napi 2 200 Ft alatt van, ezért az összegzés sávja figyelmeztet és blokkol.',
+          label: '2c · Extrák a nap rendelésében',
+          note: 'A heti kínálat lekerült az oldalról, ezért az extrák — a doboz is — <b>a nap rendelésében</b> kaptak léptetőt: ott adod hozzá és ott módosítod őket, menü nélkül is. Csütörtökre itt <b>csak extrák</b> kerültek. A nap kártyája ezért nem mondja magát üresnek: kiírja, hogy még nincs összeállított menü, alatta a léptetők és az ételek összege. Az 500 Ft a napi 2 200 Ft alatt van, de ez már nem tilt: a különbözetről a pénztár szól.',
           vm: () =>
             baseVm({
               activeDate: THU,
@@ -4127,8 +3742,8 @@
         {
           id: 'allergen-tip',
           label: '2a · Allergén — ikon és buborék',
-          note: 'Az allergének a saját piktogramjukkal állnak a fogás neve alatt: az ikon az, amit egy allergiás vendég keres, a szám csak a tájékoztató számozott listájához köt vissza — ezért a buborékba és a listába került, nem a 28 px-es korongra. A buborék egérrel rámutatásra, billentyűzetes fókuszra <b>és koppintásra</b> is előjön; érintőn nincs hover, ezért a chipre koppintás nem a sort nyitja meg, hanem az allergén nevét írja ki. A <b>Lasagne</b> öt allergénje mutatja a határt: három ikon után a többi egyetlen „+2” chipbe zárul, amely a saját buborékában nevezi meg őket. Egy tint, nem tizennégy: a piktogram már megkülönböztet, a telített barna pedig a gomboké marad.',
-          vm: () => baseVm({ tip: 'list:' + dayItem(WED, 'Rántott szelet') + ':7' }),
+          note: 'Az allergének a saját piktogramjukkal állnak a fogás neve alatt — <b>az űrlap minden választósorában</b> és a főétel-választóban is. Eddig a heti kínálat listája mutatta a levesek, köretek, savanyúságok és desszertek allergénjeit; a lista lekerült, az allergéninformációnak viszont a rendelés előtt elérhetőnek kell lennie. Az ikon az, amit egy allergiás vendég keres; a szám a buborékba és a tájékoztató listájába került. A buborék rámutatásra, fókuszra <b>és koppintásra</b> is előjön. Három ikon után a többi egyetlen „+N” chipbe zárul — a főétel-választóban a Lasagne mutatja.',
+          vm: () => baseVm({ composer: composedMenu({ main: dayItem(WED, 'Rántott szelet') }), tip: 'pick:' + dayItem(WED, 'Rántott szelet') + ':7' }),
         },
         {
           id: 'allergens',
@@ -4177,7 +3792,7 @@
         {
           id: 'composer-soup-only',
           label: '2b · Űrlap — csak leves',
-          note: 'A levessorra koppintva a fogás az űrlap leves szeletébe kerül, nem a főételbe — ezt a domain és az árazás eddig is engedte, a kínálatból viszont nem lehetett elindítani. Főétel nélkül a leves nem ingyenes: az árdobozban azonnal ott a <b>+650 Ft</b> és az indoklása is (<code>RestaurantConfig.pricing.soupPrice</code>), így a felár ott derül ki, ahol keletkezik, nem a kosárban. Külön gombot nem kapott, és a főételek mellé sem került második gomb: az ebédelők túlnyomó része főételt rendel — a leves önmagában legyen lehetséges, ne hangsúlyos.',
+          note: 'Csak leves, főétel nélkül — ezt a domain és az árazás is engedi. Főétel nélkül a leves nem ingyenes: az árdobozban azonnal ott a <b>+650 Ft</b> és az indoklása is (<code>RestaurantConfig.pricing.soupPrice</code>), így a felár ott derül ki, ahol keletkezik, nem a kosárban.',
           vm: () =>
             baseVm({
               cart: cartFull(),
@@ -4195,10 +3810,10 @@
           vm: () => baseVm({ cart: cartFull(), summaryOpen: true }),
         },
         {
-          id: 'summary-minimum',
-          label: '2d · Minimum alatt — figyelmeztetés és blokk',
-          note: 'A 2 200 Ft-os minimum <b>naponta</b> érvényes az ételek összegére, a kiszállítási díj nélkül. Csütörtökön 1 180 Ft hiányzik: a nap sárgán jelölve, a „Tovább” gomb tiltva.',
-          vm: () => baseVm({ cart: cartBelowMinimum(), summaryOpen: true, activeDate: THU }),
+          id: 'checkout-minimum',
+          label: '2d+2e · Minimum alatt — felirat a pénztárban',
+          note: 'A 2 200 Ft-os minimum <b>naponta</b> érvényes az ételek összegére, a kiszállítási díj nélkül. Csütörtökön 1 180 Ft hiányzik. <b>Nem tilt</b>: az összegzés nem figyelmeztet, a „Tovább” aktív, és csak itt, a pénztárban jelenik meg a felirat, hogy a különbözetet kiszállításkor ki kell fizetni — naponként, összeggel. A végösszeg nem változik; hogy a különbözet az ár része legyen-e, az a #57 nyitott kérdése.',
+          vm: () => baseVm({ screen: 'checkout', cart: cartBelowMinimum() }),
         },
         {
           id: 'checkout',
@@ -4428,7 +4043,7 @@
       }
 
       /* --- the allergen bubble ------------------------------------------------
-         Positioned by measurement, not by CSS: .dishes, .rail-scroll and the sheet
+         Positioned by measurement, not by CSS: the page's cards and the sheet
          body all clip their overflow, so the bubble cannot be a child of the chip's
          row. It is one fixed element per app, and inside a device frame — which is
          transformed and is a container-query root — "fixed" resolves against the
@@ -4476,7 +4091,7 @@
            the sticky ones only while they are actually stuck. */
         let safeTop = 8;
         let safeBottom = fh - 8;
-        frame.querySelectorAll('.masthead, .daybar, .chiprail').forEach((el) => {
+        frame.querySelectorAll('.masthead, .daybar').forEach((el) => {
           const r = el.getBoundingClientRect();
           if (!r.height) return;
           const y = (r.top - fr.top) / scale;
@@ -4600,22 +4215,11 @@
         hideTips();
         if (vm) vm.tip = null;
 
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-mealextra],[data-reset],[data-edit]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-mealextra],[data-reset],[data-edit]');
         if (!el || !vm) return;
         const d = el.dataset;
         let jumpTo = null;
 
-        if (d.jump !== undefined) {
-          // Two device frames render the same view model; scroll the one clicked in.
-          vm.activeChip = d.jump;
-          render();
-          const frame = ev.target.closest('.device');
-          const target = d.jump
-            ? frame.querySelector('[data-sec="' + d.jump + '"]')
-            : frame.querySelector('.chiprail');
-          if (target) target.scrollIntoView({ block: 'start' });
-          return;
-        }
         if (d.reset) {
           vm.composer = composedMenu({});
         } else if (d.edit !== undefined) {
@@ -4631,16 +4235,7 @@
         } else if (d.day) {
           vm.activeDate = d.day;
         } else if (d.compose) {
-          if (d.compose === 'new') {
-            vm.composer = composedMenu({});
-          } else {
-            const slot = slotOfItem(d.compose);
-            vm.composer = { ...vm.composer, [slot]: d.compose };
-            if (slot === 'main') {
-              vm.composer.variation = null;
-              if (!ITEMS[d.compose].requiresSide) vm.composer.side = null;
-            }
-          }
+          vm.composer = composedMenu({});
           jumpTo = 'compose';
         } else if (d.open === 'allergens') {
           vm.overlay = 'allergens';
