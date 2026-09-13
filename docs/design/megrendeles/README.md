@@ -8,7 +8,7 @@ Issues O5–O7 build to it; the copy is handed over separately in [strings.md](s
 | The mockup | [`mockup.html`](mockup.html) — open it in a browser, no build step, no dependencies |
 | Same thing, hosted | <https://claude.ai/code/artifact/b06bba8f-12ec-4236-8597-5f81521ab695> — for reviewing on a phone, which is the point |
 | The copy | [`strings.md`](strings.md) — paste-ready `strings.ts` |
-| One-screen overview | [`overview.png`](overview.png) — all 21 states at mobile width |
+| One-screen overview | [`overview.png`](overview.png) — all 20 states at mobile width |
 
 ## How to read it
 
@@ -121,7 +121,7 @@ What O6/O7 need to build, in the order they appear:
 | `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove, food subtotal; then the day's extras as priced lines with a link back to the extras section |
 | `ExtrasSection` | the extras as a category of their own at the end of the offer list, with its own chip: a vertical list of `ExtrasRow`, heading and the per-day hint |
 | `ExtrasRow` | name, unit price, stepper, line total — one row, two chromes: with the stepper in the offer list, as a priced line (`name × qty`) in the day's order |
-| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main, its variation and side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, the portions stepper, "Ürítés" and "Hozzáadás" |
+| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main, its variation and side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — tile, allergens, price. The head names which menu you are building; the foot carries the live price, "Ürítés" and "Hozzáadás" |
 | `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
 | `ChoiceRows` | soup, variation and side: a stack of full-width rows — tile, name, the price effect under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
 | `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" last, sold-out disabled |
@@ -135,7 +135,7 @@ What O6/O7 need to build, in the order they appear:
 
 ## The states in the mockup
 
-Scope 2a–2h of the issue, one entry each. All 21 exist at both widths.
+Scope 2a–2h of the issue, one entry each. All 20 exist at both widths.
 
 | State | Scope | What it shows |
 |---|---|---|
@@ -147,7 +147,6 @@ Scope 2a–2h of the issue, one entry each. All 21 exist at both widths.
 | Űrlap — kötelező mezők | 2b | missing variation and missing side, add disabled |
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Űrlap — kész menü | 2b | full price breakdown with the soup surcharge explained |
-| Űrlap — több adag | 2b | one composition, three cart rows |
 | Összeállító — csak leves | 2b | a soup in the soup slot, no main, the +650 Ft surcharge explained |
 | Összegzés kibontva | 2d | per-day subtotals, delivery fee line, grand total |
 | Minimum alatt | 2d | warning per day, "Tovább" blocked |
@@ -172,7 +171,6 @@ as a flow he likes. It is a per-item marketplace, not a weekly menu, so what tra
 | **The item sheet's anatomy** — uppercase category eyebrow, big title, description, allergens, choices, sticky action bar | The composer sheet. It was already close; now the order and the emphasis match. |
 | **Choices as full-width selection rows** — tile, name, price under the name, a mark on the right that fills with the accent and a ✓ when chosen | Replaces the nested picker for **soup, variation and side**. One tap instead of two, and every option's price effect is visible before you choose. The single biggest improvement of this revision — see "Which slots are rows" below. |
 | **A footer with the live price left and the action right** | The composer footer. The old full-width button hid the price inside its own label. |
-| **A quantity stepper on the item** | "3 adag" on the composer: three colleagues, one composition, three cart rows — see decision 8. |
 | **A leading square tile on every row**, with a quiet placeholder when there is no photo | `Tile`. Piccolo has no photos (PLAN.md §2), so the tile carries the dish's initial. If photos ever arrive the tile takes them and nothing else moves. |
 | **The whole row as the tap target** | The "Összeállítom" button is gone: fewer things on the row, a much bigger target. |
 | **Horizontal rails for secondary sections** | Kiemelt ajánlat, Egész héten rendelhető, Feláras köretek, Savanyúságok, Desszertek. |
@@ -298,11 +296,10 @@ confirm or reject:
    on delivery. Adding a payment block would imply a choice that does not exist.
 7. **Pickup is not drawn.** `pickupEnabled` is false for Piccolo; drawing an unreachable branch
    would invite it into O6.
-8. **The portions stepper creates N menus, not one menu with a quantity.** `order_menus` has no
-   quantity column and should not get one: three of the same lunch is three rows, which is what the
-   kitchen summary counts and what the delivery list carries. A "×3" on a single row is one glance
-   away from being read as one. The stepper is a shortcut for composing the same thing three times,
-   nothing more.
+8. **No portions stepper.** Removed 2026-09-13 at Dávid's request. One composition adds one menu;
+   three of the same lunch are composed three times. The model is unchanged either way:
+   `order_menus` has no quantity column and should not get one, because three lunches are three
+   rows — what the kitchen summary counts and the delivery list carries.
 9. **A soup on its own is possible, but not advertised.** PLAN.md §2 already prices a soup without a
    main at 650 Ft, and the composer already accepted a menu with only a soup — the menu simply had no
    way to start one, so the empty cart's "or compose a menu with a soup" was a promise the page could
@@ -351,8 +348,8 @@ confirm or reject:
    soup rows carry the adjustment they would cause, so the −100 / +650 is visible before the tap.
 3. Or scroll to the catalogue below and tap a dish there: it drops into the form and the page
    scrolls back to it. Two ways in, one place where a menu is built.
-4. **Hozzáadás** commits the composition to the active day — N copies if the portions stepper says
-   N, with the Extra quantities scaled by the same N. The form empties and its head now reads
+4. **Hozzáadás** commits the composition to the active day as one menu, and merges the Extra
+   quantities into the day. The form empties and its head now reads
    "2. menü összeállítása".
 5. The day's order fills in beside the form (above it on a phone); "Módosítás" pulls a menu back
    into the form, where it was built.
@@ -369,8 +366,7 @@ confirm or reject:
     belong inline, and the catalogue below already lists them all.
 12. **The sauces and bread are offered inside the form but land on the day.** They are `order_extras`
     rows with a quantity, not menu slots, so the form holds them until "Hozzáadás" and then merges
-    them into the active day, multiplied by the portions count — three identical lunches want three
-    breads. The box is not offered here: it is packaging, it belongs to the day, and it already has
+    them into the active day. The box is not offered here: it is packaging, it belongs to the day, and it already has
     its own row in the extras category. **Watch this in O6:** those same two extras can also be
     changed from the extras category below, so two controls write one number. They agree, because
     they write the same state — but if it grates, the form's copies are the ones to drop.

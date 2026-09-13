@@ -138,9 +138,6 @@ export const strings = {
     soupSurchargeWhy: 'A leves csak a napi főételek árában van benne.',
     priceTotal: 'Menü ára',
     add: 'Hozzáadás',
-    addMany: (n: number) => n + ' adag hozzáadása',
-    portions: 'adag',
-    portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba.',
     save: 'Módosítás mentése',
     cancel: 'Mégsem',
     pickerTitle: (slot: string) => slot + ' választása',
@@ -264,8 +261,5 @@ export const strings = {
   one: the day's order numbers them (`cart.menuNumber`). Decided 2026-09-07; PLAN.md §2 and §3 have
   not caught up yet — see README.md.
 - **"Elfogyott", not "Nem elérhető".** It is what the kitchen says on the phone.
-- **`composer.portions` is `adag`, not `db`.** You order portions of a lunch, not pieces of a
-  product. `addMany(3)` reads "3 adag hozzáadása" — it says what the button will do, in the plural
-  the guest already sees on the stepper.
 - **The e-mail address is repeated on the success screen.** A mistyped address is the most common
   reason a confirmation never arrives, and it is the only moment the guest can still notice it.

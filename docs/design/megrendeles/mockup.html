@@ -1524,9 +1524,6 @@
         font-weight: 600;
         color: var(--ink-500);
       }
-      .foot-top .stepper {
-        margin-left: auto;
-      }
       .foot-actions {
         display: flex;
         gap: var(--s-2);
@@ -2109,9 +2106,6 @@
           soupSurchargeWhy: 'A leves csak a napi főételek árában van benne.',
           priceTotal: 'Menü ára',
           add: 'Hozzáadás',
-          addMany: (n) => n + ' adag hozzáadása',
-          portions: 'adag',
-          portionsHelp: 'Ugyanez a menü több adagban — mindegyik külön sorként kerül a kosárba.',
           save: 'Módosítás mentése',
           cancel: 'Mégsem',
           pickerTitle: (slot) => slot + ' választása',
@@ -3239,7 +3233,6 @@
         const mainItem = c.main ? ITEMS[c.main] : null;
         const needsVariation = !!(mainItem && mainItem.variations);
         const needsSide = !!(mainItem && mainItem.requiresSide);
-        const portions = c.portions || 1;
 
         /**
          * The main is the only slot that still opens a picker, so it is the only one
@@ -3513,7 +3506,7 @@
                 : '') +
               '</div>'
             : '') +
-          (portions > 1 ? '<p class="help">' + esc(S.composer.portionsHelp) + '</p>' : '');
+''; 
 
         const invalid = p.errors.length > 0;
         const empty = p.errors.includes('empty') && !extrasTotal;
@@ -3525,24 +3518,10 @@
               ? S.composer.unanswered
               : S.composer.emptyMenu;
 
-        const addTotal = (p.total + extrasTotal) * portions;
         const foot =
           '<div class="foot-top"><span class="foot-price num">' +
-          money(addTotal) +
-          (portions > 1
-            ? '<small>' + esc(money(p.total + extrasTotal) + ' × ' + portions) + '</small>'
-            : '') +
-          '</span><span class="stepper"><button type="button" aria-label="' +
-          esc(S.extras.less) +
-          '" data-portions="-1"' +
-          (portions > 1 ? '' : ' disabled') +
-          '>−</button><span class="qty num">' +
-          portions +
-          ' ' +
-          esc(S.composer.portions) +
-          '</span><button type="button" aria-label="' +
-          esc(S.extras.more) +
-          '" data-portions="1">+</button></span></div>' +
+          money(p.total + extrasTotal) +
+          '</span></div>' +
           (invalid && !empty ? '<p class="error">' + esc(errorText) + '</p>' : '') +
           '<div class="foot-actions">' +
           (empty
@@ -3553,7 +3532,7 @@
           '<button type="button" class="btn btn-primary"' +
           (invalid ? ' aria-disabled="true" disabled' : ' data-add="1"') +
           '>' +
-          esc(portions > 1 ? S.composer.addMany(portions) : S.composer.add) +
+          esc(S.composer.add) +
           '</button></div>';
 
         const menuNo = (vm.cart.find((d) => d.date === date) || { menus: [] }).menus.length + 1;
@@ -4023,7 +4002,6 @@
       const addedMenu = (o) => composedMenu({ soup: null, pickle: null, dessert: null, ...o });
 
       const composedMenu = (o) => ({
-        portions: 1,
         extras: {},
         main: null,
         variation: null,
@@ -4193,23 +4171,6 @@
                 side: permItem('Steak burgonya'),
                 dessert: permItem('Almás pite'),
                 pickle: null,
-              }),
-            }),
-        },
-        {
-          id: 'composer-portions',
-          label: '2b · Űrlap — több adag ugyanabból',
-          note: 'A referenciából átvett mennyiség-léptető. Háromszor ugyanaz a menü: egy összeállítás, három kosársor — mindegyik külön <code>order_menus</code> sor. Így a konyha darabszámot lát, nem egy „×3” jelölést, amit el lehet nézni.',
-          vm: () =>
-            baseVm({
-              cart: cartFull(),
-              composer: composedMenu({
-                soup: dayItem(WED, 'Húsleves cérnametélttel'),
-                main: dayItem(WED, 'Sertéssült'),
-                side: permItem('Főtt burgonya'),
-                pickle: permItem('Csemege uborka'),
-                dessert: null,
-                portions: 3,
               }),
             }),
         },
@@ -4639,7 +4600,7 @@
         hideTips();
         if (vm) vm.tip = null;
 
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-portions],[data-mealextra],[data-reset],[data-edit]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-jump],[data-mealextra],[data-reset],[data-edit]');
         if (!el || !vm) return;
         const d = el.dataset;
         let jumpTo = null;
@@ -4660,15 +4621,13 @@
         } else if (d.edit !== undefined) {
           // Editing pulls the menu back into the form, where it was built.
           const day = vm.cart.find((x) => x.date === vm.activeDate);
-          vm.composer = { ...day.menus[Number(d.edit)], portions: 1, extras: {} };
+          vm.composer = { ...day.menus[Number(d.edit)], extras: {} };
           day.menus.splice(Number(d.edit), 1);
           dropDayIfEmpty(day);
         } else if (d.mealextra) {
           const next = { ...(vm.composer.extras || {}) };
           next[d.mealextra] = Math.max(0, (next[d.mealextra] || 0) + Number(d.delta));
           vm.composer.extras = next;
-        } else if (d.portions) {
-          vm.composer.portions = Math.max(1, (vm.composer.portions || 1) + Number(d.portions));
         } else if (d.day) {
           vm.activeDate = d.day;
         } else if (d.compose) {
@@ -4697,21 +4656,18 @@
           vm.picker = { slot: d.slot };
           vm.overlay = 'picker';
         } else if (d.add) {
-          const n = vm.composer.portions || 1;
           const day = cartDay();
-          for (let k = 0; k < n; k++) {
-            const menu = { ...vm.composer, portions: 1 };
-            for (const slot of ['soup', 'pickle', 'dessert']) {
-              if (menu[slot] === undefined) menu[slot] = null;
-            }
-            menu.extras = undefined;
-            day.menus.push(menu);
+          const menu = { ...vm.composer };
+          for (const slot of ['soup', 'pickle', 'dessert']) {
+            if (menu[slot] === undefined) menu[slot] = null;
           }
+          menu.extras = undefined;
+          day.menus.push(menu);
           for (const [key, qty] of Object.entries(vm.composer.extras || {})) {
             if (!qty) continue;
             let e = day.extras.find((x) => x.key === key);
             if (!e) day.extras.push((e = { key, qty: 0 }));
-            e.qty += qty * n;
+            e.qty += qty;
           }
           vm.composer = composedMenu({});
           vm.overlay = null;
