@@ -26,6 +26,25 @@ describe('core', () => {
     );
   });
 
+  it('exports the menu domain', () => {
+    expect(Object.keys(core)).toEqual(
+      expect.arrayContaining([
+        'slots',
+        'isCategory',
+        'isAllergenCode',
+        'isWeeklyCategory',
+        'slotsForCategory',
+        'categoriesForSlot',
+        'validateMenuItem',
+        'priceFor',
+        'firstOrderableDay',
+        'orderWindow',
+        'isOrderable',
+        'buildPublicMenu',
+      ]),
+    );
+  });
+
   it('labels every allergen and category in Hungarian', () => {
     expect(Object.keys(core.allergenLabelsHu)).toEqual([...core.allergenCodes]);
     expect(Object.keys(core.categoryLabelsHu)).toEqual([
