@@ -1060,14 +1060,16 @@
         line-height: 1;
         flex: none;
       }
+      /* Mobile first: the form runs edge to edge. Inside a 375 px screen a card
+         border, the screen's padding and the body's padding stacked three insets
+         before a choice row began. Only the top and bottom rules stay. */
       .composer-form {
         display: flex;
         flex-direction: column;
+        margin-inline: calc(var(--s-4) * -1);
         background: var(--ground);
-        border: 1px solid var(--line-strong);
-        border-radius: var(--radius);
+        border-block: 1px solid var(--line-strong);
         overflow: hidden;
-        box-shadow: var(--shadow-1);
         scroll-margin-top: 150px;
       }
       .cf-head {
@@ -1605,6 +1607,13 @@
          mockup reacts to the device frame, not to the reviewer's window.
          ====================================================================== */
       @container app (min-width: 900px) {
+        /* On desktop the form is a card again, beside the day's order. */
+        .composer-form {
+          margin-inline: 0;
+          border: 1px solid var(--line-strong);
+          border-radius: var(--radius);
+          box-shadow: var(--shadow-1);
+        }
         .masthead {
           height: 96px;
           padding: 0 var(--s-8);

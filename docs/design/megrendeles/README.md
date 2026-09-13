@@ -88,7 +88,7 @@ rather than another box, and only sheets get a real shadow.
 ### Layout
 
 **Mobile (375).** One column. Sticky masthead; the day strip under it scrolls away with the page; then — in this order —
-alerts, **the composer form**, the day's order. A sticky bottom bar carries the running total and the only way forward; tapping
+alerts, **the composer form**, which runs edge to edge with no card border, the day's order. A sticky bottom bar carries the running total and the only way forward; tapping
 **Részletek** expands the full per-day breakdown in place. Only the main-course chooser is a bottom
 sheet; every other choice is open on the page.
 
