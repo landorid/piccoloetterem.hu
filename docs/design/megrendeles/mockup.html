@@ -2948,6 +2948,9 @@
           0,
         );
 
+        /* A quantity is set with − and + only. The number between them is text, never an
+           input: no keyboard pops up on a phone, and nothing can be typed outside 0..20. */
+        const MAX_QTY = 20;
         const mealExtraRow = (x) => {
           const qty = pendingExtras[x.key] || 0;
           return (
@@ -2965,13 +2968,15 @@
             x.key +
             '" data-delta="-1"' +
             (qty ? '' : ' disabled') +
-            '>−</button><span class="qty num">' +
+            '>−</button><span class="qty num" aria-live="polite">' +
             qty +
             '</span><button type="button" aria-label="' +
             esc(S.extras.moreOf(x.name)) +
             '" data-mealextra="' +
             x.key +
-            '" data-delta="1">+</button></span></div>'
+            '" data-delta="1"' +
+            (qty >= MAX_QTY ? ' disabled' : '') +
+            '>+</button></span></div>'
           );
         };
         /**
@@ -4086,7 +4091,7 @@
           dropDayIfEmpty(day);
         } else if (d.mealextra) {
           const next = { ...(vm.composer.extras || {}) };
-          next[d.mealextra] = Math.max(0, (next[d.mealextra] || 0) + Number(d.delta));
+          next[d.mealextra] = Math.min(20, Math.max(0, (next[d.mealextra] || 0) + Number(d.delta)));
           vm.composer.extras = next;
         } else if (d.day) {
           vm.activeDate = d.day;

@@ -395,6 +395,12 @@ confirm or reject:
     voluntary text; whether the restaurant wants it somewhere else, for example in the e-mail, is its
     call. `config.allergenNotice` (PLAN.md §3) has no reader on this page any more. Soup rows, the
     main-course row and the main-course picker also lose their tile, so the name leads.
+19. **Quantities are set with − and + only.** Dávid, 2026-09-13. Wherever a count is chosen — today
+    the Extra steppers in the form — there are two buttons and the number between them is plain text,
+    never an input. No keyboard opens on a phone, nothing out of range can be typed, and the control
+    reads the same everywhere. − is disabled at 0 and + at 20, the limit O1 and O3 already validate.
+    The number is announced politely to screen readers when it changes. **For O6:** do not build
+    this as `<input type="number">` with buttons around it.
 
 ## Follow-ups this mockup suggests
 
