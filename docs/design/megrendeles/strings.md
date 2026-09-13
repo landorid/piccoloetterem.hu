@@ -64,7 +64,6 @@ export const strings = {
     sideExtras: 'Feláras köretek',
   },
   dish: {
-    soupIncluded: 'A menü ára tartalmazza',
     soldOut: 'Elfogyott',
   },
   allergens: {

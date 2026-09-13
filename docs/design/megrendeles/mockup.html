@@ -1769,7 +1769,6 @@
           sideExtras: 'Feláras köretek',
         },
         dish: {
-          soupIncluded: 'A menü ára tartalmazza',
           soldOut: 'Elfogyott',
         },
         allergens: {
@@ -2202,7 +2201,6 @@
             slot: S.composer.slots.soup,
             what: soupItem.name,
             amount: 0,
-            note: includesSoup ? S.dish.soupIncluded : null,
           });
         }
         if (mainItem) {
@@ -2929,7 +2927,7 @@
               '"><span>' +
               esc(l.what) +
               '</span><span class="amt num">' +
-              (l.amount === 0 ? (l.note ? esc(l.note) : money(0)) : l.adj ? signed(l.amount) : money(l.amount)) +
+              (l.adj ? signed(l.amount) : money(l.amount)) +
               '</span></div>' +
               (l.why ? '<div class="why">' + esc(l.why) + '</div>' : ''),
           )
@@ -3100,7 +3098,7 @@
                   const amount =
                     it.cat === 'daily_soup'
                       ? c.main && ITEMS[c.main].soupIncluded
-                        ? S.dish.soupIncluded
+                        ? money(0)
                         : signed(CFG.pricing.soupPrice)
                       : priceOf(it, date) === 0
                         ? money(0)
