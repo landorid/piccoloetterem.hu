@@ -16,7 +16,6 @@ Merge it with what is already in `strings.ts`: keep `siteName`, replace the `ord
    restaurant will have different ones:
    | Key in this file | Real home |
    |---|---|
-   | `allergens.notice` | `config.allergenNotice` |
    | `errors.nextWeekBody` | `config.messages.nextWeekNotPublished` |
    | `errors.emptyWeekBody` | new `config.messages.*` entry — see the note in README.md |
    | extras names (`Éthordó doboz`, `Kenyér`, `Ketchup`, `Tartármártás`) | `config.extras[].name` |
@@ -69,13 +68,9 @@ export const strings = {
     soldOut: 'Elfogyott',
   },
   allergens: {
-    link: 'Allergének',
-    title: 'Allergén tájékoztató',
-    codesLabel: 'Allergének:',
     tip: (n: number, name: string) => n + ' · ' + name,
     more: (n: number) => '+' + n,
     moreLabel: (names: string) => 'További allergének: ' + names,
-    notice: 'Az ételek allergénjeit a fogás neve alatt ikonokkal jelöljük — az ikonra koppintva kiírjuk a nevét. A konyhánkban glutént, tejet, tojást, szóját, diót, zellert és halat is használunk, ezért a nyomokban való előfordulás egyetlen fogásnál sem zárható ki. Ha allergiád van, a rendelés leadása előtt hívj minket.',
     list: [
       'Glutént tartalmazó gabonák',
       'Rákfélék',
@@ -141,9 +136,6 @@ export const strings = {
   },
   extras: {
     title: 'Extrák',
-    hint: 'Naponta, az adott nap rendeléséhez.',
-    less: 'Kevesebb',
-    more: 'Több',
     lessOf: (name: string) => 'Kevesebb: ' + name,
     moreOf: (name: string) => 'Több: ' + name,
     unitPrice: (p: string) => p + ' / db',

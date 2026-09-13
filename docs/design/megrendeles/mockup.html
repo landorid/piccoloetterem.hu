@@ -676,57 +676,6 @@
 
       /* The legend in the sheet: the same disc next to the number and the name, so the
          two representations teach each other. */
-      .alist {
-        display: flex;
-        flex-direction: column;
-      }
-      .alist-row {
-        display: flex;
-        align-items: center;
-        gap: var(--s-3);
-        min-height: var(--tap);
-        padding: var(--s-1) 0;
-        border-top: 1px solid var(--line);
-        font-size: var(--t-md);
-      }
-      .alist-row:first-child {
-        border-top: 0;
-      }
-      .alist-row .achip {
-        margin: 0;
-      }
-      .alist-row .num {
-        flex: none;
-        width: 20px;
-        text-align: right;
-        color: var(--ink-500);
-        font-size: var(--t-sm);
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-      }
-      .alist-row .what {
-        flex: 1;
-        min-width: 0;
-      }
-      .allergen-note {
-        display: flex;
-        gap: var(--s-2);
-        padding: var(--s-3);
-        border: 1px dashed var(--line-strong);
-        border-radius: var(--radius);
-        background: var(--brand-50);
-        font-size: var(--t-sm);
-        color: var(--ink-700);
-        line-height: 1.5;
-      }
-      .allergen-note button {
-        border: 0;
-        background: none;
-        padding: 0;
-        color: var(--brand-700);
-        font-weight: 700;
-        text-decoration: underline;
-      }
 
       /* --- buttons ------------------------------------------------------------- */
       .btn {
@@ -1748,10 +1697,6 @@
           grid-column: 1;
           grid-row: 2;
         }
-        .screen-menu > .col-main {
-          grid-column: 1;
-          grid-row: 3;
-        }
         .screen-menu > .rail {
           grid-column: 2;
           grid-row: 2 / span 2;
@@ -1828,14 +1773,9 @@
           soldOut: 'Elfogyott',
         },
         allergens: {
-          link: 'Allergének',
-          title: 'Allergén tájékoztató',
-          codesLabel: 'Allergének:',
           tip: (n, name) => n + ' · ' + name,
           more: (n) => '+' + n,
           moreLabel: (names) => 'További allergének: ' + names,
-          notice:
-            'Az ételek allergénjeit a fogás neve alatt ikonokkal jelöljük — az ikonra koppintva kiírjuk a nevét. A konyhánkban glutént, tejet, tojást, szóját, diót, zellert és halat is használunk, ezért a nyomokban való előfordulás egyetlen fogásnál sem zárható ki. Ha allergiád van, a rendelés leadása előtt hívj minket.',
           list: [
             'Glutént tartalmazó gabonák',
             'Rákfélék',
@@ -1901,9 +1841,6 @@
         },
         extras: {
           title: 'Extrák',
-          hint: 'Naponta, az adott nap rendeléséhez.',
-          less: 'Kevesebb',
-          more: 'Több',
           lessOf: (name) => 'Kevesebb: ' + name,
           moreOf: (name) => 'Több: ' + name,
           unitPrice: (p) => p + ' / db',
@@ -2607,37 +2544,13 @@
         );
       }
 
-      /**
-       * One extra as a row: with a stepper in the day's order, where it is added and
-       * changed, or as a priced line (name × qty). Same anatomy and the same strings
-       * either way, so the two can never disagree.
-       */
-      function ExtraRow(x, qty, opts = {}) {
-        const step = !!opts.stepper;
+      /** One extra as a priced line: name × quantity and the line total. */
+      function ExtraRow(x, qty) {
         return (
-          '<div class="' +
-          cls('extra', step && qty && 'is-on') +
-          '"><span class="name">' +
-          esc(step ? x.name : x.name + ' × ' + qty) +
-          (step ? '<small>' + esc(S.extras.unitPrice(money(x.price))) + '</small>' : '') +
-          '</span>' +
-          (step
-            ? '<span class="stepper"><button type="button" aria-label="' +
-              esc(S.extras.lessOf(x.name)) +
-              '" data-extra="' +
-              x.key +
-              '" data-delta="-1"' +
-              (qty ? '' : ' disabled') +
-              '>−</button><span class="qty num">' +
-              qty +
-              '</span><button type="button" aria-label="' +
-              esc(S.extras.moreOf(x.name)) +
-              '" data-extra="' +
-              x.key +
-              '" data-delta="1">+</button></span>'
-            : '') +
-          '<span class="amt num">' +
-          (qty ? money(qty * x.price) : '—') +
+          '<div class="extra"><span class="name">' +
+          esc(x.name + ' × ' + qty) +
+          '</span><span class="amt num">' +
+          money(qty * x.price) +
           '</span></div>'
         );
       }
@@ -2652,19 +2565,13 @@
           esc(cap(dayFull(vm.activeDate))) +
           '</span></div>';
 
-        // The day's order is where extras live (#58): every one, the box included, as a
-        // stepper for the active day — but only once the day holds a menu. An empty
-        // day's card says one thing, and a box or a bread belongs to a lunch.
-        const qtyOf = (key) =>
-          (((day && day.extras) || []).find((e) => e.key === key) || {}).qty || 0;
+        // The day's extras as plain priced lines under the menus: no heading and no
+        // stepper, because they are changed in the form ("Módosítás" brings them back
+        // there). They are listed at all because the food subtotal counts them.
         const extras =
-          '<div class="extras"><div class="section-h"><h2 style="font-size:var(--t-base)">' +
-          esc(S.extras.title) +
-          '</h2><span class="hint">' +
-          esc(S.extras.hint) +
-          '</span></div><div class="extra-list">' +
-          CFG.extras.map((x) => ExtraRow(x, qtyOf(x.key), { stepper: true })).join('') +
-          '</div></div>';
+          priced && priced.extras.length
+            ? '<div class="extras">' + priced.extras.map((x) => ExtraRow(x, x.qty)).join('') + '</div>'
+            : '';
         const empty =
           '<div class="cart-empty"><p><b>' +
           esc(S.cart.empty) +
@@ -2861,8 +2768,7 @@
           const item = c.main ? ITEMS[c.main] : null;
           const line = p.lines.find((l) => l.slot === S.composer.slots.main);
           const inner = item
-            ? Tile(item) +
-              '<span class="pbody"><span class="pname">' +
+            ? '<span class="pbody"><span class="pname">' +
               esc(item.name) +
               (item.soldOut
                 ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>'
@@ -2874,8 +2780,7 @@
                 ? '<span class="psub">' + allergenCodes(item, 'pick') + '</span>'
                 : '') +
               '</span>'
-            : Tile(null) +
-              '<span class="pbody"><span class="placeholder">' +
+            : '<span class="pbody"><span class="placeholder">' +
               esc(S.composer.choose) +
               '</span></span>';
           return (
@@ -2908,7 +2813,7 @@
          * Every option is rendered; the block never scrolls on its own. Seven side
          * rows make a tall block, but a scroller inside the scrolling sheet would
          * hide the very options that are the usual reason the add button is disabled.
-         * noTile drops the tile for the variation block: a variation is a property of
+         * noTile drops the tile. Soups and mains carry none (Dávid, 2026-09-13), and for the variation block: a variation is a property of
          * the main course above it, not a dish of its own, and "Csirkemell" and
          * "Csirkecomb" would both draw a C.
          */
@@ -2979,6 +2884,7 @@
         const soupBlock = choiceRows(S.composer.slots.soup, {
           slot: 'soup',
           answerable: true,
+          noTile: true,
           hint: mainItem ? null : S.composer.soupHint,
           options: [
             ...WEEK.byDate[date].soups.map((s) => ({
@@ -3033,9 +2939,10 @@
          * Step 2 offers the things you eat *alongside* the lunch. Two of them are menu
          * slots (dessert, pickle); the sauces and bread are day-level extras with a quantity,
          * so they are held here and merged into the day when the menu is added. The box
-         * is not here: it is packaging, and it belongs to the day, not to a plate.
+         * is here too: since 2026-09-13 the form is the only place an extra is added or
+         * changed; the day's order only lists them.
          */
-        const MEAL_EXTRAS = ['ketchup', 'tartar', 'bread'];
+        const MEAL_EXTRAS = ['box', 'bread', 'ketchup', 'tartar'];
         const pendingExtras = c.extras || {};
         const mealExtras = CFG.extras.filter((x) => MEAL_EXTRAS.includes(x.key));
         const extrasTotal = mealExtras.reduce(
@@ -3179,7 +3086,6 @@
           '" data-pick="" data-slot="' +
           slot +
           '">' +
-          Tile(null) +
           '<span class="pbody"><span class="pname">' +
           esc(S.composer.none) +
           '</span></span><span class="pmark" aria-hidden="true">✓</span></button>';
@@ -3209,7 +3115,6 @@
                     '" data-slot="' +
                     slot +
                     '">' +
-                    Tile(it) +
                     '<span class="pbody"><span class="pname">' +
                     esc(it.name) +
                     (soldOut ? ' <span class="tag tag-soldout">' + esc(S.dish.soldOut) + '</span>' : '') +
@@ -3239,46 +3144,8 @@
 
       /* The legend now carries the pictogram next to the number and the name, so the
          sheet teaches the chips and the chips point back at the sheet. */
-      function AllergenSheet() {
-        const list = S.allergens.list
-          .map(
-            (name, i) =>
-              '<div class="alist-row"><span class="achip" aria-hidden="true"><span class="adisc">' +
-              allergenGlyph(i + 1) +
-              '</span></span><span class="num">' +
-              (i + 1) +
-              '</span><span class="what">' +
-              esc(name) +
-              '</span></div>',
-          )
-          .join('');
-        return Sheet(
-          S.allergens.title,
-          '',
-          '<p style="font-size:var(--t-md);line-height:1.6">' +
-            esc(S.allergens.notice) +
-            '</p><div class="card"><div class="card-body"><div class="alist">' +
-            list +
-            '</div></div></div>',
-          '<button type="button" class="btn btn-ghost btn-block" data-close-overlay>' +
-            esc(S.common.close) +
-            '</button>',
-        );
-      }
-
       /* --- screens --------------------------------------------------------- */
       function MenuScreen(vm) {
-        // The weekly menu is no longer listed below the form (#58); every dish is in
-        // the form or the main-course picker. The allergen notice stays: distance
-        // selling must make allergen information available before the purchase
-        // (EU Regulation 1169/2011, Art. 14).
-        const offer =
-          '<div class="allergen-note"><span aria-hidden="true">⚠</span><p>' +
-          esc(S.allergens.notice) +
-          ' <button type="button" data-open="allergens">' +
-          esc(S.allergens.link) +
-          '</button></p></div>';
-
         return (
           '<div class="screen screen-menu">' +
           '<div class="banners">' +
@@ -3288,9 +3155,6 @@
           '<div class="rail">' +
           CartCard(vm) +
           SummaryBar(vm, 'desktop') +
-          '</div>' +
-          '<div class="col-main">' +
-          offer +
           '</div>' +
           '</div>' +
           SummaryBar(vm, 'mobile')
@@ -3582,7 +3446,6 @@
 
         let overlay = '';
         if (vm.overlay === 'picker') overlay = PickerSheet(vm);
-        else if (vm.overlay === 'allergens') overlay = AllergenSheet();
 
         return (
           '<div class="app">' +
@@ -3719,7 +3582,7 @@
         {
           id: 'menu-extras',
           label: '2c · Extrák a nap rendelésében',
-          note: 'Az extrák — a doboz is — <b>a nap rendelésében</b> kaptak léptetőt, és csak akkor jelennek meg, ha a napon <b>már van menü</b>. Üres napon a kártya egyetlen dolgot mond: még nincs összeállított menü. Ha törlöd a nap utolsó menüjét, a nap extrái is vele mennek, hogy ne maradjon olyan tétel az összegben, amit a kártya nem mutat; a „Módosítás” nem viszi el őket.',
+          note: 'Az extrák — a doboz is — <b>az űrlap Extra blokkjában</b> kerülnek a naphoz, a menüvel együtt. A nap kártyáján <b>egyszerű sorok</b>: név × darab és ár, fejléc és léptető nélkül, mert az ételek összege tartalmazza őket. Módosítani az űrlapon lehet: a „Módosítás” a menüvel együtt a nap extráit is visszahúzza, a „Hozzáadás” pedig újra hozzáadja. Ha törlöd a nap utolsó menüjét, a nap extrái is vele mennek.',
           vm: () =>
             baseVm({
               activeDate: THU,
@@ -3739,14 +3602,8 @@
         {
           id: 'allergen-tip',
           label: '2a · Allergén — ikon és buborék',
-          note: 'Az allergének a saját piktogramjukkal állnak a fogás neve alatt — <b>az űrlap minden választósorában</b> és a főétel-választóban is. Eddig a heti kínálat listája mutatta a levesek, köretek, savanyúságok és desszertek allergénjeit; a lista lekerült, az allergéninformációnak viszont a rendelés előtt elérhetőnek kell lennie. Az ikon az, amit egy allergiás vendég keres; a szám a buborékba és a tájékoztató listájába került. A buborék rámutatásra, fókuszra <b>és koppintásra</b> is előjön. Három ikon után a többi egyetlen „+N” chipbe zárul — a főétel-választóban a Lasagne mutatja.',
+          note: 'Az allergének a saját piktogramjukkal állnak a fogás neve alatt — <b>az űrlap minden választósorában</b> és a főétel-választóban is. Eddig a heti kínálat listája mutatta a levesek, köretek, savanyúságok és desszertek allergénjeit; a lista lekerült, az allergéninformációnak viszont a rendelés előtt elérhetőnek kell lennie. Az ikon az, amit egy allergiás vendég keres; a szám a buborékba került. A buborék rámutatásra, fókuszra <b>és koppintásra</b> is előjön. Három ikon után a többi egyetlen „+N” chipbe zárul — a főétel-választóban a Lasagne mutatja.',
           vm: () => baseVm({ composer: composedMenu({ main: dayItem(WED, 'Rántott szelet') }), tip: 'pick:' + dayItem(WED, 'Rántott szelet') + ':7' }),
-        },
-        {
-          id: 'allergens',
-          label: '2a · Allergén tájékoztató',
-          note: 'A számkódok és a piktogramok feloldása egy listában — a kettő itt tanítja egymást. A tájékoztató szövege a <code>RestaurantConfig.allergenNotice</code>-ból jön.',
-          vm: () => baseVm({ cart: cartFull(), overlay: 'allergens' }),
         },
         {
           id: 'composer-required',
@@ -4212,7 +4069,7 @@
         hideTips();
         if (vm) vm.tip = null;
 
-        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-extra],[data-toggle],[data-go],[data-open],[data-mealextra],[data-reset],[data-edit]');
+        const el = ev.target.closest('[data-day],[data-compose],[data-slot],[data-pick],[data-close-overlay],[data-add],[data-remove],[data-toggle],[data-go],[data-mealextra],[data-reset],[data-edit]');
         if (!el || !vm) return;
         const d = el.dataset;
         let jumpTo = null;
@@ -4220,9 +4077,13 @@
         if (d.reset) {
           vm.composer = composedMenu({});
         } else if (d.edit !== undefined) {
-          // Editing pulls the menu back into the form, where it was built.
+          // Editing pulls the menu back into the form, where it was built — with the
+          // day's extras, because the form is the only place they can be changed.
           const day = vm.cart.find((x) => x.date === vm.activeDate);
-          vm.composer = { ...day.menus[Number(d.edit)], extras: {} };
+          const extras = {};
+          for (const e of day.extras || []) if (e.qty) extras[e.key] = e.qty;
+          vm.composer = { ...day.menus[Number(d.edit)], extras };
+          day.extras = [];
           day.menus.splice(Number(d.edit), 1);
           dropDayIfEmpty(day);
         } else if (d.mealextra) {
@@ -4234,8 +4095,6 @@
         } else if (d.compose) {
           vm.composer = composedMenu({});
           jumpTo = 'compose';
-        } else if (d.open === 'allergens') {
-          vm.overlay = 'allergens';
         } else if (d.pick !== undefined && d.slot) {
           vm.composer[d.slot] = d.pick || null;
           if (vm.overlay === 'picker') vm.overlay = null;
@@ -4269,12 +4128,6 @@
           // Extras only show beside a menu, so removing the day's last menu takes them
           // with it instead of leaving counted lines nobody can see. Editing does not.
           if (!day.menus.length) vm.cart = vm.cart.filter((c) => c !== day);
-        } else if (d.extra) {
-          const day = cartDay();
-          let e = day.extras.find((x) => x.key === d.extra);
-          if (!e) day.extras.push((e = { key: d.extra, qty: 0 }));
-          e.qty = Math.max(0, e.qty + Number(d.delta));
-          dropDayIfEmpty(day);
         } else if (d.toggle === 'summary') {
           vm.summaryOpen = !vm.summaryOpen;
         } else if (d.go) {
