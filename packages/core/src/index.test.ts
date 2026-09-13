@@ -17,7 +17,7 @@ describe('core', () => {
         'datesOfIsoWeek',
         'weekday',
         'isOperatingDay',
-        'isHoliday',
+        'isClosedDate',
         'isWeekendPrice',
         'formatDateHu',
         'weekLabel',

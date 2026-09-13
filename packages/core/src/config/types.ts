@@ -52,7 +52,6 @@ export interface RestaurantConfig {
   operatingDays: readonly Weekday[];
   /** Last weekday whose cutoff still accepts orders for the rest of the same week. */
   lastSameWeekOrderDay: Weekday;
-  allergenNotice: string;
   pricing: {
     noSoupDiscount: number;
     soupPrice: number;
@@ -61,12 +60,6 @@ export interface RestaurantConfig {
   };
   extras: readonly ExtraDef[];
   pickupEnabled: boolean;
-  messages: {
-    /** Shown when the roll-over reaches a next week that is not published yet. */
-    nextWeekNotPublished: string;
-    /** Shown when the current week is published but has nothing orderable. */
-    emptyWeek: string;
-  };
   email: { from: string; replyTo: string };
   contact: {
     address: string;
@@ -75,6 +68,4 @@ export interface RestaurantConfig {
     /** When orders are taken, `HH:mm`. `until` must equal `cutoff`; `loadConfig` enforces it. */
     intakeWindow: { from: string; until: string };
   };
-  /** ISO dates (`YYYY-MM-DD`) the restaurant is closed. */
-  holidays: readonly string[];
 }

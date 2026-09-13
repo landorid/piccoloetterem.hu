@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   datesOfIsoWeek,
   formatDateHu,
-  isHoliday,
+  isClosedDate,
   isOperatingDay,
   isoDate,
   isoWeekOf,
@@ -20,7 +20,6 @@ const HOUR = 3_600_000;
 const config = {
   timezone: tz,
   operatingDays: [1, 2, 3, 4, 5, 6],
-  holidays: ['2026-10-23', '2026-12-25'],
 } as const;
 
 /** A wall-clock moment in Budapest. `month` is 1-based. */
@@ -187,21 +186,27 @@ describe('ISO week boundaries', () => {
   });
 });
 
-describe('isHoliday', () => {
-  it('matches a configured holiday for the whole Budapest day', () => {
-    expect(isHoliday(bud(2026, 10, 23, 12), config)).toBe(true);
+describe('isClosedDate', () => {
+  const closedDates = ['2026-10-23', '2026-12-24'];
+
+  it('matches a closed date for the whole Budapest day', () => {
+    expect(isClosedDate(bud(2026, 10, 23, 12), tz, closedDates)).toBe(true);
     // 00:30 on Oct 23 in Budapest, still Oct 22 in UTC.
-    expect(isHoliday(new Date('2026-10-22T22:30:00Z'), config)).toBe(true);
-    expect(isHoliday(bud(2026, 10, 23, 23, 59), config)).toBe(true);
+    expect(isClosedDate(new Date('2026-10-22T22:30:00Z'), tz, closedDates)).toBe(true);
+    expect(isClosedDate(bud(2026, 10, 23, 23, 59), tz, closedDates)).toBe(true);
   });
 
   it('does not match the days around it', () => {
-    expect(isHoliday(bud(2026, 10, 22, 23, 59), config)).toBe(false);
-    expect(isHoliday(bud(2026, 10, 24), config)).toBe(false);
+    expect(isClosedDate(bud(2026, 10, 22, 23, 59), tz, closedDates)).toBe(false);
+    expect(isClosedDate(bud(2026, 10, 24), tz, closedDates)).toBe(false);
+  });
+
+  it('matches nothing when no date is closed', () => {
+    expect(isClosedDate(bud(2026, 10, 23), tz, [])).toBe(false);
   });
 
   it('is independent of isOperatingDay', () => {
-    // Friday 2026-10-23 is a holiday on an operating weekday.
+    // Friday 2026-10-23 is closed on an operating weekday.
     expect(isOperatingDay(bud(2026, 10, 23), config)).toBe(true);
   });
 });

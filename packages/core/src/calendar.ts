@@ -72,7 +72,7 @@ export function weekday(date: TZDate): Weekday {
   return (day === 0 ? 7 : day) as Weekday;
 }
 
-/** Whether the restaurant works on this weekday. Holidays are a separate check: `isHoliday`. */
+/** Whether the restaurant works on this weekday. Closed dates are a separate check: `isClosedDate`. */
 export function isOperatingDay(
   date: Date,
   config: Pick<RestaurantConfig, 'timezone' | 'operatingDays'>,
@@ -80,11 +80,12 @@ export function isOperatingDay(
   return config.operatingDays.includes(weekday(toZoned(date, config.timezone)));
 }
 
-export function isHoliday(
-  date: Date,
-  config: Pick<RestaurantConfig, 'timezone' | 'holidays'>,
-): boolean {
-  return config.holidays.includes(isoDate(toZoned(date, config.timezone)));
+/**
+ * Whether ordering is switched off for the calendar day of `date` in `tz`. `closedDates` are ISO
+ * dates (`YYYY-MM-DD`) set by staff; the caller loads them.
+ */
+export function isClosedDate(date: Date, tz: string, closedDates: readonly string[]): boolean {
+  return closedDates.includes(isoDate(toZoned(date, tz)));
 }
 
 /** Whether the weekend price applies: the date is a Saturday or a Sunday. */

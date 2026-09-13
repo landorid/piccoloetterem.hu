@@ -8,7 +8,7 @@ export { TZDate } from '@date-fns/tz';
 export {
   datesOfIsoWeek,
   formatDateHu,
-  isHoliday,
+  isClosedDate,
   isOperatingDay,
   isoDate,
   isoWeekOf,
