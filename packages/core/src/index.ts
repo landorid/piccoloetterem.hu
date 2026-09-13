@@ -33,3 +33,34 @@ export {
   type WeeklyCategory,
   weeklyCategories,
 } from './config/types';
+export { priceFor } from './menu/price';
+export { buildPublicMenu } from './menu/public';
+export {
+  categoriesForSlot,
+  type FieldErrors,
+  isAllergenCode,
+  isCategory,
+  isWeeklyCategory,
+  type MenuItemErrorCode,
+  slotsForCategory,
+  validateMenuItem,
+} from './menu/rules';
+export {
+  type MenuDay,
+  type MenuItem,
+  type MenuItemInput,
+  type MenuWeek,
+  type PublicMenu,
+  type PublicMenuDay,
+  type ScheduleEntry,
+  type Slot,
+  slots,
+} from './menu/types';
+export {
+  firstOrderableDay,
+  type IsPublished,
+  isOrderable,
+  type OrderWindow,
+  orderWindow,
+  type WindowConfig,
+} from './menu/window';
