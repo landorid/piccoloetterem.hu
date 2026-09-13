@@ -2093,7 +2093,7 @@
           requiredSuffix: 'kötelező',
           soupHint: 'A napi főételek ára tartalmazza a levest.',
           answerSuffix: 'válassz',
-          unanswered: 'Válaszolj a jelölt kérdésekre — a „Nem kérek” is válasz.',
+          unanswered: 'Válassz levest — a „Nem kérek” is válasz.',
           formTitle: (n) => n + '. menü összeállítása',
           reset: 'Ürítés',
           mealExtras: 'Extra',
@@ -2527,12 +2527,10 @@
 
         if (mainItem && mainItem.variations && !m.variation) errors.push('variation');
         if (mainItem && mainItem.requiresSide && !m.side) errors.push('side');
-        /* Soup, pickle and dessert carry no default. The guest answers each one —
-           picking a dish or picking "Nem kérek" — so nothing is ordered, or skipped,
-           by a checkbox nobody looked at. */
-        for (const slot of ['soup', 'pickle', 'dessert']) {
-          if (m[slot] === undefined) errors.push('unanswered:' + slot);
-        }
+        /* The soup carries no default: its answer moves the price (included, −100,
+           or +650), so the guest settles it — a dish or "Nem kérek". Pickle and
+           dessert are plain add-ons and start on "Nem kérek". */
+        if (m.soup === undefined) errors.push('unanswered:soup');
         if (!soupItem && !mainItem && !m.side && !m.pickle && !m.dessert) errors.push('empty');
 
         return { lines, total: lines.reduce((s, l) => s + l.amount, 0), errors };
@@ -3471,7 +3469,6 @@
           sideBlock +
           choiceRows(S.composer.slots.pickle, {
             slot: 'pickle',
-            answerable: true,
             options: [
               ...WEEK.pickles.map((i) => ({
                 id: i.id,
@@ -3483,7 +3480,6 @@
           }) +
           choiceRows(S.composer.slots.dessert, {
             slot: 'dessert',
-            answerable: true,
             options: [
               ...WEEK.desserts.map((i) => ({
                 id: i.id,
@@ -4032,6 +4028,8 @@
         main: null,
         variation: null,
         side: null,
+        pickle: null,
+        dessert: null,
         ...o,
       });
 
@@ -4120,7 +4118,7 @@
         {
           id: 'menu-empty',
           label: '2a+2b · Az első képernyő — üres űrlap',
-          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. Alatta megmarad a kínálat böngészhető listája: ott is koppinthatsz egy fogásra, és beleesik az űrlapba. <b>Semmi nincs előre bejelölve</b>: a levesre, a desszertre és a savanyúságra külön-külön válaszolni kell, és a „Nem kérek” a lista <i>végén</i> áll, nem az elején. Amíg egy kérdés nyitva van, a címkéje pirosan „· válassz”, és a „Hozzáadás” tiltva. Hétfő és kedd már lezárult (áthúzva), a kiszállítási díj és a minimum a fejlécben.',
+          note: 'Ez az, amit a vendég reggel lát: <b>egy üres űrlap az 1. menühöz</b>, ahogy a régi oldalon is. Nem kell böngészni, nem nyílik modal — csak kiválasztod, mit kérsz. A főétel tömör sor + választólap (11 fogás három kategóriából), minden más ki van nyitva. Alatta megmarad a kínálat böngészhető listája: ott is koppinthatsz egy fogásra, és beleesik az űrlapba. <b>A levest nem jelöljük be előre</b>: arra válaszolni kell, mert a válasz az árat is mozgatja — amíg nyitva van, a címkéje pirosan „· válassz”, és a „Hozzáadás” tiltva. A savanyúság és a desszert <b>„Nem kérek”-kel indul</b>. A „Nem kérek” mindenhol a lista <i>végén</i> áll. Hétfő és kedd már lezárult (szürke), a kiszállítási díj és a minimum a fejlécben.',
           vm: () => baseVm({}),
         },
         {

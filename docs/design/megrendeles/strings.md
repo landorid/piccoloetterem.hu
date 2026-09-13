@@ -122,7 +122,7 @@ export const strings = {
     requiredSuffix: 'kötelező',
     soupHint: 'A napi főételek ára tartalmazza a levest.',
     answerSuffix: 'válassz',
-    unanswered: 'Válaszolj a jelölt kérdésekre — a „Nem kérek” is válasz.',
+    unanswered: 'Válassz levest — a „Nem kérek” is válasz.',
     formTitle: (n: number) => n + '. menü összeállítása',
     reset: 'Ürítés',
     mealExtras: 'Extra',

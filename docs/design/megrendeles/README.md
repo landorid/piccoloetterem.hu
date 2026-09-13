@@ -203,7 +203,7 @@ What we deliberately did **not** take:
 | Főétel | 11, across three categories | **its own row + picker** — too many to inline. The row has two faces: a prompt before it is answered, and afterwards the dish itself, drawn exactly like any other chosen course — same border, tint and filled check. Only the prompt carries a chevron, since that is where it helps: this is the one row that opens a picker. |
 | Változat | 2–3 | **choice rows**, without tiles — a variation is a property of the main course above it, not a dish of its own, and `Csirkemell` / `Csirkecomb` would both draw a `C`. |
 | Köret | 7 | **choice rows** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
-| Savanyúság, Desszert | 3 + "Nem kérek" each | **choice rows**, open on the page like the rest. Neither carries a default, so each has to be answered — see the forced-choice note below. |
+| Savanyúság, Desszert | 3 + "Nem kérek" each | **choice rows**, open on the page like the rest, **starting on "Nem kérek"** — see decision 14. |
 
 A required block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
 
@@ -381,24 +381,22 @@ confirm or reject:
     because filling it in is the job of that screen and the reference's arrangement is a tablet
     layout. One line of CSS moves the rail to the left if Dávid prefers the reference exactly.
 
-14. **Nothing is pre-selected, and "Nem kérek" is the last option.** Dávid's call, 2026-09-07.
-    Soup, dessert and pickle each open unanswered; the guest picks a dish *or* picks "Nem kérek",
-    and until every one is settled the block's label reads `· válassz` in red and "Hozzáadás" is
-    disabled. Three things follow.
-    **(a) Why it is likely to lift the order.** A pre-checked "Nem kérek" sitting first is a default
-    nobody reads — it answers the question before it is asked, and the eye moves on. Removing it
-    forces the options into view once per menu. The strongest case is the **soup**: beside a daily
-    main it is included, and declining it only takes 100 Ft off, so a guest who skipped past a
-    pre-checked "Nem kérek" was leaving a nearly free course on the table. Dessert (590–690 Ft) and
-    pickle (250 Ft) are straight upsell, and that is where the revenue would come from.
-    **(b) What it costs.** Three taps per menu that nobody paid before, on a page whose users are
-    regulars ordering the same lunch inside a two-hour window. Forced choice hurts habitual repeat
-    users most, which is exactly this audience. The number to watch is not attach rate on its own
-    but attach rate *against* completed orders per week — analytics is on the backlog.
-    **(c) The cheaper half, if it turns out to hurt.** Keep the forced answer on the soup, where a
-    real price consequence hangs on it, and let dessert and pickle open unanswered without blocking.
-    That keeps the attention effect and gives back two of the three taps. It is one line: drop those
-    two slots from the `unanswered:` check in `priceMenu`.
+14. **Only the soup has to be answered; pickle and dessert start on "Nem kérek".** "Nem kérek"
+    is the last option in every list.
+    On 2026-09-07 Dávid asked for no default on soup, dessert and pickle alike, so each had to be
+    answered before "Hozzáadás" enabled. On 2026-09-13 he reversed it for **pickle and dessert**:
+    they now open with "Nem kérek" selected. The soup keeps the forced answer — its block reads
+    `LEVES · VÁLASSZ` in red until settled, and the footer says `Válassz levest — a „Nem kérek” is
+    válasz.`
+    **Why the split is the right one.** The soup is the slot where an answer moves the price —
+    included beside a daily main, −100 Ft if declined, +650 Ft beside an all-week dish — so a
+    pre-checked answer there would decide money on the guest's behalf. Pickle (250 Ft) and dessert
+    (590–690 Ft) are plain add-ons with no such interplay. Forcing them cost two taps per menu on a
+    page used by regulars inside a two-hour window, which is the friction Dávid had already flagged.
+    The trade: some upsell attention on dessert and pickle is given back. If analytics later shows
+    attach rate on those two matters more than completion speed, it is one line to restore —
+    add them back to the `unanswered:` check in `priceMenu` and drop their defaults in
+    `composedMenu`.
 15. **The main course prompts "Válassz", not "Nem kérek".** The row is not offering to decline a
     main; it is asking for one. A menu without a main is still valid — the soup-only case in
     decision 9 — but that is reached by choosing a soup, not by declining the main.
