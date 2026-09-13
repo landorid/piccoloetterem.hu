@@ -9,6 +9,7 @@
     "includes": [
       "**",
       "!docs/design",
+      "!packages/db/drizzle",
       "!**/dist",
       "!**/.astro",
       "!**/.wrangler",
