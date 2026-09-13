@@ -935,8 +935,11 @@
         border-radius: 999px;
         background: var(--paper);
       }
-      .stepper button {
-        width: var(--tap);
+      .stepper button,
+      .stepper-add {
+        position: relative;
+        flex: none;
+        width: 36px;
         height: 36px;
         border: 0;
         background: none;
@@ -945,12 +948,27 @@
         color: var(--brand-700);
         border-radius: 999px;
       }
+      /* The visible button is 36 px; the tap area stays 44 px tall. */
+      .stepper button::before,
+      .stepper-add::before {
+        content: '';
+        position: absolute;
+        inset: -4px 0;
+      }
+      .stepper-add {
+        border: 1px solid var(--line-strong);
+        border-radius: 999px;
+        background: var(--paper);
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--brand-700);
+      }
       .stepper button[disabled] {
         color: var(--ink-400);
         cursor: not-allowed;
       }
       .stepper .qty {
-        min-width: 26px;
+        min-width: 20px;
         text-align: center;
         font-weight: 700;
       }
@@ -1164,6 +1182,8 @@
         gap: 2px;
       }
       .pickrow .pname {
+        overflow-wrap: anywhere;
+        hyphens: auto;
         font-family: var(--font-display);
         font-size: var(--t-base);
         font-weight: 500;
@@ -2949,7 +2969,9 @@
         );
 
         /* A quantity is set with − and + only. The number between them is text, never an
-           input: no keyboard pops up on a phone, and nothing can be typed outside 0..20. */
+           input: no keyboard pops up on a phone, and nothing can be typed outside 0..20.
+           At 0 the row shows a single +; the − and the number appear from 1, so an
+           untouched extra takes one button's width instead of a whole stepper's. */
         const MAX_QTY = 20;
         const mealExtraRow = (x) => {
           const qty = pendingExtras[x.key] || 0;
@@ -2962,21 +2984,27 @@
             esc(x.name) +
             '</span><span class="pamt num">' +
             esc(S.extras.unitPrice(money(x.price))) +
-            '</span></span><span class="stepper"><button type="button" aria-label="' +
-            esc(S.extras.lessOf(x.name)) +
-            '" data-mealextra="' +
-            x.key +
-            '" data-delta="-1"' +
-            (qty ? '' : ' disabled') +
-            '>−</button><span class="qty num" aria-live="polite">' +
-            qty +
-            '</span><button type="button" aria-label="' +
-            esc(S.extras.moreOf(x.name)) +
-            '" data-mealextra="' +
-            x.key +
-            '" data-delta="1"' +
-            (qty >= MAX_QTY ? ' disabled' : '') +
-            '>+</button></span></div>'
+            '</span></span>' +
+            (qty
+              ? '<span class="stepper"><button type="button" aria-label="' +
+                esc(S.extras.lessOf(x.name)) +
+                '" data-mealextra="' +
+                x.key +
+                '" data-delta="-1">−</button><span class="qty num" aria-live="polite">' +
+                qty +
+                '</span><button type="button" aria-label="' +
+                esc(S.extras.moreOf(x.name)) +
+                '" data-mealextra="' +
+                x.key +
+                '" data-delta="1"' +
+                (qty >= MAX_QTY ? ' disabled' : '') +
+                '>+</button></span>'
+              : '<button type="button" class="stepper-add" aria-label="' +
+                esc(S.extras.moreOf(x.name)) +
+                '" data-mealextra="' +
+                x.key +
+                '" data-delta="1">+</button>') +
+            '</div>'
           );
         };
         /**

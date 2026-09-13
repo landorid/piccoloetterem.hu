@@ -399,8 +399,10 @@ confirm or reject:
     the Extra steppers in the form — there are two buttons and the number between them is plain text,
     never an input. No keyboard opens on a phone, nothing out of range can be typed, and the control
     reads the same everywhere. − is disabled at 0 and + at 20, the limit O1 and O3 already validate.
-    The number is announced politely to screen readers when it changes. **For O6:** do not build
-    this as `<input type="number">` with buttons around it.
+    The number is announced politely to screen readers when it changes. **At 0 the row shows only a
+    round +**; the − and the number appear from 1, because on a 375 px phone a full stepper on every
+    untouched extra squeezed the names. The buttons are 36 px wide with a 44 px tall tap area. **For
+    O6:** do not build this as `<input type="number">` with buttons around it.
 
 ## Follow-ups this mockup suggests
 
