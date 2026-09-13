@@ -350,10 +350,8 @@
          a circle, an event mark below. Six days divide the width evenly, so nothing
          scrolls and nothing is cut off at the right edge — a strip you have to swipe
          hides the very days you are deciding between. */
+      /* Not sticky: only the masthead stays on screen while the form scrolls. */
       .daybar {
-        position: sticky;
-        top: 72px;
-        z-index: 5;
         background: var(--paper);
         border-bottom: 1px solid var(--line);
       }
@@ -547,7 +545,7 @@
 
       /* Category chips — jump to a section without scrolling past everything. */
       section[data-sec] {
-        scroll-margin-top: 196px;
+        scroll-margin-top: 88px;
       }
 
       /* --- small parts --------------------------------------------------------- */
@@ -1652,7 +1650,6 @@
           font-size: var(--t-2xl);
         }
         .daybar {
-          top: 96px;
           padding: 0 var(--s-8);
         }
         .daybar ul {
@@ -1707,7 +1704,7 @@
           max-height: 86%;
         }
         section[data-sec] {
-          scroll-margin-top: 204px;
+          scroll-margin-top: 112px;
         }
         .success h1 {
           font-size: var(--t-3xl);
@@ -1899,7 +1896,7 @@
           remove: 'Törlés',
           addAnother: 'Még egy menü ehhez a naphoz',
           empty: 'Erre a napra még nincs összeállított menüd.',
-          emptyCta: 'Állíts össze egy menüt az űrlapon, vagy adj hozzá extrát.',
+          emptyCta: 'Állíts össze egy menüt az űrlapon.',
           foodSubtotal: 'Ételek összesen',
         },
         extras: {
@@ -4091,7 +4088,7 @@
            the sticky ones only while they are actually stuck. */
         let safeTop = 8;
         let safeBottom = fh - 8;
-        frame.querySelectorAll('.masthead, .daybar').forEach((el) => {
+        frame.querySelectorAll('.masthead').forEach((el) => {
           const r = el.getBoundingClientRect();
           if (!r.height) return;
           const y = (r.top - fr.top) / scale;

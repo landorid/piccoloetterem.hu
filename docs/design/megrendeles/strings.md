@@ -136,7 +136,7 @@ export const strings = {
     remove: 'Törlés',
     addAnother: 'Még egy menü ehhez a naphoz',
     empty: 'Erre a napra még nincs összeállított menüd.',
-    emptyCta: 'Állíts össze egy menüt az űrlapon, vagy adj hozzá extrát.',
+    emptyCta: 'Állíts össze egy menüt az űrlapon.',
     foodSubtotal: 'Ételek összesen',
   },
   extras: {

@@ -87,13 +87,12 @@ rather than another box, and only sheets get a real shadow.
 
 ### Layout
 
-**Mobile (375).** One column. Sticky masthead, sticky day rail under it, then — in this order —
-alerts, **the composer form**, the day's order, the category chips, the menu sections, the allergen
-notice. A sticky bottom bar carries the running total and the only way forward; tapping
+**Mobile (375).** One column. Sticky masthead; the day strip under it scrolls away with the page; then — in this order —
+alerts, **the composer form**, the day's order, the allergen notice. A sticky bottom bar carries the running total and the only way forward; tapping
 **Részletek** expands the full per-day breakdown in place. Only the main-course chooser is a bottom
 sheet; every other choice is open on the page.
 
-**Desktop (1280).** A two-column grid: the composer form and the menu sections in the left column
+**Desktop (1280).** A two-column grid: the composer form and the allergen notice in the left column
 (max 760 px), a sticky 372 px rail on the right spanning both rows with the day's order and the
 summary. Alerts span both columns. Choice rows lay out three across once the column is wide enough,
 so the form stays short. Checkout splits the same way — form left, order right; success stays one
@@ -170,7 +169,6 @@ as a flow he likes. It is a per-item marketplace, not a weekly menu, so what tra
 | **A leading square tile on every row**, with a quiet placeholder when there is no photo | `Tile`. Piccolo has no photos (PLAN.md §2), so the tile carries the dish's initial. If photos ever arrive the tile takes them and nothing else moves. |
 | **The whole row as the tap target** | The "Összeállítom" button is gone: fewer things on the row, a much bigger target. |
 | **Horizontal rails for secondary sections** | Kiemelt ajánlat, Egész héten rendelhető, Feláras köretek, Savanyúságok, Desszertek. |
-| **A sticky category chip row** | Jump to a section without scrolling past the whole day. |
 | **The delivery fee stated in the header** — their "Mindössze 190 Ft kényelmi díj" | `order.terms`, under the week label. Ours was buried in the footer and the summary. |
 | **A closed-state banner that names the next opening** | We already had this for the cutoff; their version confirmed it earns the space. |
 | **Allergens as pictogram chips, not bare numbers** | `AllergenChip`. Dávid's fourth request from that reference. Fourteen glyphs drawn by hand in the mockup file; the name arrives on hover, on focus and on tap — see decision 10. We took the *pictogram*, not their per-allergen hues. |
@@ -228,6 +226,9 @@ still 53 px a column. The old strip was a flex row of 60 px minimum-width tabs w
 came to roughly 530 px and pushed Saturday off the right edge. A strip you have to swipe hides the
 very days you are deciding between, and a half-visible last day reads as a rendering fault rather
 than an invitation to scroll.
+
+It is **not sticky** (Dávid, 2026-09-13): only the masthead stays on screen, so a long form gets
+the height back once the day is chosen.
 
 The shape is the iOS calendar header: weekday letters in small caps, the date in a circle below, and
 a mark under that. The circle replaces the old underline — it is the same "you are here" signal in
