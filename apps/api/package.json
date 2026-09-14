@@ -9,7 +9,12 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "hono": "4.13.7"
+    "@hono/zod-validator": "0.9.1",
+    "@piccolo/core": "workspace:^",
+    "@piccolo/db": "workspace:^",
+    "@sentry/cloudflare": "10.74.0",
+    "hono": "4.13.7",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260906.1",

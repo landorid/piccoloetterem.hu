@@ -1,19 +1,25 @@
-import { Hono } from 'hono';
+import { withSentry } from '@sentry/cloudflare';
+import { app } from './app';
+import type { Bindings } from './env';
 
-const app = new Hono();
+export type { AppType } from './app';
 
-// Deliberately does not touch the database: a frequent ping would keep the Neon
-// compute awake and multiply its consumption (docs/STACK.md rule 3).
-app.get('/api/health', (c) => c.json({ ok: true }));
+/**
+ * The API Worker: `/api/*` only. The public site and the admin are separate assets-only Workers
+ * (apps/web, apps/admin).
+ *
+ * `fetch` wraps `app.fetch` in a plain object instead of exporting the Hono app, because
+ * `withSentry` would otherwise also hook `onError` and report every error twice: `handleError`
+ * already reports to Sentry itself, since the response carries the event id.
+ */
+const handler = {
+  fetch: (request, env, ctx) => app.fetch(request, env, ctx),
+} satisfies ExportedHandler<Bindings>;
 
-// Every response this Worker produces is structured JSON. Error bodies carry a
-// machine-readable `code`; the frontends map that code to a Hungarian message in
-// their own strings.ts, so no user-facing text originates here.
-app.notFound((c) => c.json({ error: { code: 'not_found' } }, 404));
-
-app.onError((err, c) => {
-  console.error(err);
-  return c.json({ error: { code: 'internal_error' } }, 500);
-});
-
-export default app;
+export default withSentry<Bindings>(
+  (env) => ({
+    dsn: env.SENTRY_DSN,
+    environment: env.ENVIRONMENT ?? 'development',
+  }),
+  handler,
+);
