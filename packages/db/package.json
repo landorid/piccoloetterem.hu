@@ -9,9 +9,14 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio",
+    "db:seed:dev": "tsx src/seed/dev.ts"
   },
   "dependencies": {
+    "@piccolo/core": "workspace:^",
     "drizzle-orm": "0.45.2",
     "pg": "8.23.0"
   },
@@ -19,6 +24,7 @@
     "@types/node": "22.20.0",
     "@types/pg": "8.23.1",
     "drizzle-kit": "0.31.10",
+    "tsx": "4.23.13",
     "typescript": "5.9.3"
   }
 }

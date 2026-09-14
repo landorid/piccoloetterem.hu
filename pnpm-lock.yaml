@@ -150,6 +150,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@piccolo/core':
+        specifier: workspace:^
+        version: link:../core
       drizzle-orm:
         specifier: 0.45.2
         version: 0.45.2(@cloudflare/workers-types@5.20260906.1)(@types/pg@8.23.1)(pg@8.23.0)
@@ -166,6 +169,9 @@ importers:
       drizzle-kit:
         specifier: 0.31.10
         version: 0.31.10
+      tsx:
+        specifier: 4.23.13
+        version: 4.23.13
       typescript:
         specifier: 5.9.3
         version: 5.9.3
