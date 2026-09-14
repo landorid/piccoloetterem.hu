@@ -37,12 +37,12 @@ Strict serial order, already checked against every `Blocked by` list. Run top to
 | 2 | #30 | O2 | — | Design mockup. Run early: Dávid's review has latency and #34 needs it. |
 | 3 | #53 | F1a | — | Wiring defects found reviewing PR #52. Must land before #18 and #19. |
 | 4 | #17 | F2 | 16 | Unblocks manual #41 on merge. |
-| 5 | #18 | F3 | 16, 53 | |
-| 6 | #19 | F4 | 16, 18, 53 | |
+| 5 | #18 | F3 | 16, 53 | **Chip posted 2026-09-14 after #61 merged; do not post it again.** (Dávid chose not to run it in parallel with #23.) The Neon `dev` branch exists and was verified. Add to the chip prompt: `DATABASE_URL` (pooled) is in `/Users/landoridavid/Workplace/piccoloetterem.hu/.env`, which is gitignored and not copied into the worktree, so load it by that absolute path and never print or commit it; there is no `DATABASE_URL_UNPOOLED`, derive the direct URL for `drizzle-kit migrate` by dropping `-pooler` from the host; `psql` is at `/opt/homebrew/opt/libpq/bin/psql` (not on PATH); Docker is available for the local `postgres://` acceptance check; `menu_items.description` and `price_weekend` are nullable to match M1. |
+| 6 | #19 | F4 | 16, 18, 53 | **Chip posted 2026-09-14 after #62 merged; do not post it again.** `SENTRY_DSN` added to the root `.env` by Dávid; local `wrangler dev` validation only, no deploy. |
 | 7 | #20 | F5 | 19 | |
 | 8 | #21 | F6 | 19 | |
 | 9 | #22 | F7 | 19 | Unblocks manual #40 on merge. |
-| 10 | #23 | M1 | 17 | |
+| 10 | #23 | M1 | 17 | Ran early while #18 waited for a database (PR #61). |
 | 11 | #24 | M2 | 18, 21, 23 | |
 | 12 | #25 | M3 | 24 | |
 | 13 | #26 | M4 | 20, 21 | |
