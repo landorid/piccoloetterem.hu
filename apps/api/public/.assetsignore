@@ -1,3 +1,0 @@
-# Everything else in public/ is build output (scripts/copy-assets.mjs) and is git-ignored; this
-# file keeps the directory in git so `wrangler dev` starts before the first build. Cloudflare
-# excludes .assetsignore itself from the upload.

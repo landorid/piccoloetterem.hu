@@ -1,72 +1,17 @@
 import { Hono } from 'hono';
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
-import { app, handleError } from './app';
-import type { AppEnv, Bindings } from './env';
+import { app, handleError, parseOrigins } from './app';
+import type { AppEnv } from './env';
 import { HttpError } from './errors';
-import { handler } from './index';
 import { validate } from './validation';
-
-/** An ASSETS binding serving a fixed set of paths, like the built `public/`. */
-function fakeAssets(files: Record<string, string>): Fetcher {
-  return {
-    fetch: async (input: RequestInfo | URL) => {
-      const { pathname } = new URL(input instanceof Request ? input.url : input);
-      const body = files[pathname];
-      return body === undefined ? new Response('', { status: 404 }) : new Response(body);
-    },
-    connect: () => {
-      throw new Error('not used');
-    },
-  } as unknown as Fetcher;
-}
 
 const ctx = {
   waitUntil: () => {},
   passThroughOnException: () => {},
 } as unknown as ExecutionContext;
 
-function serve(path: string, env: Partial<Bindings> = {}) {
-  const assets = fakeAssets({
-    '/': 'astro index',
-    '/megrendeles/': 'astro megrendeles',
-    '/admin/': 'admin shell',
-    '/admin/assets/app.js': 'admin js',
-  });
-  return handler.fetch(
-    new Request(`http://localhost${path}`),
-    { ASSETS: assets, ...env },
-    ctx,
-  ) as Promise<Response>;
-}
-
-describe('Worker routing', () => {
-  it('serves static files as they are', async () => {
-    const res = await serve('/admin/assets/app.js');
-    expect(res.status).toBe(200);
-    expect(await res.text()).toBe('admin js');
-  });
-
-  it('answers unknown /admin paths with the SPA shell and 200', async () => {
-    for (const path of ['/admin/deep/path', '/admin/orders/123']) {
-      const res = await serve(path);
-      expect(res.status).toBe(200);
-      expect(await res.text()).toBe('admin shell');
-    }
-  });
-
-  it('keeps the asset 404 outside /admin, including look-alike prefixes', async () => {
-    for (const path of ['/nonexistent', '/administrator']) {
-      expect((await serve(path)).status).toBe(404);
-    }
-  });
-
-  it('sends /api paths to Hono, never to the assets', async () => {
-    const res = await serve('/api/nope');
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: 'not_found', message: 'No route for /api/nope' });
-  });
-});
+const env = { CORS_ORIGINS: 'http://localhost:4321, https://admin.example.hu' };
 
 describe('GET /api/health', () => {
   it('returns 200 without any binding', async () => {
@@ -78,9 +23,67 @@ describe('GET /api/health', () => {
 
 describe('GET /api/health/db', () => {
   it('fails as an internal error when no database is configured', async () => {
-    const res = await app.request('/api/health/db', {}, { RESTAURANT: 'piccolo' }, ctx);
+    const res = await app.request('/api/health/db', {}, {}, ctx);
     expect(res.status).toBe(500);
     expect(await res.json()).toEqual({ error: 'internal', eventId: expect.any(String) });
+  });
+});
+
+describe('unknown paths', () => {
+  it('returns 404 JSON inside and outside /api, without touching the database', async () => {
+    for (const path of ['/api/nope', '/', '/admin']) {
+      const res = await app.request(path, {}, {});
+      expect(res.status).toBe(404);
+      expect(await res.json()).toEqual({ error: 'not_found', message: `No route for ${path}` });
+    }
+  });
+});
+
+describe('CORS', () => {
+  it('parses CORS_ORIGINS, trimming blanks', () => {
+    expect(parseOrigins(' https://a.hu ,, https://b.hu ')).toEqual([
+      'https://a.hu',
+      'https://b.hu',
+    ]);
+    expect(parseOrigins(undefined)).toEqual([]);
+  });
+
+  it('allows a listed origin', async () => {
+    const res = await app.request(
+      '/api/health',
+      { headers: { Origin: 'https://admin.example.hu' } },
+      env,
+    );
+    expect(res.headers.get('access-control-allow-origin')).toBe('https://admin.example.hu');
+  });
+
+  it('sends no CORS headers to any other origin', async () => {
+    const res = await app.request(
+      '/api/health',
+      { headers: { Origin: 'https://evil.example' } },
+      env,
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get('access-control-allow-origin')).toBeNull();
+  });
+
+  it('answers a preflight from a listed origin with 204', async () => {
+    const res = await app.request(
+      '/api/orders',
+      {
+        method: 'OPTIONS',
+        headers: {
+          Origin: 'http://localhost:4321',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type, authorization',
+        },
+      },
+      env,
+    );
+    expect(res.status).toBe(204);
+    expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:4321');
+    expect(res.headers.get('access-control-allow-headers')).toBe('Content-Type,Authorization');
+    expect(res.headers.get('access-control-allow-credentials')).toBeNull();
   });
 });
 

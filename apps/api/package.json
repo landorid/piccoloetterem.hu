@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
-    "copy-assets": "node scripts/copy-assets.mjs",
-    "build": "node scripts/copy-assets.mjs && wrangler deploy --dry-run --outdir dist",
+    "build": "wrangler deploy --dry-run --outdir dist",
     "typecheck": "tsc"
   },
   "dependencies": {

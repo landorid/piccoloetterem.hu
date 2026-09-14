@@ -21,9 +21,9 @@ Kapcsolódó: [PLAN.md](PLAN.md) — a döntések, a domain modell és az issue-
 
 | Réteg | Választás | Szerep |
 |---|---|---|
-| Futtatás | Cloudflare Workers (Paid) | Egyetlen Worker ügyfelenként: statikus fájlok + API azonos originen |
+| Futtatás | Cloudflare Workers (Paid) | Ügyfelenként három Worker: API, publikus oldal, admin — mindegyik saját hostnéven |
 | Publikus frontend | Astro + React sziget | Statikus oldalak (SEO), React sziget a kosárhoz |
-| Admin felület | Vite + React SPA | Külön app, külön build — `/admin/*` alatt, ugyanabban a Workerben |
+| Admin felület | Vite + React SPA | Külön app, külön build, külön Worker — `admin.<domain>` |
 | API | Hono | Web-standard `Request`/`Response`, fut Workersen és Node-on |
 | Domain logika | `core/` — sima TypeScript | ISO-hét, határidő, ünnepnapok, rendelés-összeállítás. HTTP nélkül tesztelhető |
 | Adatbázis | Neon Postgres (Free) | Ügyfelenként külön projekt |
@@ -36,13 +36,13 @@ Kapcsolódó: [PLAN.md](PLAN.md) — a döntések, a domain modell és az issue-
 | Sablonok | React Email | Szolgáltató-független |
 | Hibakövetés | Sentry | Már használatban a Fessh stackben |
 
-### Három alkalmazás, egy deployable
+### Három alkalmazás, három Worker
 
 ```
 apps/
-  web/     Astro         →  dist/         →  szolgálva:  /
-  admin/   Vite + React  →  dist/admin/   →  szolgálva:  /admin/*
-  api/     Hono          →  a Worker      →  szolgálva:  /api/*
+  web/     Astro         →  dist/  →  assets-only Worker  →  <domain>
+  admin/   Vite + React  →  dist/  →  assets-only Worker  →  admin.<domain>
+  api/     Hono          →  Worker                        →  api.<domain>/api/*
 packages/
   core/         domain logika, sima TypeScript
   db/           Drizzle séma és migrációk
@@ -52,14 +52,16 @@ packages/
 **Nincs örökölt adatimport.** Az új rendszer üres vevőtörzzsel és üres rendeléstörténettel indul
 (2026-09-06-i döntés). A 3. szakasz mérései a modellezést szolgálták, nem egy migrációt.
 
-Az admin valódi SPA, nem Astro-sziget: állapotos, interaktív, SEO-igény nélküli. Külön app és
-külön build — de **ugyanabban a Workerben** deployolva, mert a külön origin visszahozná a CORS-t,
-a `SameSite=None`-t és egy ügyfelenkénti DNS-lépést. A publikus oldal így nem szállít admin JS-t
-a vendégeknek.
+Az admin valódi SPA, nem Astro-sziget: állapotos, interaktív, SEO-igény nélküli. Külön app, külön
+build és külön Worker. A publikus oldal így nem szállít admin JS-t a vendégeknek.
 
-> **Miért egyetlen Worker.** Ha minden ugyanazon az originen van, eltűnik a CORS, a `SameSite=None`
-> és az ügyfelenkénti `api.<domain>` DNS-lépés, a Clerk session sütije pedig magától működik.
-> Egy egész hibaosztály szűnik meg egyetlen szerkezeti döntéssel.
+> **Miért három Worker (2026-09-14-i döntés).** Az API és a két frontend egymástól függetlenül
+> deployolható, és a két statikus Workernek nincs saját kódja: az admin mély útvonalait a Cloudflare
+> beépített `single-page-application` módja szolgálja ki, nem kézzel írt routing. Az ára: a
+> frontendek más originről hívják az API-t, ezért az API CORS-t ad a `CORS_ORIGINS` listában
+> szereplő originöknek; a Clerk session `Authorization: Bearer` fejlécben megy, nem sütiben; és
+> ügyfelenként három hostnév kell (`<domain>`, `admin.<domain>`, `api.<domain>`). Ez váltja a
+> korábbi „egyetlen Worker, azonos origin" döntést.
 
 ---
 
@@ -155,8 +157,8 @@ customers      -- email_key UNIQUE, a rendelő
 hitelesítést kezelő terhelések jellemzően 10–20 ms-ot esznek. Az $5 nem a jelszó-hashelést veszi
 meg, hanem a CPU-plafont emeli 10 ms-ról 30 másodpercre — az egész alkalmazásra, az egész fiókra.
 
-**Az admin külön app, de nem külön deploy.** Külön build, mert egy dashboard nem Astro-sziget.
-Ugyanaz a Worker, mert a külön origin visszahozná a CORS-t és bonyolítaná a Clerk sütijét.
+**Az admin külön app, külön Worker.** Külön build, mert egy dashboard nem Astro-sziget. Saját
+Worker `admin.<domain>`-en (2026-09-14-i döntés, a korábbi „ugyanaz a Worker, azonos origin" helyett).
 Központi, minden ügyfelet kiszolgáló admin nem opció: N különböző Neon adatbázishoz kellene
 csatlakoznia, ami a single-tenant elszigetelést törné szét.
 
@@ -195,10 +197,9 @@ domain kell. Az SES mindkét falat leveszi ~$0,25-ért.
       Crypto/fetch), tehát a session-ellenőrzésnek `authenticateRequest`-tel mennie kell a Hono
       API-ban. A frontend komponensek React-alapúak, tehát Astro szigetben kell futniuk.
       Fél napos spike.
-- [ ] **Az admin SPA-fallback útvonala.** A gyökérben statikus Astro oldal áll, a `/admin/*` alatt
-      SPA, aminek minden mély útvonala az `admin/index.html`-t kell hogy kapja. A Workers static
-      assets globális `not_found_handling`-je ezt elrontaná — a fallbacket a Worker scriptben kell
-      explicit kezelni.
+- [x] **Az admin SPA-fallback útvonala.** Lezárva 2026-09-14-én: az admin saját Workert kapott
+      (`admin.<domain>`), ahol a Cloudflare `not_found_handling = "single-page-application"`
+      szolgálja ki a mély útvonalakat, a publikus oldal 404-eit pedig nem érinti.
 - [ ] **A Neon legacy consumption API elérhető-e Free csomagon.** A v2 (`/consumption_history/v2/projects`)
       dokumentáltan Launch+. A legacy (`/consumption_history/projects`, `active_time_seconds`)
       „older plans"-re hivatkozik, de nem mondja ki, hogy a Free ide tartozik. Egy curl eldönti.
@@ -219,9 +220,11 @@ Másold ügyfelenként, és pipáld végig.
 - [ ] A projekt felvétele a fogyasztásfigyelőbe
       — Free csomagon nincs használati riasztás, a falat magunknak kell látni közeledni
 - [ ] Clerk organization létrehozása az étteremnek, személyzet meghívása
-- [ ] Cloudflare Worker deploy + Hyperdrive binding a Neon projektre
+- [ ] A három Worker deployja: API (Hyperdrive binding a Neon projektre, `CORS_ORIGINS` a két
+      frontend hostnevére), web, admin
       — ugyanaz az image mindenhol: buildelj egyszer CI-ban, ne ügyfelenként
-- [ ] Ügyfél domainje a Workerre irányítva
+- [ ] Ügyfél domainjei a Workerekre (Custom Domain): `<domain>` → web, `admin.<domain>` → admin,
+      `api.<domain>` → API
 - [ ] SES domain identity + DKIM verifikáció
 - [ ] SPF, DKIM és DMARC rekordok az ügyfél DNS-ében
       — enélkül a visszaigazolók spambe esnek: rendelési rendszernél ez üzleti hiba

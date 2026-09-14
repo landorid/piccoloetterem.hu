@@ -1,0 +1,15 @@
+# The staff SPA, at admin.<domain>: an assets-only Worker serving the Vite build. The API is a
+# separate Worker (apps/api, api.<domain>); see docs/STACK.md §1.
+name = "piccolo-admin"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./dist"
+# Client-side routes such as /rendelesek get index.html, so a reload deep inside the SPA works.
+not_found_handling = "single-page-application"
+
+[env.staging]
+name = "piccolo-admin-staging"
+
+[env.production]
+name = "piccolo-admin-production"

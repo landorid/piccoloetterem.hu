@@ -1,33 +1,31 @@
-name = "piccolo"
+# The API Worker, at api.<domain>. The public site (apps/web, <domain>) and the admin
+# (apps/admin, admin.<domain>) are separate assets-only Workers; see docs/STACK.md §1.
+name = "piccolo-api"
 main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Static assets: `pnpm build` copies apps/web/dist here and apps/admin/dist to ./public/admin.
-# src/index.ts decides what the Worker does with a miss (the /admin SPA fallback), so no
-# not_found_handling here: it is global and would break the public 404.
-[assets]
-directory = "./public"
-binding = "ASSETS"
-# /api/* always reaches the Worker, even if a file of the same name ever lands in public/.
-run_worker_first = ["/api/*"]
-
-# Local development (`wrangler dev`). There is no Hyperdrive binding here: the Worker falls back
-# to DATABASE_URL from .dev.vars (see README.md).
+# Local development (`wrangler dev`, http://localhost:8787). There is no Hyperdrive binding here:
+# the Worker falls back to DATABASE_URL from .dev.vars (see README.md).
 [vars]
 ENVIRONMENT = "development"
 RESTAURANT = "piccolo"
+# Browser origins allowed to call the API (CORS), comma-separated: the Astro and Vite dev servers
+# that `pnpm dev` starts.
+CORS_ORIGINS = "http://localhost:4321,http://localhost:5173"
 
 # Secrets are never written in this file. Set them per environment with
 #   wrangler secret put SENTRY_DSN --env <staging|production>
 # SENTRY_DSN is the only one this Worker reads so far.
 
 [env.staging]
-name = "piccolo-staging"
+name = "piccolo-api-staging"
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
 RESTAURANT = "piccolo"
+# Placeholder. Replace with the staging web and admin Workers' URLs (manual issue #40).
+CORS_ORIGINS = "https://piccolo-web-staging.<account>.workers.dev,https://piccolo-admin-staging.<account>.workers.dev"
 
 [[env.staging.hyperdrive]]
 binding = "HYPERDRIVE"
@@ -36,11 +34,14 @@ binding = "HYPERDRIVE"
 id = "00000000000000000000000000000000"
 
 [env.production]
-name = "piccolo-production"
+name = "piccolo-api-production"
 
 [env.production.vars]
 ENVIRONMENT = "production"
 RESTAURANT = "piccolo"
+# Placeholder. Replace with the production web and admin URLs (manual issue #40); once the
+# customer's domains are attached: https://<domain>,https://admin.<domain>.
+CORS_ORIGINS = "https://piccolo-web-production.<account>.workers.dev,https://piccolo-admin-production.<account>.workers.dev"
 
 [[env.production.hyperdrive]]
 binding = "HYPERDRIVE"

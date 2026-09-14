@@ -1,3 +1,0 @@
-# Build output copied from apps/web and apps/admin by scripts/copy-assets.mjs.
-public/*
-!public/.assetsignore
