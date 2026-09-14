@@ -3,9 +3,47 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Static assets. The directory is empty for now, so every request falls through
-# to the Worker. Issue #19 fills it with the built output of apps/web (at /) and
-# apps/admin (at /admin/*).
+# Static assets: `pnpm build` copies apps/web/dist here and apps/admin/dist to ./public/admin.
+# src/index.ts decides what the Worker does with a miss (the /admin SPA fallback), so no
+# not_found_handling here: it is global and would break the public 404.
 [assets]
 directory = "./public"
 binding = "ASSETS"
+# /api/* always reaches the Worker, even if a file of the same name ever lands in public/.
+run_worker_first = ["/api/*"]
+
+# Local development (`wrangler dev`). There is no Hyperdrive binding here: the Worker falls back
+# to DATABASE_URL from .dev.vars (see README.md).
+[vars]
+ENVIRONMENT = "development"
+RESTAURANT = "piccolo"
+
+# Secrets are never written in this file. Set them per environment with
+#   wrangler secret put SENTRY_DSN --env <staging|production>
+# SENTRY_DSN is the only one this Worker reads so far.
+
+[env.staging]
+name = "piccolo-staging"
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+RESTAURANT = "piccolo"
+
+[[env.staging.hyperdrive]]
+binding = "HYPERDRIVE"
+# Placeholder. Replace with the id printed by `wrangler hyperdrive create piccolo-staging`
+# for the staging Neon branch (manual issue #40).
+id = "00000000000000000000000000000000"
+
+[env.production]
+name = "piccolo-production"
+
+[env.production.vars]
+ENVIRONMENT = "production"
+RESTAURANT = "piccolo"
+
+[[env.production.hyperdrive]]
+binding = "HYPERDRIVE"
+# Placeholder. Replace with the id printed by `wrangler hyperdrive create piccolo-production`
+# for the production Neon branch (manual issue #40).
+id = "11111111111111111111111111111111"
