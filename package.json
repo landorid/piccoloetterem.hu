@@ -15,6 +15,10 @@
     "build:packages": "pnpm -r --stream --filter \"./packages/*\" build",
     "build:apps": "pnpm --filter @piccolo/web --filter @piccolo/admin build && pnpm --filter @piccolo/api build",
     "build": "pnpm run build:packages && pnpm run build:apps",
+    "db:generate": "pnpm --filter @piccolo/db db:generate",
+    "db:migrate": "pnpm --filter @piccolo/db db:migrate",
+    "db:studio": "pnpm --filter @piccolo/db db:studio",
+    "db:seed:dev": "pnpm --filter @piccolo/db db:seed:dev",
     "dev": "pnpm run build:packages && concurrently -n api,web,admin -c blue,green,magenta \"pnpm --filter @piccolo/api dev\" \"pnpm --filter @piccolo/web dev\" \"pnpm --filter @piccolo/admin dev\""
   },
   "devDependencies": {
