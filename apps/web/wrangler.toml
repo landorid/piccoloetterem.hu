@@ -1,0 +1,16 @@
+# The public site, at <domain>: an assets-only Worker serving the Astro build. The API is a
+# separate Worker (apps/api, api.<domain>); see docs/STACK.md §1.
+name = "piccolo-web"
+compatibility_date = "2026-09-01"
+
+[assets]
+directory = "./dist"
+# An unknown path gets the nearest 404.html of the build, or a plain 404 while there is none
+# (a src/pages/404.astro becomes that page).
+not_found_handling = "404-page"
+
+[env.staging]
+name = "piccolo-web-staging"
+
+[env.production]
+name = "piccolo-web-production"

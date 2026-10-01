@@ -3,10 +3,9 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 
-// Served by the Worker under /admin/*, from the same origin as the API, so the
-// Clerk session cookie works without CORS (see docs/STACK.md §1).
+// Served at the root of admin.<domain> by its own assets-only Worker (wrangler.toml). It calls
+// the API at api.<domain> cross-origin (see docs/STACK.md §1).
 export default defineConfig({
-  base: '/admin/',
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

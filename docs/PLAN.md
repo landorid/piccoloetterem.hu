@@ -54,6 +54,14 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 - Accounts (Cloudflare, Neon, Clerk, AWS, Sentry) already exist. Issues labelled `manual` are for
   Dávid, not for agents.
 
+**Hosting** (revised 2026-09-14)
+
+- Three Workers per customer, each on its own hostname: `apps/api` (Hono) at `api.<domain>`, and
+  assets-only Workers for `apps/web` at `<domain>` and `apps/admin` at `admin.<domain>`. The
+  frontends call the API cross-origin: the API sends CORS headers only to the origins in
+  `CORS_ORIGINS`, and the admin sends the Clerk session as `Authorization: Bearer`. Decided by
+  Dávid during F4 (#19); it replaces the single same-origin Worker in STACK.md §1.
+
 **Ordering rules — unchanged from the old system, now configuration**
 
 - Cutoff **09:30** Europe/Budapest, enforced by the server. Before cutoff Mon–Fri the first
@@ -146,9 +154,9 @@ HTTP handlers never contain domain logic (STACK.md rule 6).
 ## 4. Repository layout
 
 ```
-apps/web      Astro + React island        → served at /
-apps/admin    Vite + React + shadcn/ui    → served at /admin/*
-apps/api      Hono on Cloudflare Workers  → /api/*, also serves both static builds
+apps/web      Astro + React island        → assets-only Worker at <domain>
+apps/admin    Vite + React + shadcn/ui    → assets-only Worker at admin.<domain>
+apps/api      Hono on Cloudflare Workers  → api.<domain>/api/*
 packages/core        domain logic, config type, pure TypeScript, Vitest
 packages/api-client  typed client from Hono RPC, used by both apps
 packages/db          Drizzle schema, migrations, query helpers
@@ -168,7 +176,7 @@ Strict order. Each issue is one agent session. `→` marks blockers. Issues live
 | F1 [#16](https://github.com/landorid/piccoloetterem.hu/issues/16) | Scaffold the pnpm monorepo, tooling, and the agent guide (AGENTS.md) | infra |
 | F2 [#17](https://github.com/landorid/piccoloetterem.hu/issues/17) | `packages/core`: `RestaurantConfig` type, Piccolo instance, calendar utilities → F1 | core |
 | F3 [#18](https://github.com/landorid/piccoloetterem.hu/issues/18) | `packages/db`: Drizzle schema and migrations for the domain model → F1 | db |
-| F4 [#19](https://github.com/landorid/piccoloetterem.hu/issues/19) | `apps/api`: Hono on Workers, static assets, `/admin` SPA fallback, Hyperdrive, health, Sentry → F1 F3 | api |
+| F4 [#19](https://github.com/landorid/piccoloetterem.hu/issues/19) | `apps/api`: Hono API Worker, web and admin Workers, CORS, Hyperdrive, health, Sentry → F1 F3 | api |
 | F5 [#20](https://github.com/landorid/piccoloetterem.hu/issues/20) | `packages/api-client`: Hono RPC typed client → F4 | api |
 | F6 [#21](https://github.com/landorid/piccoloetterem.hu/issues/21) | Clerk: admin sign-in and `/api/admin/*` middleware → F4 | admin api |
 | F7 [#22](https://github.com/landorid/piccoloetterem.hu/issues/22) | GitHub Actions: checks + staging deploy from `develop`, production from `main` → F4 | infra |

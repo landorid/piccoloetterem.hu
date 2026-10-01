@@ -22,16 +22,18 @@ binding.
 
 | Path | What | Served at |
 |---|---|---|
-| `apps/web` | Astro + React island — public ordering page | `/` (`/megrendeles`) |
-| `apps/admin` | Vite + React + shadcn/ui — staff SPA | `/admin/*` |
-| `apps/api` | Hono on Cloudflare Workers; also serves both static builds | `/api/*` |
+| `apps/web` | Astro + React island — public ordering page; assets-only Worker | `<domain>` (`/megrendeles`) |
+| `apps/admin` | Vite + React + shadcn/ui — staff SPA; assets-only Worker | `admin.<domain>` |
+| `apps/api` | Hono on Cloudflare Workers | `api.<domain>` (`/api/*`) |
 | `packages/core` | Domain logic, `RestaurantConfig`, pure TypeScript, fully unit-tested | — |
 | `packages/db` | Drizzle schema, migrations, `createDb()` | — |
 | `packages/api-client` | Typed client from Hono RPC, used by both apps | — |
 | `docs/` | The documents above | — |
 
-Everything ships as **one Worker per customer**: static assets and the API on a single origin, so
-there is no CORS, no `SameSite=None` and no per-customer DNS step (docs/STACK.md §1).
+Everything ships as **three Workers per customer**, each on its own hostname: the API, and one
+assets-only Worker per frontend (docs/STACK.md §1, decided 2026-09-14). The frontends call the API
+cross-origin: the API allows the origins in `CORS_ORIGINS`, and the admin sends the Clerk session
+as `Authorization: Bearer`, not as a cookie.
 
 The workspace packages are consumed as **TypeScript source** (`exports` points at `src/index.ts`);
 every consumer — Vite, Astro, Wrangler, Vitest — bundles them. `pnpm build` in a package emits
@@ -53,7 +55,7 @@ pnpm build             # packages first, then apps
 ```
 
 `pnpm dev` serves the API on <http://localhost:8787> (`/api/health` → `{"ok":true}`), the public
-site on <http://localhost:4321> and the admin on <http://localhost:5173/admin/>.
+site on <http://localhost:4321> and the admin on <http://localhost:5173/>.
 
 Run a single workspace with `pnpm --filter @piccolo/core <script>` and a single Vitest project with
 `pnpm exec vitest run --project=@piccolo/core`.
