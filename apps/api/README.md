@@ -14,7 +14,8 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | File | What |
 |---|---|
 | `src/index.ts` | The Worker export: `app.fetch` wrapped in `withSentry` |
-| `src/app.ts` | The Hono app (`basePath('/api')`), CORS, health routes, `notFound`, `handleError`, `AppType` |
+| `src/app.ts` | The Hono app (`basePath('/api')`), CORS, health routes, `/api/admin/*`, `notFound`, `handleError`, `AppType` |
+| `src/auth.ts` | `requireStaff` for `/api/admin/*`: Clerk session → `c.get('staff')` |
 | `src/middleware.ts` | `withConfig` → `c.get('config')`, `withDb` → `c.get('db')` |
 | `src/validation.ts` | `validate(target, schema)`: `@hono/zod-validator` with the API's 400 shape |
 | `src/errors.ts` | `HttpError(status, code, message)` |
@@ -31,8 +32,9 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 
    `DATABASE_URL` is your Neon development branch's pooled URL, the same one as in the repo-root
    `.env` (see packages/db/README.md). Quote it, because it contains `&`. `SENTRY_DSN` is optional;
-   without it, Sentry is disabled. `ENVIRONMENT`, `RESTAURANT` and `CORS_ORIGINS` come from
-   `[vars]` in `wrangler.toml`.
+   without it, Sentry is disabled. Copy `apps/api/.dev.vars.example` and fill in `CLERK_SECRET_KEY`,
+   `CLERK_PUBLISHABLE_KEY` and `CLERK_ORG_ID` (see below). `ENVIRONMENT`, `RESTAURANT`,
+   `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` come from `[vars]` in `wrangler.toml`.
 
 2. `pnpm dev` (from the repo root) runs the API on <http://localhost:8787>, the public site on
    <http://localhost:4321> and the admin on <http://localhost:5173>. The local `CORS_ORIGINS`
@@ -40,11 +42,14 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 
 To try a frontend exactly as its Worker serves it, build it and run `pnpm --filter @piccolo/web preview`
 (<http://localhost:8788>) or `pnpm --filter @piccolo/admin preview` (<http://localhost:8789>).
+The preview origin is not in `CORS_ORIGINS` or `CLERK_AUTHORIZED_PARTIES`. Sign-in against the
+API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 
 | Path | Response |
 |---|---|
 | `GET /api/health` | `{ ok: true, version }`. Never touches the database, so it is safe for uptime pings (docs/STACK.md rule 3). |
 | `GET /api/health/db` | `{ ok: true }` after `select 1`, or 500. Wakes the Neon compute, so call it rarely. |
+| `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
 | anything else | 404 `{ error: 'not_found', message }` |
 
 ## CORS
@@ -54,8 +59,9 @@ comma-separated. A request from any other origin gets no CORS headers, so the br
 response. Preflights from allowed origins get 204 with `Content-Type` and `Authorization` allowed.
 
 There are no cookies and no credentials mode. The admin sends the Clerk session as
-`Authorization: Bearer <token>` (issue F6). When a frontend moves to a new hostname, update
-`CORS_ORIGINS` for that environment.
+`Authorization: Bearer <token>`. When a frontend moves to a new hostname, update
+`CORS_ORIGINS` for that environment. The admin origin also has to be listed in
+`CLERK_AUTHORIZED_PARTIES` (see below).
 
 ## Adding a route
 
@@ -105,6 +111,52 @@ in their own `strings.ts`. `message` is for developers and never shown to users.
 | `throw new HttpError(status, code, message)` | `status` | `{ error: code, message }` |
 | No such route | 404 | `{ error: 'not_found', message }` |
 | Anything else | 500 | `{ error: 'internal', eventId }`, reported to Sentry; `eventId` finds it there |
+| `/api/admin/*` without a Clerk session | 401 | `{ error: 'unauthenticated' }` |
+| `/api/admin/*` session, not a member of `CLERK_ORG_ID` | 403 | `{ error: 'forbidden' }` |
+
+Staff routes are mounted under `/api/admin/*`, which is where `requireStaff` runs. A route
+outside that prefix is public.
+
+## Clerk on Workers
+
+Staff sign in on the admin SPA (`admin.<domain>`, locally <http://localhost:5173>). Customers
+never enter Clerk. The only role is membership of the organization in `CLERK_ORG_ID`.
+
+The admin and the API are different origins (docs/STACK.md §1). CORS does not allow credentials,
+and the `__session` cookie is not sent. The admin attaches the session from
+`useAuth().getToken()` as `Authorization: Bearer <token>`. That helper is
+`adminAuthorizationHeaders` in `apps/admin/src/apiAuth.ts`. Issue #20's
+`createApiClient({ headers })` is where it plugs in. `packages/api-client` on this
+branch is still the stub; this change does not add the typed client.
+
+`requireStaff` calls `createClerkClient({ secretKey, publishableKey }).authenticateRequest`
+when the request carries `Authorization: Bearer <token>`. Clerk then verifies that token and
+does not run the cookie handshake. No bearer token, or a token Clerk rejects, is 401. The
+missing-token case does not call Clerk, so `curl` without a session is 401 even when the
+publishable key is not configured yet. `c.get('staff')` is set only when `orgId === CLERK_ORG_ID`.
+
+Gotchas:
+
+- **Bundle size.** Import `createClerkClient` from `@clerk/backend` and nothing else from that
+  package. The Worker already has `nodejs_compat`. A dry-run upload of this Worker is about
+  1365 KiB uncompressed / 274 KiB gzip, under the Paid plan's 10 MB limit. Do not pull Clerk
+  into a second bundle.
+- **`authorizedParties`.** Clerk puts the admin origin in the token's `azp` claim. Pass that
+  origin, exactly, including scheme and port (`http://localhost:5173` in local dev, not the
+  public site and not the API). `CLERK_AUTHORIZED_PARTIES` is a comma-separated var in
+  `wrangler.toml`. If the list is empty, Clerk skips the check, so the middleware rejects the
+  request instead of calling Clerk.
+- **Bearer, not cookie.** Do not expect `__session` to arrive. A request with only that cookie
+  is unauthenticated here. The old single-origin model is not how this API is hosted.
+- **Organization id in the session token.** `authenticateRequest` does not look up membership.
+  It reads `orgId` from the token: v2 tokens use `o.id`, older tokens use `org_id`, and only
+  when that organization is the active one. The admin calls `setActive` for `VITE_CLERK_ORG_ID`
+  before it calls the API. If you customized the session token in the Clerk Dashboard and
+  dropped `o` / `org_id`, put it back, or every member is 403 with no `orgId`.
+
+The admin publishable key is `VITE_CLERK_PUBLISHABLE_KEY`, baked in at build time from the
+repo-root `.env` (the admin Worker is assets-only and has no runtime env). The API reads
+`CLERK_PUBLISHABLE_KEY` at runtime. They are the same key. `CLERK_SECRET_KEY` stays on the API.
 
 ## Environments and secrets
 
@@ -113,9 +165,9 @@ in their own `strings.ts`. `message` is for developers and never shown to users.
 - `staging`, deployed as `piccolo-api-staging`
 - `production`, deployed as `piccolo-api-production`
 
-Each deployed environment sets `ENVIRONMENT` and `CORS_ORIGINS` and binds `HYPERDRIVE`. The
-Hyperdrive ids and the `CORS_ORIGINS` URLs are **placeholders** until manual issue #40 creates the
-resources and replaces them.
+Each deployed environment sets `ENVIRONMENT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES`, and
+binds `HYPERDRIVE`. The Hyperdrive ids and the origin URLs are **placeholders** until manual
+issue #40 creates the resources and replaces them.
 
 Secrets are never written into `wrangler.toml`. Set them per environment:
 
@@ -127,6 +179,10 @@ wrangler secret put SENTRY_DSN --env staging
 |---|---|---|
 | `SENTRY_DSN` | secret | `wrangler secret put` per environment; `.dev.vars` locally |
 | `DATABASE_URL` | secret | `.dev.vars` only. Deployed environments use the `HYPERDRIVE` binding instead |
+| `CLERK_SECRET_KEY` | secret | `wrangler secret put` per environment; `.dev.vars` locally |
+| `CLERK_PUBLISHABLE_KEY` | secret | same. Not secret in the cryptographic sense, but it is not written into `wrangler.toml`. The admin build uses `VITE_CLERK_PUBLISHABLE_KEY` |
+| `CLERK_ORG_ID` | secret | same. Organization id of this restaurant's staff |
 | `ENVIRONMENT` | var | `wrangler.toml`: `development`, `staging` or `production`, also the Sentry environment |
 | `RESTAURANT` | var | `wrangler.toml`: the `RestaurantConfig` instance (`loadConfig`) |
 | `CORS_ORIGINS` | var | `wrangler.toml`: the web and admin origins for that environment |
+| `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
