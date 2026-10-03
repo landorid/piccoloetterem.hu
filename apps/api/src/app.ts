@@ -4,6 +4,7 @@ import { type ErrorHandler, Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import pkg from '../package.json';
+import { requireStaff } from './auth';
 import type { AppEnv, Bindings } from './env';
 import { HttpError } from './errors';
 import { withDb } from './middleware';
@@ -47,7 +48,11 @@ export const app = new Hono<AppEnv>()
   .get('/health/db', withDb, async (c) => {
     await c.get('db').execute(sql`select 1`);
     return c.json({ ok: true as const });
-  });
+  })
+  // Every staff route. `requireStaff` runs before the handler and before notFound,
+  // so an unknown `/api/admin/*` path is still 401 without a session.
+  .use('/admin/*', requireStaff)
+  .get('/admin/ping', (c) => c.json({ userId: c.get('staff').userId }));
 
 app.notFound((c) => c.json({ error: 'not_found', message: `No route for ${c.req.path}` }, 404));
 

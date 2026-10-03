@@ -6,6 +6,8 @@ import { defineConfig } from 'vite';
 // Served at the root of admin.<domain> by its own assets-only Worker (wrangler.toml). It calls
 // the API at api.<domain> cross-origin (see docs/STACK.md §1).
 export default defineConfig({
+  // Repo-root `.env`, so `VITE_CLERK_PUBLISHABLE_KEY` lives next to the API keys in `.env.example`.
+  envDir: fileURLToPath(new URL('../..', import.meta.url)),
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {

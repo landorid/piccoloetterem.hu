@@ -9,6 +9,7 @@
     "typecheck": "tsc"
   },
   "dependencies": {
+    "@clerk/backend": "3.22.0",
     "@hono/zod-validator": "0.9.1",
     "@piccolo/core": "workspace:^",
     "@piccolo/db": "workspace:^",
