@@ -4,8 +4,6 @@
  */
 export const version = '0.0.0';
 
-const ciProbe: number = 'type-error';
-
 export { TZDate } from '@date-fns/tz';
 export {
   datesOfIsoWeek,
