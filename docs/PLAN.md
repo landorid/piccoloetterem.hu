@@ -269,3 +269,14 @@ Manual issues (label `manual`) are Dávid's and skip the guardrail and stop sect
 - Playwright smoke test of the ordering flow.
 - Neon consumption monitor (STACK.md §2).
 - Order editing in admin; staff notifications (daily digest).
+
+## 8. CI secrets
+
+`.github/workflows/ci.yml` checks pull requests and pushes to `develop` and `main`. A push deploys:
+`develop` uses the `staging` GitHub Environment, `main` uses `production`. Create this list on each
+environment. Values stay out of the repo. Cloudflare and Neon resources are P2 (#40).
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `DATABASE_URL` (per environment)
+- `WORKER_URL` (per environment, the API origin)
