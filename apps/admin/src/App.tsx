@@ -42,36 +42,10 @@ function usePathname(): string {
   return pathname;
 }
 
-function SignOutButton() {
-  const { signOut } = useClerk();
+function LoadingScreen() {
   return (
-    <Button
-      type="button"
-      variant="outline"
-      onClick={() => void signOut({ redirectUrl: loginPath })}
-    >
-      {strings.signOut}
-    </Button>
-  );
-}
-
-function PlaceholderHeader() {
-  return (
-    <header className="flex items-center justify-between border-b px-4 py-3">
-      <span className="font-semibold">{strings.appName}</span>
-      <SignOutButton />
-    </header>
-  );
-}
-
-function NoAccess() {
-  return (
-    <div className="flex min-h-svh flex-col">
-      <PlaceholderHeader />
-      <main className="flex flex-1 flex-col items-center justify-center gap-2 px-4 text-center">
-        <h1 className="font-semibold text-2xl">{strings.noAccessTitle}</h1>
-        <p className="max-w-md text-muted-foreground">{strings.noAccessBody}</p>
-      </main>
+    <div className="flex min-h-svh items-center justify-center" aria-busy="true">
+      <div className="size-8 animate-spin rounded-full border-2 border-muted-foreground/25 border-t-foreground" />
     </div>
   );
 }
@@ -84,6 +58,8 @@ function OrgGuard({ children }: { children: React.ReactNode }) {
   });
   const [activationFailed, setActivationFailed] = useState(false);
 
+  const membershipsReady =
+    userMemberships.isLoading === false && userMemberships.data !== undefined;
   const memberships = userMemberships.data ?? [];
   const isMember = Boolean(
     configuredOrgId &&
@@ -94,6 +70,7 @@ function OrgGuard({ children }: { children: React.ReactNode }) {
     if (
       !isLoaded ||
       !authLoaded ||
+      !membershipsReady ||
       !setActive ||
       !isMember ||
       !configuredOrgId ||
@@ -105,21 +82,35 @@ function OrgGuard({ children }: { children: React.ReactNode }) {
       return;
     }
     void setActive({ organization: configuredOrgId }).catch(() => setActivationFailed(true));
-  }, [activationFailed, authLoaded, isLoaded, isMember, orgId, setActive]);
+  }, [activationFailed, authLoaded, isLoaded, isMember, membershipsReady, orgId, setActive]);
 
-  if (!authLoaded || !isLoaded || (isMember && orgId !== configuredOrgId && !activationFailed)) {
-    return (
-      <p className="flex min-h-svh items-center justify-center text-muted-foreground">
-        {strings.loading}
-      </p>
-    );
+  if (
+    !authLoaded ||
+    !isLoaded ||
+    !membershipsReady ||
+    (isMember && orgId !== configuredOrgId && !activationFailed)
+  ) {
+    return <LoadingScreen />;
   }
 
   if (!isMember || activationFailed) {
-    return <NoAccess />;
+    return <LoadingScreen />;
   }
 
   return children;
+}
+
+function SignOutButton() {
+  const { signOut } = useClerk();
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={() => void signOut({ redirectUrl: loginPath })}
+    >
+      {strings.signOut}
+    </Button>
+  );
 }
 
 function Ping() {
@@ -161,7 +152,7 @@ function Ping() {
     return <p className="text-muted-foreground">{strings.apiUnreachable}</p>;
   }
   if (!userId) {
-    return <p className="text-muted-foreground">{strings.loading}</p>;
+    return null;
   }
   return (
     <p>
@@ -173,7 +164,10 @@ function Ping() {
 function Shell() {
   return (
     <div className="flex min-h-svh flex-col">
-      <PlaceholderHeader />
+      <header className="flex items-center justify-between border-b px-4 py-3">
+        <span className="font-semibold">{strings.appName}</span>
+        <SignOutButton />
+      </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
         <h1 className="font-semibold text-2xl">{strings.heading}</h1>
         <Ping />
@@ -205,9 +199,7 @@ export function App() {
         </OrgGuard>
       </Show>
       <Show when="signed-out">
-        <p className="flex min-h-svh items-center justify-center text-muted-foreground">
-          {strings.loading}
-        </p>
+        <LoadingScreen />
         <RedirectToSignIn />
       </Show>
     </>
