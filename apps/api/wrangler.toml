@@ -22,6 +22,7 @@ CLERK_AUTHORIZED_PARTIES = "http://localhost:5173"
 #   wrangler secret put SENTRY_DSN --env <staging|production>
 #   wrangler secret put CLERK_SECRET_KEY --env <staging|production>
 #   wrangler secret put CLERK_PUBLISHABLE_KEY --env <staging|production>
+#   wrangler secret put CLERK_JWT_KEY --env <staging|production>
 #   wrangler secret put CLERK_ORG_ID --env <staging|production>
 # Locally they live in .dev.vars. See README.md.
 

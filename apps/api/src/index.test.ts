@@ -51,6 +51,7 @@ const staffEnv = {
   ...env,
   CLERK_SECRET_KEY: 'sk_test_example',
   CLERK_PUBLISHABLE_KEY: 'pk_test_example',
+  CLERK_JWT_KEY: '-----BEGIN PUBLIC KEY-----\ntest\n-----END PUBLIC KEY-----',
   CLERK_ORG_ID: 'org_piccolo',
   CLERK_AUTHORIZED_PARTIES: 'http://localhost:5173',
 };
@@ -83,7 +84,20 @@ describe('GET /api/admin/ping', () => {
     expect(authenticateRequest).toHaveBeenCalledWith(expect.any(Request), {
       authorizedParties: ['http://localhost:5173'],
       acceptsToken: 'session_token',
+      jwtKey: staffEnv.CLERK_JWT_KEY,
     });
+  });
+
+  it('fails closed when CLERK_JWT_KEY is missing', async () => {
+    const res = await app.request(
+      '/api/admin/ping',
+      { headers: { Authorization: 'Bearer member' } },
+      { ...staffEnv, CLERK_JWT_KEY: undefined },
+      ctx,
+    );
+    expect(res.status).toBe(500);
+    expect(await res.json()).toEqual({ error: 'internal', eventId: expect.any(String) });
+    expect(authenticateRequest).not.toHaveBeenCalled();
   });
 
   it('returns 401 for an unknown admin path without a session', async () => {

@@ -30,6 +30,9 @@ function bearerToken(authorization: string | undefined): string | undefined {
  * `orgId` is taken from the session token only. Clerk omits it when the user
  * has no active organization, and an empty `authorizedParties` list makes Clerk
  * skip the `azp` check, so a missing list fails closed.
+ *
+ * `CLERK_JWT_KEY` makes verification networkless: Clerk verifies the session JWT
+ * locally instead of fetching JWKS from the Backend API on every request.
  */
 export const requireStaff = createMiddleware<AppEnv>(async (c, next) => {
   // No bearer token is no session. Do this before Clerk so a missing publishable
@@ -43,6 +46,11 @@ export const requireStaff = createMiddleware<AppEnv>(async (c, next) => {
     throw new Error('CLERK_AUTHORIZED_PARTIES is not set');
   }
 
+  const jwtKey = c.env.CLERK_JWT_KEY?.trim();
+  if (!jwtKey) {
+    throw new Error('CLERK_JWT_KEY is not set');
+  }
+
   const clerk = createClerkClient({
     secretKey: c.env.CLERK_SECRET_KEY,
     publishableKey: c.env.CLERK_PUBLISHABLE_KEY,
@@ -50,6 +58,7 @@ export const requireStaff = createMiddleware<AppEnv>(async (c, next) => {
   const state = await clerk.authenticateRequest(c.req.raw, {
     authorizedParties,
     acceptsToken: 'session_token',
+    jwtKey,
   });
   if (!state.isAuthenticated) {
     return c.json({ error: 'unauthenticated' as const }, 401);
