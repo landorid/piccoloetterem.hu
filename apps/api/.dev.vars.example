@@ -12,5 +12,8 @@ SENTRY_DSN=
 CLERK_SECRET_KEY=
 # Same publishable key the admin bakes in as VITE_CLERK_PUBLISHABLE_KEY.
 CLERK_PUBLISHABLE_KEY=
+# PEM public key (Dashboard → API keys → Show JWT public key). Required for networkless verification.
+# Quote it; it is multi-line. Example: CLERK_JWT_KEY="-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----"
+CLERK_JWT_KEY=
 # Organization id (org_…) of this restaurant's staff. Membership is the only role.
 CLERK_ORG_ID=

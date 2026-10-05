@@ -16,6 +16,11 @@ export interface Bindings {
   CLERK_SECRET_KEY?: string;
   /** Clerk publishable key. `authenticateRequest` needs it together with the secret key. */
   CLERK_PUBLISHABLE_KEY?: string;
+  /**
+   * PEM public key for networkless session JWT verification (`jwtKey`).
+   * Dashboard → API keys → Show JWT public key. Without it the Worker would fetch JWKS per request.
+   */
+  CLERK_JWT_KEY?: string;
   /** Organization whose members are this restaurant's staff. The only role. */
   CLERK_ORG_ID?: string;
   /**

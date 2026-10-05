@@ -33,8 +33,8 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
    `DATABASE_URL` is your Neon development branch's pooled URL, the same one as in the repo-root
    `.env` (see packages/db/README.md). Quote it, because it contains `&`. `SENTRY_DSN` is optional;
    without it, Sentry is disabled. Copy `apps/api/.dev.vars.example` and fill in `CLERK_SECRET_KEY`,
-   `CLERK_PUBLISHABLE_KEY` and `CLERK_ORG_ID` (see below). `ENVIRONMENT`, `RESTAURANT`,
-   `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` come from `[vars]` in `wrangler.toml`.
+   `CLERK_PUBLISHABLE_KEY`, `CLERK_JWT_KEY` and `CLERK_ORG_ID` (see below). `ENVIRONMENT`,
+   `RESTAURANT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` come from `[vars]` in `wrangler.toml`.
 
 2. `pnpm dev` (from the repo root) runs the API on <http://localhost:8787>, the public site on
    <http://localhost:4321> and the admin on <http://localhost:5173>. The local `CORS_ORIGINS`
@@ -131,9 +131,11 @@ branch is still the stub; this change does not add the typed client.
 
 `requireStaff` calls `createClerkClient({ secretKey, publishableKey }).authenticateRequest`
 when the request carries `Authorization: Bearer <token>`. Clerk then verifies that token and
-does not run the cookie handshake. No bearer token, or a token Clerk rejects, is 401. The
-missing-token case does not call Clerk, so `curl` without a session is 401 even when the
-publishable key is not configured yet. `c.get('staff')` is set only when `orgId === CLERK_ORG_ID`.
+does not run the cookie handshake. Verification is networkless via `jwtKey` (`CLERK_JWT_KEY`):
+the Worker checks the session JWT locally instead of fetching JWKS from Clerk on every request.
+No bearer token, or a token Clerk rejects, is 401. The missing-token case does not call Clerk,
+so `curl` without a session is 401 even when the publishable key is not configured yet.
+`c.get('staff')` is set only when `orgId === CLERK_ORG_ID`.
 
 Gotchas:
 
@@ -146,6 +148,9 @@ Gotchas:
   public site and not the API). `CLERK_AUTHORIZED_PARTIES` is a comma-separated var in
   `wrangler.toml`. If the list is empty, Clerk skips the check, so the middleware rejects the
   request instead of calling Clerk.
+- **`CLERK_JWT_KEY`.** Dashboard → API keys → Show JWT public key → PEM Public Key. Required.
+  Without it the middleware fails closed (500) rather than falling back to a JWKS network call.
+  Quote the multi-line PEM in `.dev.vars`.
 - **Bearer, not cookie.** Do not expect `__session` to arrive. A request with only that cookie
   is unauthenticated here. The old single-origin model is not how this API is hosted.
 - **Organization id in the session token.** `authenticateRequest` does not look up membership.
@@ -156,7 +161,8 @@ Gotchas:
 
 The admin publishable key is `VITE_CLERK_PUBLISHABLE_KEY`, baked in at build time from the
 repo-root `.env` (the admin Worker is assets-only and has no runtime env). The API reads
-`CLERK_PUBLISHABLE_KEY` at runtime. They are the same key. `CLERK_SECRET_KEY` stays on the API.
+`CLERK_PUBLISHABLE_KEY` at runtime. They are the same key. `CLERK_SECRET_KEY` and
+`CLERK_JWT_KEY` stay on the API.
 
 ## Environments and secrets
 
@@ -181,6 +187,7 @@ wrangler secret put SENTRY_DSN --env staging
 | `DATABASE_URL` | secret | `.dev.vars` only. Deployed environments use the `HYPERDRIVE` binding instead |
 | `CLERK_SECRET_KEY` | secret | `wrangler secret put` per environment; `.dev.vars` locally |
 | `CLERK_PUBLISHABLE_KEY` | secret | same. Not secret in the cryptographic sense, but it is not written into `wrangler.toml`. The admin build uses `VITE_CLERK_PUBLISHABLE_KEY` |
+| `CLERK_JWT_KEY` | secret | same. PEM public key for networkless session JWT verification (`jwtKey`) |
 | `CLERK_ORG_ID` | secret | same. Organization id of this restaurant's staff |
 | `ENVIRONMENT` | var | `wrangler.toml`: `development`, `staging` or `production`, also the Sentry environment |
 | `RESTAURANT` | var | `wrangler.toml`: the `RestaurantConfig` instance (`loadConfig`) |
