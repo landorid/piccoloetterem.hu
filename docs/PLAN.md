@@ -273,8 +273,9 @@ Manual issues (label `manual`) are Dávid's and skip the guardrail and stop sect
 ## 8. CI secrets
 
 `.github/workflows/ci.yml` checks pull requests and pushes to `develop` and `main`. A push deploys:
-`develop` uses the `staging` GitHub Environment, `main` uses `production`. Create this list on each
-environment. Values stay out of the repo. Cloudflare and Neon resources are P2 (#40).
+`develop` uses the `development` GitHub Environment and the top-level Wrangler config, `main` uses
+`production`. Create this list on each environment. Values stay out of the repo. Cloudflare and Neon
+resources are P2 (#40).
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
