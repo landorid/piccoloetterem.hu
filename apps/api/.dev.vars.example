@@ -1,0 +1,16 @@
+# Copy to apps/api/.dev.vars. `wrangler dev` reads that file. Never commit .dev.vars.
+# Comments only. No real values. See README.md, "Clerk on Workers".
+
+# Neon pooled URL. Quote it, because it contains `&`. Same value as DATABASE_URL in the repo-root .env.
+DATABASE_URL=
+
+# Optional. Without it, Sentry is disabled locally.
+SENTRY_DSN=
+
+# Clerk — staff authentication only. Customers never enter Clerk.
+# Dashboard → API keys. The secret key stays on the API Worker.
+CLERK_SECRET_KEY=
+# Same publishable key the admin bakes in as VITE_CLERK_PUBLISHABLE_KEY.
+CLERK_PUBLISHABLE_KEY=
+# Organization id (org_…) of this restaurant's staff. Membership is the only role.
+CLERK_ORG_ID=

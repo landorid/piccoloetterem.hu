@@ -12,6 +12,23 @@ export interface Bindings {
   RESTAURANT?: string;
   /** Comma-separated browser origins allowed to call the API: the web and admin Workers. */
   CORS_ORIGINS?: string;
+  /** Clerk secret key. Staff auth only. From `.dev.vars` locally, `wrangler secret put` when deployed. */
+  CLERK_SECRET_KEY?: string;
+  /** Clerk publishable key. `authenticateRequest` needs it together with the secret key. */
+  CLERK_PUBLISHABLE_KEY?: string;
+  /** Organization whose members are this restaurant's staff. The only role. */
+  CLERK_ORG_ID?: string;
+  /**
+   * Comma-separated admin origins allowed to mint the session token (`azp`).
+   * Not a secret. Set in `wrangler.toml`, like `CORS_ORIGINS`.
+   */
+  CLERK_AUTHORIZED_PARTIES?: string;
+}
+
+/** A member of `CLERK_ORG_ID`, set by the `/api/admin/*` middleware. */
+export interface Staff {
+  userId: string;
+  orgId: string;
 }
 
 export interface AppEnv {
@@ -19,5 +36,6 @@ export interface AppEnv {
   Variables: {
     config: RestaurantConfig;
     db: Db;
+    staff: Staff;
   };
 }

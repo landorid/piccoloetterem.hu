@@ -1,0 +1,5 @@
+interface ImportMetaEnv {
+  readonly VITE_CLERK_PUBLISHABLE_KEY?: string;
+  readonly VITE_CLERK_ORG_ID?: string;
+  readonly VITE_API_URL?: string;
+}
