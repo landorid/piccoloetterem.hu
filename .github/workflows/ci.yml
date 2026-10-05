@@ -1,5 +1,5 @@
 # Secrets and variables to create on each GitHub Environment
-# (`staging` for develop, `production` for main). No values in this file.
+# (`development` for develop, `production` for main). No values in this file.
 #
 # - CLOUDFLARE_API_TOKEN
 # - CLOUDFLARE_ACCOUNT_ID
@@ -62,9 +62,11 @@ jobs:
     needs: checks
     if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
-    environment: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
     env:
-      WRANGLER_ENV: ${{ github.ref_name == 'main' && 'production' || 'staging' }}
+      # production matches [env.production] in each wrangler.toml.
+      # develop deploys the top-level config (piccolo-api, piccolo-web, piccolo-admin).
+      WRANGLER_ENV: ${{ github.ref_name == 'main' && 'production' || '' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -99,21 +101,21 @@ jobs:
 
       - name: Deploy API
         working-directory: apps/api
-        run: pnpm exec wrangler deploy --env "$WRANGLER_ENV"
+        run: pnpm exec wrangler deploy --env="$WRANGLER_ENV"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy web
         working-directory: apps/web
-        run: pnpm exec wrangler deploy --env "$WRANGLER_ENV"
+        run: pnpm exec wrangler deploy --env="$WRANGLER_ENV"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
       - name: Deploy admin
         working-directory: apps/admin
-        run: pnpm exec wrangler deploy --env "$WRANGLER_ENV"
+        run: pnpm exec wrangler deploy --env="$WRANGLER_ENV"
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
