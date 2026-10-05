@@ -45,6 +45,23 @@ describe('core', () => {
     );
   });
 
+  it('exports order composition, validation and pricing', () => {
+    expect(Object.keys(core)).toEqual(
+      expect.arrayContaining([
+        'orderErrorCodes',
+        'orderMessagesHu',
+        'normaliseEmailKey',
+        'normalisePhone',
+        'validateMenu',
+        'validateDay',
+        'validateSubmission',
+        'priceMenu',
+        'priceDay',
+        'priceSubmission',
+      ]),
+    );
+  });
+
   it('labels every allergen and category in Hungarian', () => {
     expect(Object.keys(core.allergenLabelsHu)).toEqual([...core.allergenCodes]);
     expect(Object.keys(core.categoryLabelsHu)).toEqual([
