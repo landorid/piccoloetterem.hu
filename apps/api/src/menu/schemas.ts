@@ -11,6 +11,9 @@ import { z } from 'zod';
  * (prices, allergens, categories, consistent ids) are `packages/core`'s, so their codes are
  * the same wherever an item is validated. The `satisfies` clauses keep each schema in step with
  * the core type it mirrors.
+ *
+ * Arrays are `readonly`, like the `MenuItem` the `GET` routes return, so a typed client can send
+ * back what it read without a cast.
  */
 
 /** `MenuItemContent`: what staff edit on any item. */
@@ -19,8 +22,8 @@ const itemContent = z.object({
   description: z.string().nullable(),
   priceWeekday: z.number(),
   priceWeekend: z.number().nullable(),
-  variations: z.array(z.string()),
-  allergens: z.array(z.string()),
+  variations: z.array(z.string()).readonly(),
+  allergens: z.array(z.string()).readonly(),
   soupIncluded: z.boolean(),
   requiresSide: z.boolean(),
 }) satisfies z.ZodType<MenuItemContent>;
@@ -31,7 +34,7 @@ const permanentItem = itemContent.extend({
   id: z.uuid().optional(),
   active: z.boolean().optional(),
 });
-const permanentSection = z.array(permanentItem);
+const permanentSection = z.array(permanentItem).readonly();
 
 /**
  * `PUT /items`: the whole permanent menu, the shape `GET /items` returns. Fields the server owns
@@ -57,7 +60,8 @@ export const weekParams = z
   .refine(({ year, week }) => isIsoWeek(year, week), { path: ['week'] });
 
 const weekItem = itemContent.extend({ id: z.uuid().optional() });
-const weekDay = z.object({ soups: z.array(weekItem), mains: z.array(weekItem) });
+const weekList = z.array(weekItem).readonly();
+const weekDay = z.object({ soups: weekList, mains: weekList });
 
 /**
  * `PUT /weeks/:year/:week`: the shape `GET` returns. Fields the server owns (`category`,
@@ -66,7 +70,7 @@ const weekDay = z.object({ soups: z.array(weekItem), mains: z.array(weekItem) })
  */
 export const weekBody = z.object({
   days: z.object({ 1: weekDay, 2: weekDay, 3: weekDay, 4: weekDay, 5: weekDay, 6: weekDay }),
-  featured: z.array(weekItem),
+  featured: weekList,
 }) satisfies z.ZodType<WeekDraft>;
 
 const isoDate = z.iso.date();

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
+import { hc, type InferResponseType } from 'hono/client';
 import { describe, expect, it } from 'vitest';
-import { app, handleError } from '../app';
+import { type AppType, app, handleError } from '../app';
 import type { AppEnv } from '../env';
 import { adminMenuRoutes } from './admin.routes';
 import { noopMenuCache } from './cache';
@@ -18,6 +19,27 @@ const routes: [method: string, path: string][] = [
   ['POST', '/closed-dates'],
   ['DELETE', '/closed-dates/2026-10-23'],
 ];
+
+describe('/api/admin/menu through the typed client', () => {
+  // A type-level check, enforced by `pnpm typecheck` (tsc compiles the tests): what a GET returns
+  // goes straight back into its PUT, with no cast.
+  it('accepts a GET result as the body of its PUT', () => {
+    const client = hc<AppType>('http://localhost');
+    type PermanentMenu = InferResponseType<typeof client.api.admin.menu.items.$get, 200>;
+    type Week = InferResponseType<
+      (typeof client.api.admin.menu.weeks)[':year'][':week']['$get'],
+      200
+    >;
+    const putBack = (menu: PermanentMenu, week: Week) => [
+      client.api.admin.menu.items.$put({ json: menu }),
+      client.api.admin.menu.weeks[':year'][':week'].$put({
+        param: { year: '2099', week: '10' },
+        json: week,
+      }),
+    ];
+    expect(putBack).toBeTypeOf('function');
+  });
+});
 
 describe('/api/admin/menu without a Clerk session', () => {
   it.each(routes)('%s %s is 401', async (method, path) => {
