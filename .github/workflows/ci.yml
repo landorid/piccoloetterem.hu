@@ -5,6 +5,14 @@
 # - CLOUDFLARE_ACCOUNT_ID
 # - DATABASE_URL (per environment)
 # - WORKER_URL (per environment, the API origin)
+#
+# Variables (not secrets, all three are public) to create on each GitHub Environment. Vite inlines
+# them into the admin bundle at build time, so the admin is built in the `deploy` job, where the
+# environment's variables are visible:
+#
+# - VITE_CLERK_PUBLISHABLE_KEY
+# - VITE_CLERK_ORG_ID
+# - VITE_API_URL (the API origin)
 
 name: CI
 
@@ -52,11 +60,8 @@ jobs:
           path: apps/web/dist/
           if-no-files-found: error
 
-      - uses: actions/upload-artifact@v4
-        with:
-          name: admin-dist
-          path: apps/admin/dist/
-          if-no-files-found: error
+      # The admin bundle is not uploaded: it is built again in `deploy` with the environment's
+      # VITE_* variables, which this job cannot read.
 
   deploy:
     needs: checks
@@ -89,10 +94,12 @@ jobs:
           name: web-dist
           path: apps/web/dist
 
-      - uses: actions/download-artifact@v4
-        with:
-          name: admin-dist
-          path: apps/admin/dist
+      - name: Build admin
+        run: pnpm --filter @piccolo/admin build
+        env:
+          VITE_CLERK_PUBLISHABLE_KEY: ${{ vars.VITE_CLERK_PUBLISHABLE_KEY }}
+          VITE_CLERK_ORG_ID: ${{ vars.VITE_CLERK_ORG_ID }}
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
 
       - name: Migrate database
         run: pnpm db:migrate
