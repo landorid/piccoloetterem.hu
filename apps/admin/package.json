@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "wrangler dev --port 8789",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "lint:strings": "node scripts/lint-strings.mjs"
   },
   "dependencies": {
     "@clerk/localizations": "4.21.2",
