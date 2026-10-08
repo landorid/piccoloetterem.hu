@@ -1,6 +1,7 @@
 import type { TZDate } from '@date-fns/tz';
 import { datesOfIsoWeek, isoDate, weekLabel } from '../calendar';
-import type { Category, PermanentCategory, RestaurantConfig } from '../config/types';
+import type { Category, RestaurantConfig } from '../config/types';
+import { groupPermanentItems } from './edit';
 import type {
   MenuDay,
   MenuItem,
@@ -36,11 +37,6 @@ export function buildPublicMenu(
       .map((entry) => byId.get(entry.menuItemId))
       .filter((item): item is MenuItem => item?.category === category);
 
-  const permanent = (category: PermanentCategory): MenuItem[] =>
-    activeItems
-      .filter((item) => item.category === category)
-      .toSorted((a, b) => a.sortOrder - b.sortOrder);
-
   const [mon, tue, wed, thu, fri, sat] = datesOfIsoWeek(isoYear, isoWeek, config.timezone);
   const day = (menuDay: MenuDay, date: TZDate): PublicMenuDay => ({
     date: isoDate(date),
@@ -61,12 +57,6 @@ export function buildPublicMenu(
       6: day(6, sat),
     },
     featured: scheduled(null, 'featured'),
-    permanent: {
-      allWeek: permanent('all_week'),
-      desserts: permanent('dessert'),
-      pickles: permanent('pickle'),
-      sides: permanent('side'),
-      sideExtras: permanent('side_extra'),
-    },
+    permanent: groupPermanentItems(activeItems),
   };
 }

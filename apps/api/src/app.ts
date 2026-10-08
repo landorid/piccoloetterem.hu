@@ -7,6 +7,8 @@ import pkg from '../package.json';
 import { requireStaff } from './auth';
 import type { AppEnv, Bindings } from './env';
 import { HttpError } from './errors';
+import { adminMenuRoutes } from './menu/admin.routes';
+import { menuCacheFor } from './menu/cache';
 import { withDb } from './middleware';
 
 /** Parses `CORS_ORIGINS`: comma-separated exact origins, e.g. `https://admin.example.hu`. */
@@ -52,7 +54,8 @@ export const app = new Hono<AppEnv>()
   // Every staff route. `requireStaff` runs before the handler and before notFound,
   // so an unknown `/api/admin/*` path is still 401 without a session.
   .use('/admin/*', requireStaff)
-  .get('/admin/ping', (c) => c.json({ userId: c.get('staff').userId }));
+  .get('/admin/ping', (c) => c.json({ userId: c.get('staff').userId }))
+  .route('/admin/menu', adminMenuRoutes(menuCacheFor));
 
 app.notFound((c) => c.json({ error: 'not_found', message: `No route for ${c.req.path}` }, 404));
 

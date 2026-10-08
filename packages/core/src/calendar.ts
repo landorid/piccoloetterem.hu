@@ -49,18 +49,22 @@ export function isoWeekOf(date: TZDate): { isoYear: number; isoWeek: number } {
   return { isoYear: getISOWeekYear(date), isoWeek: getISOWeek(date) };
 }
 
+/** Whether ISO year `isoYear` has a week `isoWeek` (52 or 53 weeks, depending on the year). */
+export function isIsoWeek(isoYear: number, isoWeek: number): boolean {
+  if (!Number.isInteger(isoYear) || !Number.isInteger(isoWeek) || isoWeek < 1) {
+    return false;
+  }
+  // January 4 always falls in ISO week 1.
+  return isoWeek <= getISOWeeksInYear(new TZDate(isoYear, 0, 4, 'UTC'));
+}
+
 /** Monday … Sunday of the ISO week, as local midnights in `tz`. */
 export function datesOfIsoWeek(isoYear: number, isoWeek: number, tz: string): WeekDates {
-  // January 4 always falls in ISO week 1.
-  const jan4 = toZoned(new TZDate(isoYear, 0, 4, tz), tz);
-  if (
-    !Number.isInteger(isoYear) ||
-    !Number.isInteger(isoWeek) ||
-    isoWeek < 1 ||
-    isoWeek > getISOWeeksInYear(jan4)
-  ) {
+  if (!isIsoWeek(isoYear, isoWeek)) {
     throw new RangeError(`No ISO week ${isoWeek} in ${isoYear}`);
   }
+  // January 4 always falls in ISO week 1.
+  const jan4 = toZoned(new TZDate(isoYear, 0, 4, tz), tz);
   const monday = addDays<TZDate>(startOfISOWeek<TZDate>(jan4), (isoWeek - 1) * 7);
   const day = (offset: number) => addDays<TZDate>(monday, offset);
   return [day(0), day(1), day(2), day(3), day(4), day(5), day(6)];
