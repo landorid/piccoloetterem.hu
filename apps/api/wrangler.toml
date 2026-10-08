@@ -12,11 +12,11 @@ ENVIRONMENT = "development"
 RESTAURANT = "piccolo"
 # Browser origins allowed to call the API (CORS), comma-separated: the Astro and Vite dev servers
 # that `pnpm dev` starts.
-CORS_ORIGINS = "http://localhost:4321,http://localhost:5173"
+CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.honlapvarazslo.workers.dev,https://piccolo-admin.honlapvarazslo.workers.dev"
 # Admin browser origins allowed to mint the Clerk session token (the azp claim).
 # Exact origin, including scheme and port. The public site is not an authorized party.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
-CLERK_AUTHORIZED_PARTIES = "http://localhost:5173"
+CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev"
 
 # Secrets are never written in this file. Set them per environment with
 #   wrangler secret put SENTRY_DSN --env <staging|production>

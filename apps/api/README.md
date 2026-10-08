@@ -37,8 +37,10 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
    `RESTAURANT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` come from `[vars]` in `wrangler.toml`.
 
 2. `pnpm dev` (from the repo root) runs the API on <http://localhost:8787>, the public site on
-   <http://localhost:4321> and the admin on <http://localhost:5173>. The local `CORS_ORIGINS`
-   allows exactly those two dev servers. Run the API alone with `pnpm --filter @piccolo/api dev`.
+   <http://localhost:4321> and the admin on <http://localhost:5173>. The top-level `CORS_ORIGINS`
+   allows those two dev servers and the deployed development web and admin (see
+   [Environments and secrets](#environments-and-secrets)). Run the API alone with
+   `pnpm --filter @piccolo/api dev`.
 
 To try a frontend exactly as its Worker serves it, build it and run `pnpm --filter @piccolo/web preview`
 (<http://localhost:8788>) or `pnpm --filter @piccolo/admin preview` (<http://localhost:8789>).
@@ -144,7 +146,8 @@ Gotchas:
   1365 KiB uncompressed / 274 KiB gzip, under the Paid plan's 10 MB limit. Do not pull Clerk
   into a second bundle.
 - **`authorizedParties`.** Clerk puts the admin origin in the token's `azp` claim. Pass that
-  origin, exactly, including scheme and port (`http://localhost:5173` in local dev, not the
+  origin, exactly, including scheme and port (`http://localhost:5173` in local dev,
+  `https://piccolo-admin.honlapvarazslo.workers.dev` for the deployed development admin; not the
   public site and not the API). `CLERK_AUTHORIZED_PARTIES` is a comma-separated var in
   `wrangler.toml`. If the list is empty, Clerk skips the check, so the middleware rejects the
   request instead of calling Clerk.
@@ -167,12 +170,18 @@ repo-root `.env` (the admin Worker is assets-only and has no runtime env). The A
 ## Environments and secrets
 
 `wrangler.toml` defines three environments:
-- the top level, for local development
+- the top level, for local development and for the development Worker that CI deploys from
+  `develop` as `piccolo-api`
 - `staging`, deployed as `piccolo-api-staging`
 - `production`, deployed as `piccolo-api-production`
 
-Each deployed environment sets `ENVIRONMENT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES`, and
-binds `HYPERDRIVE`. The Hyperdrive ids and the origin URLs are **placeholders** until manual
+The top level's `CORS_ORIGINS` lists the local dev servers and the deployed development web and
+admin, `https://piccolo-web.honlapvarazslo.workers.dev` and
+`https://piccolo-admin.honlapvarazslo.workers.dev`. Its `CLERK_AUTHORIZED_PARTIES` lists the two
+admin origins only: `http://localhost:5173` and `https://piccolo-admin.honlapvarazslo.workers.dev`.
+
+`staging` and `production` each set `ENVIRONMENT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES`,
+and bind `HYPERDRIVE`. Their Hyperdrive ids and origin URLs are **placeholders** until manual
 issue #40 creates the resources and replaces them.
 
 Secrets are never written into `wrangler.toml`. Set them per environment:
