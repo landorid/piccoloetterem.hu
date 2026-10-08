@@ -59,19 +59,17 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 
 ## Admin menu
 
-Under `/api/admin/menu`. Items are `MenuItem` from `packages/core`. Item fields are checked by
-`validateMenuItem`, a week by `planWeek`, a reorder by `checkReorder`; a failure is 400
-`{ error: 'validation', fields }` with core's codes (`priceWeekday: 'negative'`,
-`days.1.soups.0.id: 'not_weekly'`).
+Under `/api/admin/menu`. Items are `MenuItem` from `packages/core`. The permanent menu and each
+week are saved as a whole, in one request: `planPermanentItems` and `planWeek` check them, and
+`validateMenuItem` every item. A failure rejects the whole save with 400
+`{ error: 'validation', fields }`, keyed by path with core's codes (`sides.2.priceWeekday:
+'negative'`, `days.1.soups.0.id: 'not_weekly'`).
 
 | Route | Body → response |
 |---|---|
-| `GET /items?category=` | `{ items }`: permanent items, active and inactive, by `sortOrder`; every permanent category without `category` |
-| `POST /items` | Content fields + a permanent `category` → 201 `{ item }`, active, last in its category |
-| `PATCH /items/:id` | Any subset of those fields and `active` → `{ item }`. Changing `category` puts it last there |
-| `POST /items/:id/deactivate` | → `{ item }` with `active: false` |
-| `POST /items/reorder` | `{ ids }`: every item of one permanent category, in the new order → `{ items }` |
-| `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly items too |
+| `GET /items` | `{ allWeek, desserts, pickles, sides, sideExtras }` (the keys of `PublicMenu.permanent`): every permanent item, active and inactive, each section by `sortOrder` |
+| `PUT /items` | The same shape (server-owned fields are ignored) → the permanent menu as `GET` returns it |
+| `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly and permanent items; 404 `item_not_found` for an unknown id |
 | `GET /weeks/:year/:week` | `{ week: { isoYear, isoWeek, publishedAt }, days: { 1…6: { soups, mains } }, featured }`; an empty draft if the week has no row |
 | `PUT /weeks/:year/:week` | The same shape (server-owned fields are ignored) → the week as `GET` returns it |
 | `POST /weeks/:year/:week/publish` | → `{ week }`. Sets `publishedAt` once; 404 `week_not_found` before the first `PUT`. There is no unpublish |
@@ -79,8 +77,14 @@ Under `/api/admin/menu`. Items are `MenuItem` from `packages/core`. Item fields 
 | `POST /closed-dates` | `{ date }` → `{ date, created }`; `created: false` when it was already closed |
 | `DELETE /closed-dates/:date` | → `{ date, deleted }`; `deleted: false` when it was not closed |
 
-`/items/:id` (except `sold-out`) knows only permanent items and answers 404 `item_not_found` for a
-weekly one: those are edited through their week.
+**Permanent menu save.** One transaction, holding an advisory lock so two saves in flight cannot
+interleave. A section fixes its items' category and an item's position in it is its `sortOrder`.
+An item with `id` updates that permanent item, written only if something changed; one without
+`id` is inserted. `active` is optional and defaults to `true`. Every permanent item missing from
+the payload is set inactive, never deleted. Each `id` must be a stored permanent item, listed
+once: otherwise `unknown_item`, `weekly_item` or `duplicate`. `soldOut` is not part of the save; it
+has its own route. This replaced the per-item routes of the issue's first scope (decided by Dávid
+on 2026-10-08), matching the old `/etlap` page.
 
 **Week upsert.** One transaction, holding the week's row lock so two saves in flight cannot
 interleave. A list fixes its items' category (soups `daily_soup`, mains `daily_main`, featured
@@ -99,14 +103,15 @@ is the list order.
 | publish a week | that week |
 | add or remove a closed date | the week of that date |
 | sold-out of a weekly item | every week it is scheduled on |
-| anything on a permanent item (create, edit, deactivate, reorder, sold-out) | everything (`purgeAll`): permanent items are on every week's menu |
+| `PUT /items`, or sold-out of a permanent item | everything (`purgeAll`, once per request): permanent items are on every week's menu |
 
 Purges are idempotent and run on every such request, also when it changed nothing (publishing
 again, closing a date twice), so a retry after a failed purge heals the cache.
 
 Integration tests (`src/menu/admin.integration.test.ts`) run when `DATABASE_URL` is set in the
-shell, and are skipped otherwise (as in CI). They work in a random week of the 2090s and delete
-what they create. From the repo root:
+shell, and are skipped otherwise (as in CI). They pick a random unused week of the 2090s and delete
+what they create; the permanent items that existed before the run are restored column for column.
+From the repo root:
 
 ```bash
 set -a; source .env; set +a

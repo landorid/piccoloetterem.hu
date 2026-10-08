@@ -1,14 +1,14 @@
 import {
   isIsoWeek,
   type MenuItemContent,
-  permanentCategories,
+  type PermanentItemsDraft,
   type WeekDraft,
 } from '@piccolo/core';
 import { z } from 'zod';
 
 /*
  * The admin menu API on the wire. These schemas check shape and types only; the domain rules
- * (prices, allergens, categories, a week's consistency) are `packages/core`'s, so their codes are
+ * (prices, allergens, categories, consistent ids) are `packages/core`'s, so their codes are
  * the same wherever an item is validated. The `satisfies` clauses keep each schema in step with
  * the core type it mirrors.
  */
@@ -25,20 +25,26 @@ const itemContent = z.object({
   requiresSide: z.boolean(),
 }) satisfies z.ZodType<MenuItemContent>;
 
-const permanentCategory = z.enum(permanentCategories);
-
 export const itemParams = z.object({ id: z.uuid() });
 
-export const itemsQuery = z.object({ category: permanentCategory.optional() });
+const permanentItem = itemContent.extend({
+  id: z.uuid().optional(),
+  active: z.boolean().optional(),
+});
+const permanentSection = z.array(permanentItem);
 
-/** `POST /items`: a new permanent item. It starts active, not sold out, last in its category. */
-export const newItemBody = itemContent.extend({ category: permanentCategory });
-
-/** `PATCH /items/:id`: any subset of the fields; `active: true` brings back a deactivated item. */
-export const itemPatchBody = newItemBody.extend({ active: z.boolean() }).partial();
-
-/** `POST /items/reorder`: every item of one permanent category, in the new order. */
-export const reorderBody = z.object({ ids: z.array(z.uuid()) });
+/**
+ * `PUT /items`: the whole permanent menu, the shape `GET /items` returns. Fields the server owns
+ * (`category`, `soldOut`, `sortOrder`) are accepted and ignored, so a client can send back what it
+ * read.
+ */
+export const permanentItemsBody = z.object({
+  allWeek: permanentSection,
+  desserts: permanentSection,
+  pickles: permanentSection,
+  sides: permanentSection,
+  sideExtras: permanentSection,
+}) satisfies z.ZodType<PermanentItemsDraft>;
 
 export const soldOutBody = z.object({ soldOut: z.boolean() });
 

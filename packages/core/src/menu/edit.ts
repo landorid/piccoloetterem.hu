@@ -1,10 +1,10 @@
-import type { Category, PermanentCategory, WeeklyCategory } from '../config/types';
+import type { PermanentCategory, WeeklyCategory } from '../config/types';
 import { isWeeklyCategory, type MenuItemErrorCode, validateMenuItem } from './rules';
 import type { MenuDay, MenuItem, MenuItemInput } from './types';
 
 /*
- * Staff edits to the menu: a week's items and schedule, and the order of a permanent category.
- * Pure: the caller loads the stored items and writes the result.
+ * Staff edits to the menu: a week's items and schedule, and the whole permanent menu. Both are
+ * saved in one request each. Pure: the caller loads the stored items and writes the result.
  */
 
 /**
@@ -202,53 +202,151 @@ function sameList(a: readonly string[], b: readonly string[]): boolean {
   return a.length === b.length && a.every((value, i) => value === b[i]);
 }
 
-export type ReorderErrorCode =
-  /** No ids, or an id listed twice. */
-  | 'invalid'
-  /** An id that is not a stored item. */
-  | 'unknown_item'
-  /** The ids span more than one category. */
-  | 'mixed_categories'
-  /** The ids are weekly items; their order comes from the week's schedule. */
-  | 'weekly_category'
-  /** Some item of the category is missing from the list. */
-  | 'incomplete';
+/** The sections of the permanent menu, named as in `PublicMenu.permanent`, and their category. */
+export const permanentSections = {
+  allWeek: 'all_week',
+  desserts: 'dessert',
+  pickles: 'pickle',
+  sides: 'side',
+  sideExtras: 'side_extra',
+} as const satisfies Record<string, PermanentCategory>;
 
-export type ReorderResult =
-  | { ok: true; category: PermanentCategory }
-  | { ok: false; code: ReorderErrorCode };
+export type PermanentSection = keyof typeof permanentSections;
+
+const sectionNames = Object.keys(permanentSections) as PermanentSection[];
+
+/** Every permanent item, active or not, by section, each section in `sortOrder`. */
+export type PermanentMenu = Record<PermanentSection, MenuItem[]>;
 
 /**
- * Checks a new order for one permanent category. `ids` must list every item of that category,
- * active or not, exactly once. `stored` holds every item of every category the ids belong to.
- * On success the caller sets each item's `sortOrder` to its index in `ids`.
+ * Groups items by permanent section, each section in `sortOrder` order. Weekly items are left
+ * out; inactive ones are kept.
  */
-export function checkReorder(
-  ids: readonly string[],
-  stored: readonly { id: string; category: Category }[],
-): ReorderResult {
-  if (ids.length === 0 || new Set(ids).size !== ids.length) {
-    return { ok: false, code: 'invalid' };
-  }
-  const categoryById = new Map(stored.map((item) => [item.id, item.category]));
-  const categories = new Set<Category>();
-  for (const id of ids) {
-    const category = categoryById.get(id);
-    if (!category) {
-      return { ok: false, code: 'unknown_item' };
+export function groupPermanentItems(items: readonly MenuItem[]): PermanentMenu {
+  const sorted = items.toSorted((a, b) => a.sortOrder - b.sortOrder);
+  const section = (name: PermanentSection) =>
+    sorted.filter((item) => item.category === permanentSections[name]);
+  return {
+    allWeek: section('allWeek'),
+    desserts: section('desserts'),
+    pickles: section('pickles'),
+    sides: section('sides'),
+    sideExtras: section('sideExtras'),
+  };
+}
+
+/**
+ * A permanent item as staff submit it. With `id` it is that stored permanent item; without, a new
+ * one. `active` defaults to `true`: listing an item puts it on the menu unless it says otherwise.
+ */
+export interface PermanentItemDraft extends MenuItemContent {
+  id?: string | undefined;
+  active?: boolean | undefined;
+}
+
+/** The whole permanent menu as staff submit it. The order of each section is the order guests see. */
+export type PermanentItemsDraft = Readonly<Record<PermanentSection, readonly PermanentItemDraft[]>>;
+
+export interface PlannedPermanentItem {
+  /** `null`: a new item to insert. */
+  id: string | null;
+  /** Fixed by the section the item is listed in. */
+  category: PermanentCategory;
+  content: MenuItemContent;
+  active: boolean;
+  /** The item's position within its section. */
+  sortOrder: number;
+  /** Whether the item must be written: always for a new one; for a stored one when anything differs. */
+  changed: boolean;
+}
+
+/** What to write so the permanent menu matches the draft, section by section. */
+export interface PermanentItemsPlan {
+  items: readonly PlannedPermanentItem[];
+}
+
+export type PermanentItemsErrorCode =
+  | MenuItemErrorCode
+  /** The `id` is not a stored item. */
+  | 'unknown_item'
+  /** The `id` is a weekly item; those are edited through their week. */
+  | 'weekly_item'
+  /** The item is already listed earlier in the draft. */
+  | 'duplicate';
+
+/** Field path (`sides.2.priceWeekday`, `desserts.0.id`) → the first rule it breaks. */
+export type PermanentItemsErrors = Record<string, PermanentItemsErrorCode>;
+
+export type PermanentItemsResult =
+  | { ok: true; plan: PermanentItemsPlan }
+  | { ok: false; fields: PermanentItemsErrors };
+
+/**
+ * Checks the whole permanent menu and works out what to write. A section fixes its items'
+ * category and an item's position in it is its `sortOrder`. Every item must pass
+ * `validateMenuItem` in that category. An `id` must be a stored permanent item (`stored` holds
+ * every item the draft references), listed once in the whole draft.
+ *
+ * Stored permanent items missing from the draft are the caller's to set inactive: they are not
+ * part of the plan.
+ */
+export function planPermanentItems(
+  draft: PermanentItemsDraft,
+  stored: ReadonlyMap<string, MenuItem>,
+): PermanentItemsResult {
+  const fields: PermanentItemsErrors = {};
+  const items: PlannedPermanentItem[] = [];
+  const listed = new Set<string>();
+
+  for (const name of sectionNames) {
+    const category = permanentSections[name];
+    for (const [sortOrder, entry] of draft[name].entries()) {
+      const at = `${name}.${sortOrder}`;
+      const { id, active = true, ...content } = entry;
+      const errors = validateMenuItem({ ...content, category, soldOut: false, active, sortOrder });
+      for (const [field, code] of Object.entries(errors ?? {})) {
+        fields[`${at}.${field}`] = code;
+      }
+      if (errors) {
+        continue;
+      }
+
+      if (id === undefined) {
+        items.push({ id: null, category, content, active, sortOrder, changed: true });
+        continue;
+      }
+
+      const current = stored.get(id);
+      if (!current) {
+        fields[`${at}.id`] = 'unknown_item';
+        continue;
+      }
+      if (isWeeklyCategory(current.category)) {
+        fields[`${at}.id`] = 'weekly_item';
+        continue;
+      }
+      if (listed.has(id)) {
+        fields[`${at}.id`] = 'duplicate';
+        continue;
+      }
+      listed.add(id);
+
+      const changed =
+        current.category !== category ||
+        current.active !== active ||
+        current.sortOrder !== sortOrder ||
+        !sameContent(current, content);
+      items.push({ id, category, content, active, sortOrder, changed });
     }
-    categories.add(category);
   }
-  const [category] = categories;
-  if (categories.size !== 1 || !category) {
-    return { ok: false, code: 'mixed_categories' };
-  }
-  if (isWeeklyCategory(category)) {
-    return { ok: false, code: 'weekly_category' };
-  }
-  const members = stored.filter((item) => item.category === category);
-  if (members.length !== ids.length) {
-    return { ok: false, code: 'incomplete' };
-  }
-  return { ok: true, category };
+
+  return Object.keys(fields).length > 0 ? { ok: false, fields } : { ok: true, plan: { items } };
+}
+
+/** Every stored item the draft references, once each: the items `planPermanentItems` needs. */
+export function permanentDraftIds(draft: PermanentItemsDraft): string[] {
+  const ids = sectionNames
+    .flatMap((name) => draft[name])
+    .flatMap((item) => (item.id === undefined ? [] : [item.id]));
+  return [...new Set(ids)];
 }

@@ -8,11 +8,8 @@ import { noopMenuCache } from './cache';
 const id = '00000000-0000-4000-8000-000000000101';
 
 const routes: [method: string, path: string][] = [
-  ['GET', '/items?category=side'],
-  ['POST', '/items'],
-  ['PATCH', `/items/${id}`],
-  ['POST', `/items/${id}/deactivate`],
-  ['POST', '/items/reorder'],
+  ['GET', '/items'],
+  ['PUT', '/items'],
   ['POST', `/items/${id}/sold-out`],
   ['GET', '/weeks/2026/41'],
   ['PUT', '/weeks/2026/41'],
@@ -77,11 +74,17 @@ describe('/api/admin/menu request validation', () => {
     requiresSide: false,
   };
 
+  const noItems = { allWeek: [], desserts: [], pickles: [], sides: [], sideExtras: [] };
+
   it.each<[string, string, unknown, Record<string, string>]>([
-    ['GET', '/items?category=daily_main', undefined, { category: 'invalid_value' }],
-    ['POST', '/items', { ...item, category: 'daily_soup' }, { category: 'invalid_value' }],
-    ['PATCH', '/items/not-a-uuid', {}, { id: 'invalid_format' }],
-    ['POST', '/items/reorder', { ids: ['nope'] }, { 'ids.0': 'invalid_format' }],
+    ['PUT', '/items', { ...noItems, sideExtras: undefined }, { sideExtras: 'invalid_type' }],
+    [
+      'PUT',
+      '/items',
+      { ...noItems, sides: [{ ...item, id: 'nope' }] },
+      { 'sides.0.id': 'invalid_format' },
+    ],
+    ['POST', '/items/not-a-uuid/sold-out', { soldOut: true }, { id: 'invalid_format' }],
     ['POST', `/items/${id}/sold-out`, {}, { soldOut: 'invalid_type' }],
     ['GET', '/weeks/2025/53', undefined, { week: 'custom' }],
     ['GET', '/weeks/2026/0', undefined, { week: 'too_small' }],
@@ -95,24 +98,40 @@ describe('/api/admin/menu request validation', () => {
     expect(await res.json()).toEqual({ error: 'validation', fields });
   });
 
-  it('rejects an item that breaks a core rule with the core error codes', async () => {
-    const res = await send('POST', '/items', {
-      ...item,
-      name: '  ',
-      priceWeekday: 12.5,
-      allergens: ['gluten', 'paprika'],
-      requiresSide: true,
+  it('rejects a permanent item that breaks a core rule under its path', async () => {
+    const res = await send('PUT', '/items', {
+      ...noItems,
+      desserts: [
+        item,
+        {
+          ...item,
+          name: '  ',
+          priceWeekday: 12.5,
+          allergens: ['gluten', 'paprika'],
+          requiresSide: true,
+        },
+      ],
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({
       error: 'validation',
       fields: {
-        name: 'required',
-        priceWeekday: 'not_integer',
-        allergens: 'invalid',
-        requiresSide: 'not_allowed',
+        'desserts.1.name': 'required',
+        'desserts.1.priceWeekday': 'not_integer',
+        'desserts.1.allergens': 'invalid',
+        'desserts.1.requiresSide': 'not_allowed',
       },
     });
+  });
+
+  // Replaced by `PUT /items` (decided by Dávid on 2026-10-08).
+  it.each([
+    ['POST', '/items'],
+    ['PATCH', `/items/${id}`],
+    ['POST', `/items/${id}/deactivate`],
+    ['POST', '/items/reorder'],
+  ])('%s %s no longer exists', async (method, path) => {
+    expect((await send(method, path, {})).status).toBe(404);
   });
 
   it('rejects a week item that breaks a core rule under its path', async () => {

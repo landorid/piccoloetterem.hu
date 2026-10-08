@@ -3,11 +3,12 @@
  * (a Neon development branch or a local container that `pnpm db:migrate` has migrated).
  *
  * That database may also serve a deployed development environment, so the tests never truncate:
- * they work in a random week of the 2090s and delete every row they create afterwards, and they
- * restore the sort order of the existing items the reorder test touches.
+ * they work in a random week of the 2090s and delete every row they create afterwards. Saving the
+ * permanent menu touches every permanent item, so the ones that existed before the run are put
+ * back exactly as they were.
  */
 import { randomUUID } from 'node:crypto';
-import { datesOfIsoWeek, isoDate, type MenuItem } from '@piccolo/core';
+import { datesOfIsoWeek, isoDate, type MenuItem, permanentCategories } from '@piccolo/core';
 import {
   and,
   closedDates,
@@ -15,12 +16,15 @@ import {
   customers,
   eq,
   inArray,
+  like,
   menuItems,
   menuSchedule,
   menuWeeks,
+  notInArray,
   orderItems,
   orderMenus,
   orders,
+  sql,
 } from '@piccolo/db';
 import { Hono } from 'hono';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -34,12 +38,15 @@ const url = process.env.DATABASE_URL;
 describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
   const db = createDb(url ?? '');
 
-  const isoYear = 2090 + Math.floor(Math.random() * 10);
-  const weekA = 1 + Math.floor(Math.random() * 50);
-  const weekB = weekA + 1;
-  const neverSaved = weekA + 2;
-  const [monday, , wednesday, , , , sunday] = datesOfIsoWeek(isoYear, weekA, 'Europe/Budapest');
-  const closedDate = isoDate(wednesday);
+  // A random week of the 2090s, its next two weeks and its Wednesday, all unused: picked in
+  // beforeAll, so cleanup can delete them without touching anyone else's rows.
+  let isoYear = 0;
+  let weekA = 0;
+  let weekB = 0;
+  let neverSaved = 0;
+  let mondayDate = '';
+  let sundayDate = '';
+  let closedDate = '';
 
   const purges: string[] = [];
   const cache: MenuCache = {
@@ -85,7 +92,9 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
   const createdItems = new Set<string>();
   const createdOrders: string[] = [];
   const createdCustomers: string[] = [];
-  let sideExtraOrder: { id: string; sortOrder: number }[] = [];
+  let permanentBefore: (typeof menuItems.$inferSelect)[] = [];
+  /** `created_at` / `updated_at` as Postgres prints them: a JS `Date` would drop the microseconds. */
+  const stampsBefore = new Map<string, { created: string; updated: string }>();
 
   /** Every menu item in a response body, so the ones this run created can be deleted. */
   function itemsIn(json: unknown): MenuItem[] {
@@ -111,6 +120,8 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
   });
   const soupContent = (name: string) =>
     content(name, { priceWeekday: 0, priceWeekend: null, soupIncluded: false });
+  const sideContent = (name: string) =>
+    content(name, { priceWeekday: 750, priceWeekend: null, soupIncluded: false });
   const emptyDays = () =>
     Object.fromEntries([1, 2, 3, 4, 5, 6].map((day) => [day, { soups: [], mains: [] }]));
 
@@ -167,12 +178,44 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
   }
 
   beforeAll(async () => {
-    const existing = await db.select({ id: menuItems.id }).from(menuItems);
+    for (;;) {
+      isoYear = 2090 + Math.floor(Math.random() * 10);
+      weekA = 1 + Math.floor(Math.random() * 50);
+      weekB = weekA + 1;
+      neverSaved = weekA + 2;
+      const [monday, , wednesday, , , , sunday] = datesOfIsoWeek(isoYear, weekA, 'Europe/Budapest');
+      mondayDate = isoDate(monday);
+      sundayDate = isoDate(sunday);
+      closedDate = isoDate(wednesday);
+      const weeksInUse = await db
+        .select({ isoWeek: menuWeeks.isoWeek })
+        .from(menuWeeks)
+        .where(
+          and(
+            eq(menuWeeks.isoYear, isoYear),
+            inArray(menuWeeks.isoWeek, [weekA, weekB, neverSaved]),
+          ),
+        );
+      const dateInUse = await db
+        .select({ date: closedDates.date })
+        .from(closedDates)
+        .where(eq(closedDates.date, closedDate));
+      if (weeksInUse.length === 0 && dateInUse.length === 0) {
+        break;
+      }
+    }
+
+    const existing = await db.select().from(menuItems);
     preexistingItems = new Set(existing.map((row) => row.id));
-    sideExtraOrder = await db
-      .select({ id: menuItems.id, sortOrder: menuItems.sortOrder })
-      .from(menuItems)
-      .where(eq(menuItems.category, 'side_extra'));
+    permanentBefore = existing.filter((row) =>
+      (permanentCategories as readonly string[]).includes(row.category),
+    );
+    const { rows } = await db.execute<{ id: string; created: string; updated: string }>(
+      sql`select id, created_at::text as created, updated_at::text as updated from ${menuItems}`,
+    );
+    for (const { id, created, updated } of rows) {
+      stampsBefore.set(id, { created, updated });
+    }
   });
 
   beforeEach(() => {
@@ -192,15 +235,34 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
         and(eq(table.isoYear, isoYear), inArray(table.isoWeek, [weekA, weekB, neverSaved]));
       await db.delete(menuSchedule).where(testWeeks(menuSchedule));
       await db.delete(menuWeeks).where(testWeeks(menuWeeks));
-      // Responses also list items that were there before the run; those stay.
+      // Responses also list items that were there before the run; those stay. The name check
+      // catches an item whose id never reached a response.
       const ours = [...createdItems].filter((id) => !preexistingItems.has(id));
-      if (ours.length > 0) {
-        await db.delete(menuSchedule).where(inArray(menuSchedule.menuItemId, ours));
-        await db.delete(menuItems).where(inArray(menuItems.id, ours));
+      const named = await db
+        .select({ id: menuItems.id })
+        .from(menuItems)
+        .where(
+          and(
+            like(menuItems.name, 'M2 teszt%'),
+            notInArray(menuItems.id, [...preexistingItems, randomUUID()]),
+          ),
+        );
+      const doomed = [...new Set([...ours, ...named.map((row) => row.id)])];
+      if (doomed.length > 0) {
+        await db.delete(menuSchedule).where(inArray(menuSchedule.menuItemId, doomed));
+        await db.delete(menuItems).where(inArray(menuItems.id, doomed));
       }
       await db.delete(closedDates).where(eq(closedDates.date, closedDate));
-      for (const { id, sortOrder } of sideExtraOrder) {
-        await db.update(menuItems).set({ sortOrder }).where(eq(menuItems.id, id));
+      for (const { id, ...row } of permanentBefore) {
+        const stamps = stampsBefore.get(id);
+        await db
+          .update(menuItems)
+          .set({
+            ...row,
+            createdAt: sql`${stamps?.created}::timestamptz`,
+            updatedAt: sql`${stamps?.updated}::timestamptz`,
+          })
+          .where(eq(menuItems.id, id));
       }
     } finally {
       await Promise.all(pending);
@@ -248,7 +310,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     ]);
     expect(purges).toEqual([`${isoYear}/${weekA}`]);
 
-    const orderId = await placeOrder(isoDate(monday), [stew, potatoes]);
+    const orderId = await placeOrder(mondayDate, [stew, potatoes]);
 
     // Send back what GET returns, edited: rename the stew, drop the potatoes, add the soup on Wed.
     const [, read] = await send('GET', `/weeks/${isoYear}/${weekA}`);
@@ -300,16 +362,15 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
   });
 
   it('rejects week items that are permanent, unknown or twice in one list', async () => {
-    const [, created] = await send('POST', '/items', {
-      ...content('M2 teszt állandó', { soupIncluded: false }),
-      category: 'all_week',
-    });
+    const [, permanentMenu] = await send('GET', '/items');
+    const [permanent] = Object.values(permanentMenu).flat() as MenuItem[];
+    if (!permanent) throw new Error('The database has no permanent item to test with');
     const [status, body] = await send('PUT', `/weeks/${isoYear}/${weekA}`, {
       days: {
         ...emptyDays(),
         2: { soups: [], mains: [{ ...content('x'), id: randomUUID() }, stew, stew] },
       },
-      featured: [{ ...created.item }],
+      featured: [permanent],
     });
     expect([status, body]).toEqual([
       400,
@@ -346,7 +407,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
 
     const [status, body] = await send('POST', `/items/${cheese.id}/sold-out`, { soldOut: true });
     expect([status, body.item.soldOut]).toEqual([200, true]);
-    expect(purges.toSorted()).toEqual([`${isoYear}/${weekA}`, `${isoYear}/${weekB}`]);
+    expect(purges.toSorted()).toEqual([`${isoYear}/${weekA}`, `${isoYear}/${weekB}`].toSorted());
 
     // Removed from week B, the item is still on week A and stays active there.
     await send('PUT', `/weeks/${isoYear}/${weekB}`, { days: emptyDays(), featured: [] });
@@ -354,71 +415,131 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     expect(weekARead.featured).toEqual([{ ...cheese, soldOut: true }]);
   });
 
-  it('creates, edits, deactivates and reactivates a permanent item, purging every week', async () => {
-    const [status, created] = await send('POST', '/items', {
-      ...content('M2 teszt steak', { soupIncluded: false }),
-      category: 'side_extra',
-    });
-    expect(status).toBe(201);
-    expect(created.item).toMatchObject({
-      category: 'side_extra',
-      active: true,
-      soldOut: false,
-      sortOrder: Math.max(-1, ...sideExtraOrder.map((row) => row.sortOrder)) + 1,
-    });
-    expect(purges).toEqual(['all']);
-    const { id } = created.item;
+  let steak: MenuItem;
 
-    const [, patched] = await send('PATCH', `/items/${id}`, {
-      name: 'M2 teszt steak 2',
-      priceWeekend: null,
-    });
-    expect(patched.item).toEqual({ ...created.item, name: 'M2 teszt steak 2', priceWeekend: null });
-
-    expect(await send('PATCH', `/items/${id}`, { priceWeekday: -5, variations: [' a'] })).toEqual([
-      400,
-      { error: 'validation', fields: { priceWeekday: 'negative', variations: 'untrimmed' } },
-    ]);
-    expect((await send('PATCH', `/items/${soup.id}`, { name: 'x' }))[0]).toBe(404);
-    expect((await send('POST', `/items/${soup.id}/deactivate`))[0]).toBe(404);
-
-    const [, deactivated] = await send('POST', `/items/${id}/deactivate`);
-    expect(deactivated.item.active).toBe(false);
-    const [, listed] = await send('GET', '/items?category=side_extra');
-    expect(listed.items.map((item: MenuItem) => item.id)).toContain(id);
-    const [, reactivated] = await send('PATCH', `/items/${id}`, { active: true });
-    expect(reactivated.item.active).toBe(true);
-
+  it('saves the permanent menu in one request: create, rename, reorder, deactivate by omission, reactivate', async () => {
+    // Send back what GET returns: valid as it is, and it numbers each section from 0.
+    const [, read] = await send('GET', '/items');
+    const [, base] = await send('PUT', '/items', read);
+    const n = base.sideExtras.length;
+    const d = base.desserts.length;
+    const writtenAt = async () =>
+      db
+        .select({ id: menuItems.id, updatedAt: menuItems.updatedAt })
+        .from(menuItems)
+        .where(inArray(menuItems.id, [...preexistingItems, randomUUID()]));
+    const writtenBefore = await writtenAt();
     purges.length = 0;
-    const [, soldOut] = await send('POST', `/items/${id}/sold-out`, { soldOut: true });
-    expect(soldOut.item.soldOut).toBe(true);
+
+    // Create: two side extras and a dessert, after what is already there.
+    const [status, first] = await send('PUT', '/items', {
+      ...base,
+      sideExtras: [
+        ...base.sideExtras,
+        sideContent('M2 teszt steak'),
+        sideContent('M2 teszt köret'),
+      ],
+      desserts: [...base.desserts, sideContent('M2 teszt palacsinta')],
+    });
+    expect(status).toBe(200);
+    expect(purges).toEqual(['all']);
+    expect(first.sideExtras.slice(0, n)).toEqual(base.sideExtras);
+    expect(first.desserts.slice(0, d)).toEqual(base.desserts);
+    let side: MenuItem;
+    let pancake: MenuItem;
+    [steak, side] = first.sideExtras.slice(n);
+    [pancake] = first.desserts.slice(d);
+    expect(
+      [steak, side, pancake].map((item) => [
+        item.name,
+        item.category,
+        item.active,
+        item.soldOut,
+        item.sortOrder,
+      ]),
+    ).toEqual([
+      ['M2 teszt steak', 'side_extra', true, false, n],
+      ['M2 teszt köret', 'side_extra', true, false, n + 1],
+      ['M2 teszt palacsinta', 'dessert', true, false, d],
+    ]);
+    // Items that did not change were not written.
+    expect(await writtenAt()).toEqual(writtenBefore);
+
+    // Rename and reorder the side extras; leave the dessert out.
+    const [, second] = await send('PUT', '/items', {
+      ...first,
+      sideExtras: [...first.sideExtras.slice(0, n), { ...side, name: 'M2 teszt köret 2' }, steak],
+      desserts: first.desserts.slice(0, d),
+    });
+    expect(second.sideExtras.slice(n)).toEqual([
+      { ...side, name: 'M2 teszt köret 2', sortOrder: n },
+      { ...steak, sortOrder: n + 1 },
+    ]);
+    steak = { ...steak, sortOrder: n + 1 };
+    // Left out is inactive, not deleted.
+    expect(second.desserts.slice(d)).toEqual([{ ...pancake, active: false }]);
+
+    // Reactivate the dessert.
+    const [, third] = await send('PUT', '/items', {
+      ...second,
+      desserts: second.desserts.map((item: MenuItem) =>
+        item.id === pancake.id ? { ...item, active: true } : item,
+      ),
+    });
+    expect(third.desserts.slice(d)).toEqual([pancake]);
+
+    // One invalid item rejects the whole save, including the valid new dessert.
+    purges.length = 0;
+    const a = third.allWeek.length;
+    const p = third.pickles.length;
+    expect(
+      await send('PUT', '/items', {
+        ...third,
+        allWeek: [...third.allWeek, stew],
+        desserts: [...third.desserts, sideContent('M2 teszt nem mentett')],
+        pickles: [...third.pickles, { ...sideContent('M2 teszt ismeretlen'), id: randomUUID() }],
+        sides: [...third.sides, steak],
+        sideExtras: [
+          ...third.sideExtras.slice(0, n),
+          { ...third.sideExtras[n], priceWeekday: -1 },
+          steak,
+        ],
+      }),
+    ).toEqual([
+      400,
+      {
+        error: 'validation',
+        fields: {
+          [`allWeek.${a}.id`]: 'weekly_item',
+          [`pickles.${p}.id`]: 'unknown_item',
+          [`sideExtras.${n}.priceWeekday`]: 'negative',
+          [`sideExtras.${n + 1}.id`]: 'duplicate',
+        },
+      },
+    ]);
+    expect(await send('GET', '/items')).toEqual([200, third]);
+    expect(purges).toEqual([]);
+  });
+
+  it('marks a permanent item sold out and purges every week', async () => {
+    const [status, body] = await send('POST', `/items/${steak.id}/sold-out`, { soldOut: true });
+    expect([status, body.item]).toEqual([200, { ...steak, soldOut: true }]);
     expect(purges).toEqual(['all']);
   });
 
-  it('reorders a whole permanent category and nothing less', async () => {
-    await send('POST', '/items', {
-      ...content('M2 teszt köret', { soupIncluded: false }),
-      category: 'side_extra',
-    });
-    const [, before] = await send('GET', '/items?category=side_extra');
-    const reversed: string[] = before.items.map((item: MenuItem) => item.id).toReversed();
-    purges.length = 0;
-
-    const [status, after] = await send('POST', '/items/reorder', { ids: reversed });
-    expect(status).toBe(200);
-    expect(after.items.map((item: MenuItem) => [item.id, item.sortOrder])).toEqual(
-      reversed.map((id, index) => [id, index]),
-    );
-    expect(purges).toEqual(['all']);
-
-    expect(await send('POST', '/items/reorder', { ids: reversed.slice(1) })).toEqual([
-      400,
-      { error: 'validation', fields: { ids: 'incomplete' } },
+  it('keeps one new item when two saves of the permanent menu are in flight', async () => {
+    const [, read] = await send('GET', '/items');
+    const payload = { ...read, pickles: [...read.pickles, sideContent('M2 teszt dupla')] };
+    const results = await Promise.all([
+      send('PUT', '/items', payload),
+      send('PUT', '/items', payload),
     ]);
-    expect(await send('POST', '/items/reorder', { ids: [stew.id] })).toEqual([
-      400,
-      { error: 'validation', fields: { ids: 'weekly_category' } },
-    ]);
+    expect(results.map(([status]) => status)).toEqual([200, 200]);
+    const active = await db
+      .select({ id: menuItems.id })
+      .from(menuItems)
+      .where(and(eq(menuItems.name, 'M2 teszt dupla'), eq(menuItems.active, true)));
+    expect(active).toHaveLength(1);
   });
 
   it('keeps one schedule when two saves of the same week are in flight', async () => {
@@ -456,7 +577,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
       { date: closedDate, created: false },
     ]);
 
-    const range = `from=${isoDate(monday)}&to=${isoDate(sunday)}`;
+    const range = `from=${mondayDate}&to=${sundayDate}`;
     expect(await send('GET', `/closed-dates?${range}`)).toEqual([200, { dates: [closedDate] }]);
     expect(await db.select().from(orders).where(eq(orders.id, orderId))).toEqual(orderBefore);
     const rows = await db.select().from(closedDates).where(eq(closedDates.date, closedDate));

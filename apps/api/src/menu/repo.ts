@@ -1,9 +1,8 @@
 import {
-  type Category,
   type MenuDay,
   type MenuItem,
   type MenuItemContent,
-  type PermanentCategory,
+  type PermanentItemsPlan,
   permanentCategories,
   type WeekPlan,
 } from '@piccolo/core';
@@ -20,13 +19,13 @@ import {
   menuSchedule,
   menuWeeks,
   notExists,
-  type SQL,
+  notInArray,
   sql,
 } from '@piccolo/db';
 
 /*
- * The admin menu queries. Thin: the rules (what a valid item, week or order is) are checked by
- * `packages/core` before anything here runs.
+ * The admin menu queries. Thin: the rules (what a valid item, week or permanent menu is) are
+ * checked by `packages/core` before anything here runs.
  */
 
 export interface IsoWeek {
@@ -75,36 +74,19 @@ function contentValues(content: MenuItemContent) {
   };
 }
 
-/** The next free `sort_order` in a category, so a new or moved item goes last. */
-function endOf(category: Category): SQL<number> {
-  return sql<number>`(select coalesce(max(${menuItems.sortOrder}) + 1, 0) from ${menuItems} where ${menuItems.category} = ${category})`;
-}
-
 const inWeek = (isoYear: number, isoWeek: number) =>
   and(eq(menuSchedule.isoYear, isoYear), eq(menuSchedule.isoWeek, isoWeek));
 
 // ---- Items ------------------------------------------------------------------------------------
 
-/** Permanent items, active and inactive, by `sort_order`. All permanent categories when omitted. */
-export async function listPermanentItems(
-  db: Db,
-  category?: PermanentCategory,
-): Promise<MenuItem[]> {
+/** Every permanent item, active and inactive, by category and `sort_order`. */
+export async function listPermanentItems(db: Db): Promise<MenuItem[]> {
   const rows = await db
     .select()
     .from(menuItems)
-    .where(
-      category
-        ? eq(menuItems.category, category)
-        : inArray(menuItems.category, [...permanentCategories]),
-    )
+    .where(inArray(menuItems.category, [...permanentCategories]))
     .orderBy(asc(menuItems.category), asc(menuItems.sortOrder), asc(menuItems.id));
   return rows.map(toMenuItem);
-}
-
-export async function getMenuItem(db: Db, id: string): Promise<MenuItem | null> {
-  const [row] = await db.select().from(menuItems).where(eq(menuItems.id, id));
-  return row ? toMenuItem(row) : null;
 }
 
 export async function getMenuItems(db: Db, ids: readonly string[]): Promise<MenuItem[]> {
@@ -118,97 +100,65 @@ export async function getMenuItems(db: Db, ids: readonly string[]): Promise<Menu
   return rows.map(toMenuItem);
 }
 
-/** Inserts an active, not sold-out item at the end of its category. */
-export async function insertPermanentItem(
-  db: Db,
-  category: PermanentCategory,
-  content: MenuItemContent,
-): Promise<MenuItem> {
-  const [row] = await db
-    .insert(menuItems)
-    .values({
-      ...contentValues(content),
-      category,
-      soldOut: false,
-      active: true,
-      sortOrder: endOf(category),
-    })
-    .returning();
-  if (!row) {
-    throw new Error('Insert returned no menu item');
-  }
-  return toMenuItem(row);
-}
+/**
+ * Makes the permanent menu match `plan` in one transaction, holding a lock that serialises these
+ * saves: inserts new items, updates changed ones, and sets every other active permanent item
+ * inactive (never deleted, so orders keep their reference). `soldOut` is left as it is.
+ */
+export async function writePermanentItems(db: Db, plan: PermanentItemsPlan): Promise<void> {
+  await db.transaction(async (tx) => {
+    // There is no row that stands for the permanent menu, so a transaction-scoped advisory lock
+    // does: without it two saves in flight (a double click) would each keep their new items.
+    await tx.execute(sql`select pg_advisory_xact_lock(hashtext('piccolo.permanent_items'))`);
 
-/** Overwrites an item's content, category and `active`. A new category puts it last there. */
-export async function updatePermanentItem(
-  db: Db,
-  id: string,
-  fields: MenuItemContent & { category: Category; active: boolean },
-  categoryChanged: boolean,
-): Promise<MenuItem | null> {
-  const [row] = await db
-    .update(menuItems)
-    .set({
-      ...contentValues(fields),
-      category: fields.category,
-      active: fields.active,
-      ...(categoryChanged ? { sortOrder: endOf(fields.category) } : {}),
-    })
-    .where(eq(menuItems.id, id))
-    .returning();
-  return row ? toMenuItem(row) : null;
-}
+    const ids = plan.items.map((item) => item.id ?? crypto.randomUUID());
+    const inserts = plan.items.flatMap((item, index) =>
+      item.id === null
+        ? [
+            {
+              ...contentValues(item.content),
+              id: ids[index],
+              category: item.category,
+              soldOut: false,
+              active: item.active,
+              sortOrder: item.sortOrder,
+            },
+          ]
+        : [],
+    );
+    if (inserts.length > 0) {
+      await tx.insert(menuItems).values(inserts);
+    }
+    for (const item of plan.items) {
+      if (item.id !== null && item.changed) {
+        await tx
+          .update(menuItems)
+          .set({
+            ...contentValues(item.content),
+            category: item.category,
+            active: item.active,
+            sortOrder: item.sortOrder,
+          })
+          .where(eq(menuItems.id, item.id));
+      }
+    }
 
-export async function deactivateItem(db: Db, id: string): Promise<MenuItem | null> {
-  const [row] = await db
-    .update(menuItems)
-    .set({ active: false })
-    .where(eq(menuItems.id, id))
-    .returning();
-  return row ? toMenuItem(row) : null;
+    await tx
+      .update(menuItems)
+      .set({ active: false })
+      .where(
+        and(
+          inArray(menuItems.category, [...permanentCategories]),
+          eq(menuItems.active, true),
+          ids.length > 0 ? notInArray(menuItems.id, ids) : undefined,
+        ),
+      );
+  });
 }
 
 export async function setSoldOut(db: Db, id: string, soldOut: boolean): Promise<MenuItem | null> {
   const [row] = await db.update(menuItems).set({ soldOut }).where(eq(menuItems.id, id)).returning();
   return row ? toMenuItem(row) : null;
-}
-
-/** Every item of every category that one of `ids` belongs to. */
-export async function categoryMembers(
-  db: Db,
-  ids: readonly string[],
-): Promise<{ id: string; category: Category }[]> {
-  if (ids.length === 0) {
-    return [];
-  }
-  return db
-    .select({ id: menuItems.id, category: menuItems.category })
-    .from(menuItems)
-    .where(
-      inArray(
-        menuItems.category,
-        db
-          .selectDistinct({ category: menuItems.category })
-          .from(menuItems)
-          .where(inArray(menuItems.id, [...ids])),
-      ),
-    );
-}
-
-/** Sets each item's `sort_order` to its index in `ids`, in one statement. */
-export async function applyOrder(db: Db, ids: readonly string[]): Promise<void> {
-  if (ids.length === 0) {
-    return;
-  }
-  const position = sql.join(
-    ids.map((id, index) => sql`when ${id}::uuid then ${index}::integer`),
-    sql` `,
-  );
-  await db
-    .update(menuItems)
-    .set({ sortOrder: sql`case ${menuItems.id} ${position} end` })
-    .where(inArray(menuItems.id, [...ids]));
 }
 
 /** The weeks any of `ids` is scheduled on. */

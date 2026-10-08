@@ -1,11 +1,11 @@
 import {
-  checkReorder,
+  groupPermanentItems,
   isoWeekOf,
   isWeeklyCategory,
-  type MenuItem,
   parseIsoDate,
+  permanentDraftIds,
+  planPermanentItems,
   planWeek,
-  validateMenuItem,
   weekDraftIds,
 } from '@piccolo/core';
 import { Hono } from 'hono';
@@ -16,21 +16,16 @@ import { validate, validationFailed } from '../validation';
 import type { MenuCache } from './cache';
 import {
   addClosedDate,
-  applyOrder,
-  categoryMembers,
-  deactivateItem,
-  getMenuItem,
   getMenuItems,
   type IsoWeek,
-  insertPermanentItem,
   listClosedDates,
   listPermanentItems,
   publishWeek,
   readWeek,
   removeClosedDate,
   setSoldOut,
-  updatePermanentItem,
   weeksOfItems,
+  writePermanentItems,
   writeWeek,
 } from './repo';
 import {
@@ -38,10 +33,7 @@ import {
   closedDateParams,
   closedDateRangeQuery,
   itemParams,
-  itemPatchBody,
-  itemsQuery,
-  newItemBody,
-  reorderBody,
+  permanentItemsBody,
   soldOutBody,
   weekBody,
   weekParams,
@@ -53,7 +45,7 @@ import {
  * Every write that changes what guests see purges the public menu cache after it commits:
  * - a week's items or schedule, publishing it, closing or reopening one of its dates → that week;
  * - a weekly item's sold-out flag → every week it is scheduled on;
- * - anything about a permanent item (create, edit, deactivate, reorder, sold out) → every week,
+ * - saving the permanent menu, or a permanent item's sold-out flag → every week (once per request),
  *   because permanent items appear on every week's menu.
  * Purging is idempotent, so a repeated request purges again even when it changed nothing.
  */
@@ -64,66 +56,21 @@ export function adminMenuRoutes(cacheFor: (env: Bindings) => MenuCache) {
 
       // ---- Permanent items ----
 
-      .get('/items', validate('query', itemsQuery), async (c) => {
-        const { category } = c.req.valid('query');
-        return c.json({ items: await listPermanentItems(c.get('db'), category) });
+      .get('/items', async (c) => {
+        return c.json(groupPermanentItems(await listPermanentItems(c.get('db'))));
       })
 
-      .post('/items', validate('json', newItemBody), async (c) => {
-        const { category, ...content } = c.req.valid('json');
-        const errors = validateMenuItem({
-          ...content,
-          category,
-          soldOut: false,
-          active: true,
-          sortOrder: 0,
-        });
-        if (errors) {
-          return validationFailed(c, errors);
-        }
-        const item = await insertPermanentItem(c.get('db'), category, content);
-        await cacheFor(c.env).purgeAll();
-        return c.json({ item }, 201);
-      })
-
-      .post('/items/reorder', validate('json', reorderBody), async (c) => {
-        const { ids } = c.req.valid('json');
+      .put('/items', validate('json', permanentItemsBody), async (c) => {
+        const draft = c.req.valid('json');
         const db = c.get('db');
-        const result = checkReorder(ids, await categoryMembers(db, ids));
+        const stored = await getMenuItems(db, permanentDraftIds(draft));
+        const result = planPermanentItems(draft, new Map(stored.map((item) => [item.id, item])));
         if (!result.ok) {
-          return validationFailed(c, { ids: result.code });
+          return validationFailed(c, result.fields);
         }
-        await applyOrder(db, ids);
+        await writePermanentItems(db, result.plan);
         await cacheFor(c.env).purgeAll();
-        return c.json({ items: await listPermanentItems(db, result.category) });
-      })
-
-      .patch(
-        '/items/:id',
-        validate('param', itemParams),
-        validate('json', itemPatchBody),
-        async (c) => {
-          const { id } = c.req.valid('param');
-          const db = c.get('db');
-          const current = permanentOrNotFound(await getMenuItem(db, id), id);
-          const next = { ...current, ...c.req.valid('json') };
-          const errors = validateMenuItem(next);
-          if (errors) {
-            return validationFailed(c, errors);
-          }
-          const item = await updatePermanentItem(db, id, next, next.category !== current.category);
-          await cacheFor(c.env).purgeAll();
-          return c.json({ item: permanentOrNotFound(item, id) });
-        },
-      )
-
-      .post('/items/:id/deactivate', validate('param', itemParams), async (c) => {
-        const { id } = c.req.valid('param');
-        const db = c.get('db');
-        permanentOrNotFound(await getMenuItem(db, id), id);
-        const item = await deactivateItem(db, id);
-        await cacheFor(c.env).purgeAll();
-        return c.json({ item: permanentOrNotFound(item, id) });
+        return c.json(groupPermanentItems(await listPermanentItems(db)));
       })
 
       // Weekly and permanent items alike.
@@ -215,14 +162,6 @@ export function adminMenuRoutes(cacheFor: (env: Bindings) => MenuCache) {
         return c.json({ date, deleted });
       })
   );
-}
-
-/** Weekly items are edited through their week, so `/items/:id` knows only permanent ones. */
-function permanentOrNotFound(item: MenuItem | null, id: string): MenuItem {
-  if (!item || isWeeklyCategory(item.category)) {
-    throw new HttpError(404, 'item_not_found', `No permanent menu item ${id}`);
-  }
-  return item;
 }
 
 async function purgeWeeks(cache: MenuCache, weeks: readonly IsoWeek[]): Promise<void> {

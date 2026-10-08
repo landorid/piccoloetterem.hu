@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { Category } from '../config/types';
 import {
-  checkReorder,
+  groupPermanentItems,
   type MenuItemContent,
+  type PermanentItemDraft,
+  type PermanentItemsDraft,
+  permanentDraftIds,
+  planPermanentItems,
   planWeek,
   type WeekDayDraft,
   type WeekDraft,
@@ -51,11 +55,7 @@ const draft = (
   featured,
 });
 
-const storedItem = (
-  id: string,
-  category: Category,
-  fields: Partial<MenuItemContent> & { active?: boolean } = {},
-): MenuItem => ({
+const storedItem = (id: string, category: Category, fields: Partial<MenuItem> = {}): MenuItem => ({
   id,
   category,
   ...content(),
@@ -306,27 +306,234 @@ describe('weekDraftIds', () => {
   });
 });
 
-describe('checkReorder — rule: one permanent category, listed completely', () => {
-  const items = [
-    { id: 's1', category: 'side' },
-    { id: 's2', category: 'side' },
-    { id: 's3', category: 'side' },
-    { id: 'p1', category: 'pickle' },
-    { id: 'm1', category: 'daily_main' },
-  ] as const;
+const side = (fields: Partial<PermanentItemDraft> = {}): PermanentItemDraft => ({
+  ...content({ name: 'Hasábburgonya', priceWeekday: 600, priceWeekend: null, soupIncluded: false }),
+  ...fields,
+});
+const fries = side();
 
-  it('accepts every item of one permanent category in any order', () => {
-    expect(checkReorder(['s3', 's1', 's2'], items)).toEqual({ ok: true, category: 'side' });
+const permanentDraft = (sections: Partial<PermanentItemsDraft> = {}): PermanentItemsDraft => ({
+  allWeek: [],
+  desserts: [],
+  pickles: [],
+  sides: [],
+  sideExtras: [],
+  ...sections,
+});
+
+describe('planPermanentItems — rule: the section fixes the category, the position the order', () => {
+  it('plans nothing for an empty menu', () => {
+    expect(planPermanentItems(permanentDraft(), stored())).toEqual({
+      ok: true,
+      plan: { items: [] },
+    });
   });
 
-  it.each<[string, string[], string]>([
-    ['an empty list', [], 'invalid'],
-    ['an id listed twice', ['s1', 's1', 's2', 's3'], 'invalid'],
-    ['an unknown id', ['s1', 's2', 's3', 'x'], 'unknown_item'],
-    ['two categories', ['s1', 's2', 's3', 'p1'], 'mixed_categories'],
-    ['a weekly category', ['m1'], 'weekly_category'],
-    ['a missing item', ['s1', 's2'], 'incomplete'],
-  ])('rejects %s', (_case, ids, code) => {
-    expect(checkReorder(ids, items)).toEqual({ ok: false, code });
+  it('inserts new items with their section category, their position, and active by default', () => {
+    const result = planPermanentItems(
+      permanentDraft({
+        allWeek: [side({ name: 'Rántott csirkemell', requiresSide: true })],
+        sides: [side(), side({ name: 'Párolt rizs', active: false })],
+        sideExtras: [side({ name: 'Steakburgonya' })],
+        pickles: [side({ name: 'Csemege uborka' })],
+        desserts: [side({ name: 'Palacsinta' })],
+      }),
+      stored(),
+    );
+    expect(result.ok && result.plan.items).toEqual([
+      {
+        id: null,
+        category: 'all_week',
+        content: { ...fries, name: 'Rántott csirkemell', requiresSide: true },
+        active: true,
+        sortOrder: 0,
+        changed: true,
+      },
+      {
+        id: null,
+        category: 'dessert',
+        content: { ...fries, name: 'Palacsinta' },
+        active: true,
+        sortOrder: 0,
+        changed: true,
+      },
+      {
+        id: null,
+        category: 'pickle',
+        content: { ...fries, name: 'Csemege uborka' },
+        active: true,
+        sortOrder: 0,
+        changed: true,
+      },
+      { id: null, category: 'side', content: fries, active: true, sortOrder: 0, changed: true },
+      {
+        id: null,
+        category: 'side',
+        content: { ...fries, name: 'Párolt rizs' },
+        active: false,
+        sortOrder: 1,
+        changed: true,
+      },
+      {
+        id: null,
+        category: 'side_extra',
+        content: { ...fries, name: 'Steakburgonya' },
+        active: true,
+        sortOrder: 0,
+        changed: true,
+      },
+    ]);
+  });
+});
+
+describe('planPermanentItems — rule: stored items are updated, and only when something changed', () => {
+  const current = storedItem('a', 'side', { ...fries, sortOrder: 1 });
+  const other = storedItem('b', 'side', { ...fries, name: 'Párolt rizs', sortOrder: 0 });
+
+  it('leaves an item that is unchanged in content, section, position and active unwritten', () => {
+    const result = planPermanentItems(
+      permanentDraft({ sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a' })] }),
+      stored(current, other),
+    );
+    expect(result.ok && result.plan.items.map((item) => [item.id, item.changed])).toEqual([
+      ['b', false],
+      ['a', false],
+    ]);
+  });
+
+  it.each<[string, PermanentItemsDraft]>([
+    [
+      'its content',
+      permanentDraft({
+        sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a', priceWeekday: 650 })],
+      }),
+    ],
+    [
+      'its position',
+      permanentDraft({ sides: [side({ id: 'a' }), side({ id: 'b', name: 'Párolt rizs' })] }),
+    ],
+    [
+      'its section',
+      permanentDraft({
+        sides: [side({ id: 'b', name: 'Párolt rizs' })],
+        sideExtras: [side({ id: 'a' })],
+      }),
+    ],
+    [
+      'active',
+      permanentDraft({
+        sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a', active: false })],
+      }),
+    ],
+  ])('writes an item when %s changed', (_change, draft) => {
+    const result = planPermanentItems(draft, stored(current, other));
+    expect(result.ok && result.plan.items.find((item) => item.id === 'a')?.changed).toBe(true);
+  });
+
+  it('moves an item to the category of its new section', () => {
+    const result = planPermanentItems(
+      permanentDraft({ sideExtras: [side({ id: 'a' })] }),
+      stored(current),
+    );
+    expect(result.ok && result.plan.items[0]).toMatchObject({
+      category: 'side_extra',
+      sortOrder: 0,
+    });
+  });
+
+  it('reactivates an inactive item listed without `active`', () => {
+    const result = planPermanentItems(
+      permanentDraft({ sides: [side({ id: 'a' })] }),
+      stored({ ...current, sortOrder: 0, active: false }),
+    );
+    expect(result.ok && result.plan.items[0]).toMatchObject({ active: true, changed: true });
+  });
+
+  it('keeps an item listed with `active: false` inactive', () => {
+    const result = planPermanentItems(
+      permanentDraft({ sides: [side({ id: 'a', active: false })] }),
+      stored({ ...current, sortOrder: 0, active: false }),
+    );
+    expect(result.ok && result.plan.items[0]).toMatchObject({ active: false, changed: false });
+  });
+});
+
+describe('planPermanentItems — rule: ids are stored permanent items, listed once', () => {
+  it('rejects an id that is not stored', () => {
+    expect(planPermanentItems(permanentDraft({ pickles: [side({ id: 'x' })] }), stored())).toEqual({
+      ok: false,
+      fields: { 'pickles.0.id': 'unknown_item' },
+    });
+  });
+
+  it('rejects a weekly item', () => {
+    expect(
+      planPermanentItems(
+        permanentDraft({ allWeek: [side({ id: 'w' })] }),
+        stored(storedItem('w', 'daily_main')),
+      ),
+    ).toEqual({ ok: false, fields: { 'allWeek.0.id': 'weekly_item' } });
+  });
+
+  it('rejects an item listed twice, also across sections', () => {
+    expect(
+      planPermanentItems(
+        permanentDraft({ sides: [side({ id: 'a' })], sideExtras: [side({ id: 'a' })] }),
+        stored(storedItem('a', 'side', fries)),
+      ),
+    ).toEqual({ ok: false, fields: { 'sideExtras.0.id': 'duplicate' } });
+  });
+});
+
+describe('planPermanentItems — rule: every item passes validateMenuItem in its category', () => {
+  it('reports each invalid field under its path and plans nothing', () => {
+    expect(
+      planPermanentItems(
+        permanentDraft({
+          allWeek: [side({ name: '' })],
+          desserts: [side({ name: 'Palacsinta', requiresSide: true })],
+          sides: [side(), side(), side({ priceWeekday: -1, allergens: ['nope'] })],
+        }),
+        stored(),
+      ),
+    ).toEqual({
+      ok: false,
+      fields: {
+        'allWeek.0.name': 'required',
+        'desserts.0.requiresSide': 'not_allowed',
+        'sides.2.priceWeekday': 'negative',
+        'sides.2.allergens': 'invalid',
+      },
+    });
+  });
+});
+
+describe('permanentDraftIds', () => {
+  it('lists every referenced id once, skipping new items', () => {
+    expect(
+      permanentDraftIds(
+        permanentDraft({
+          allWeek: [side({ id: 'a' })],
+          sides: [side(), side({ id: 'b' })],
+          sideExtras: [side({ id: 'a' })],
+        }),
+      ),
+    ).toEqual(['a', 'b']);
+  });
+});
+
+describe('groupPermanentItems', () => {
+  it('groups items by section in sortOrder, keeping inactive items and leaving weekly ones out', () => {
+    const rice = storedItem('rice', 'side', { sortOrder: 1, active: false });
+    const chips = storedItem('chips', 'side', { sortOrder: 0 });
+    const pancake = storedItem('pancake', 'dessert');
+    const stewItem = storedItem('stew', 'daily_main');
+    expect(groupPermanentItems([rice, stewItem, pancake, chips])).toEqual({
+      allWeek: [],
+      desserts: [pancake],
+      pickles: [],
+      sides: [chips, rice],
+      sideExtras: [],
+    });
   });
 });
