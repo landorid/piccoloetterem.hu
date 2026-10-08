@@ -7,5 +7,7 @@ export const strings = {
   order: {
     title: 'Piccolo — hamarosan',
     heading: 'Piccolo — hamarosan',
+    apiVersion: 'API-verzió',
+    apiUnreachable: 'Az API most nem érhető el.',
   },
 } as const;

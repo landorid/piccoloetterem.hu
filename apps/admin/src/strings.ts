@@ -7,5 +7,6 @@ export const strings = {
   heading: 'Admin — hamarosan',
   signOut: 'Kijelentkezés',
   apiUnreachable: 'Az API most nem érhető el.',
+  apiVersion: 'API-verzió',
   signedIn: 'Bejelentkezve.',
 } as const;
