@@ -269,8 +269,9 @@ export async function readWeek(db: Db, isoYear: number, isoWeek: number): Promis
 }
 
 /**
- * Makes the week match `plan` in one transaction: creates the week as a draft if it has no row,
- * inserts new items, updates changed ones (active again), and rewrites the week's schedule.
+ * Makes the week match `plan` in one transaction, holding the week's row lock: creates the week as
+ * a draft if it has no row, inserts new items, updates changed ones (active again), and rewrites
+ * the week's schedule.
  *
  * Items that were scheduled on the week and are not any more are detached and set inactive, never
  * deleted, so orders keep their reference. An item still scheduled on another week stays active.
@@ -285,6 +286,13 @@ export async function writeWeek(
 ): Promise<string[]> {
   return db.transaction(async (tx) => {
     await tx.insert(menuWeeks).values({ isoYear, isoWeek }).onConflictDoNothing();
+    // Serialises writers of one week. Without it two saves in flight (a double click) would each
+    // miss the schedule rows the other inserts, and the week would end up with both.
+    await tx
+      .select({ isoYear: menuWeeks.isoYear })
+      .from(menuWeeks)
+      .where(and(eq(menuWeeks.isoYear, isoYear), eq(menuWeeks.isoWeek, isoWeek)))
+      .for('update');
 
     const previous = await tx
       .selectDistinct({ id: menuSchedule.menuItemId })

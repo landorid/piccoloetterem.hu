@@ -20,6 +20,10 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/validation.ts` | `validate(target, schema)`: `@hono/zod-validator` with the API's 400 shape |
 | `src/errors.ts` | `HttpError(status, code, message)` |
 | `src/env.ts` | The bindings type (`Bindings`) and the Hono env (`AppEnv`) |
+| `src/menu/admin.routes.ts` | `/api/admin/menu/*`: permanent items, weeks, closed dates (see below) |
+| `src/menu/schemas.ts` | The zod schemas of those routes, kept in step with the `packages/core` types |
+| `src/menu/repo.ts` | Their Drizzle queries |
+| `src/menu/cache.ts` | `MenuCache` (`purgeWeek`, `purgeAll`) and `menuCacheFor(env)`; a no-op until #25 |
 
 ## Run it locally
 
@@ -50,7 +54,64 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 | `GET /api/health` | `{ ok: true, version }`. Never touches the database, so it is safe for uptime pings (docs/STACK.md rule 3). |
 | `GET /api/health/db` | `{ ok: true }` after `select 1`, or 500. Wakes the Neon compute, so call it rarely. |
 | `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
+| `/api/admin/menu/*` | Staff menu management, below. Same 401 / 403 as `/api/admin/ping`. |
 | anything else | 404 `{ error: 'not_found', message }` |
+
+## Admin menu
+
+Under `/api/admin/menu`. Items are `MenuItem` from `packages/core`. Item fields are checked by
+`validateMenuItem`, a week by `planWeek`, a reorder by `checkReorder`; a failure is 400
+`{ error: 'validation', fields }` with core's codes (`priceWeekday: 'negative'`,
+`days.1.soups.0.id: 'not_weekly'`).
+
+| Route | Body → response |
+|---|---|
+| `GET /items?category=` | `{ items }`: permanent items, active and inactive, by `sortOrder`; every permanent category without `category` |
+| `POST /items` | Content fields + a permanent `category` → 201 `{ item }`, active, last in its category |
+| `PATCH /items/:id` | Any subset of those fields and `active` → `{ item }`. Changing `category` puts it last there |
+| `POST /items/:id/deactivate` | → `{ item }` with `active: false` |
+| `POST /items/reorder` | `{ ids }`: every item of one permanent category, in the new order → `{ items }` |
+| `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly items too |
+| `GET /weeks/:year/:week` | `{ week: { isoYear, isoWeek, publishedAt }, days: { 1…6: { soups, mains } }, featured }`; an empty draft if the week has no row |
+| `PUT /weeks/:year/:week` | The same shape (server-owned fields are ignored) → the week as `GET` returns it |
+| `POST /weeks/:year/:week/publish` | → `{ week }`. Sets `publishedAt` once; 404 `week_not_found` before the first `PUT`. There is no unpublish |
+| `GET /closed-dates?from=&to=` | `{ dates }`, ISO dates, ascending, both ends included |
+| `POST /closed-dates` | `{ date }` → `{ date, created }`; `created: false` when it was already closed |
+| `DELETE /closed-dates/:date` | → `{ date, deleted }`; `deleted: false` when it was not closed |
+
+`/items/:id` (except `sold-out`) knows only permanent items and answers 404 `item_not_found` for a
+weekly one: those are edited through their week.
+
+**Week upsert.** One transaction, holding the week's row lock so two saves in flight cannot
+interleave. A list fixes its items' category (soups `daily_soup`, mains `daily_main`, featured
+`featured`). An item with `id` updates that weekly item, written only if something changed; one
+without `id` is inserted. The same `id` may sit on several days, with the same content, once per
+list. The schedule is rewritten to match. An item that was on the week and is missing from the
+payload is detached and set inactive, never deleted, so orders keep their reference; if it is
+still scheduled on another week it stays active. Weekly items' `sortOrder` is always 0: their order
+is the list order.
+
+**Cache purges**, after the write commits, through `MenuCache`:
+
+| Change | Purges |
+|---|---|
+| `PUT` a week | that week, and every week an edited item is also scheduled on |
+| publish a week | that week |
+| add or remove a closed date | the week of that date |
+| sold-out of a weekly item | every week it is scheduled on |
+| anything on a permanent item (create, edit, deactivate, reorder, sold-out) | everything (`purgeAll`): permanent items are on every week's menu |
+
+Purges are idempotent and run on every such request, also when it changed nothing (publishing
+again, closing a date twice), so a retry after a failed purge heals the cache.
+
+Integration tests (`src/menu/admin.integration.test.ts`) run when `DATABASE_URL` is set in the
+shell, and are skipped otherwise (as in CI). They work in a random week of the 2090s and delete
+what they create. From the repo root:
+
+```bash
+set -a; source .env; set +a
+pnpm exec vitest run --project=@piccolo/api
+```
 
 ## CORS
 
@@ -141,8 +202,8 @@ Gotchas:
 
 - **Bundle size.** Import `createClerkClient` from `@clerk/backend` and nothing else from that
   package. The Worker already has `nodejs_compat`. A dry-run upload of this Worker is about
-  1365 KiB uncompressed / 274 KiB gzip, under the Paid plan's 10 MB limit. Do not pull Clerk
-  into a second bundle.
+  2170 KiB uncompressed / 400 KiB gzip (zod is ~760 KiB of it since the admin menu routes, #24),
+  under the Paid plan's 10 MB limit. Do not pull Clerk into a second bundle.
 - **`authorizedParties`.** Clerk puts the admin origin in the token's `azp` claim. Pass that
   origin, exactly, including scheme and port (`http://localhost:5173` in local dev, not the
   public site and not the API). `CLERK_AUTHORIZED_PARTIES` is a comma-separated var in
