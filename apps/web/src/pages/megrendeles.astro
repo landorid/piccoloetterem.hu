@@ -1,5 +1,26 @@
 ---
+import { createApiClient, unwrap } from '@piccolo/api-client';
 import { strings } from '../strings';
+
+// Runs at build time (`output: 'static'`) and per request under `astro dev`.
+// Dev defaults to the local Worker, like the admin; a build without PUBLIC_API_URL skips the call.
+const baseUrl =
+  import.meta.env.PUBLIC_API_URL || (import.meta.env.DEV ? 'http://localhost:8787' : null);
+
+let version: string | null = null;
+if (baseUrl) {
+  try {
+    const client = createApiClient({
+      baseUrl,
+      // An unreachable API must not stall the build.
+      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+        fetch(input, { ...init, signal: AbortSignal.timeout(3_000) }),
+    });
+    version = (await unwrap(await client.api.health.$get())).version;
+  } catch {
+    version = null;
+  }
+}
 ---
 
 <!doctype html>
@@ -11,5 +32,14 @@ import { strings } from '../strings';
   </head>
   <body>
     <h1>{strings.order.heading}</h1>
+    {
+      version ? (
+        <p>
+          {strings.order.apiVersion} <code>{version}</code>
+        </p>
+      ) : (
+        <p>{strings.order.apiUnreachable}</p>
+      )
+    }
   </body>
 </html>

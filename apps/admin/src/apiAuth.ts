@@ -5,19 +5,20 @@
  * different origins, so the Clerk session is sent as a bearer token. Cookies
  * are not used.
  *
- * `packages/api-client` is not on this branch (issue #20). When it lands, pass
- * this helper as the header callback:
+ * Shaped for the `headers` callback of `createApiClient` (`@piccolo/api-client`);
+ * issue #26 wires it into the admin's API client:
  *
  * ```ts
  * const { getToken } = useAuth();
  * createApiClient({
+ *   baseUrl,
  *   headers: () => adminAuthorizationHeaders(() => getToken()),
  * });
  * ```
  */
 export async function adminAuthorizationHeaders(
   getToken: () => Promise<string | null>,
-): Promise<HeadersInit> {
+): Promise<Record<string, string>> {
   const token = await getToken();
   if (!token) {
     return {};

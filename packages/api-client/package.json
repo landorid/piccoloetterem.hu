@@ -9,9 +9,15 @@
   "types": "./src/index.ts",
   "scripts": {
     "build": "tsc",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@piccolo/api": "workspace:^",
+    "hono": "4.13.7"
   },
   "devDependencies": {
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "5.0.0"
   }
 }

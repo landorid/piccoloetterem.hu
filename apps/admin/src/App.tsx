@@ -6,6 +6,8 @@ import {
   useClerk,
   useOrganizationList,
 } from '@clerk/react';
+import { createApiClient, unwrap } from '@piccolo/api-client';
+import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { adminApiOrigin, adminAuthorizationHeaders } from './apiAuth';
@@ -113,6 +115,32 @@ function SignOutButton() {
   );
 }
 
+function HealthVersion() {
+  const health = useQuery({
+    queryKey: ['health'],
+    retry: false,
+    queryFn: async () => {
+      const baseUrl = adminApiOrigin();
+      if (!baseUrl) {
+        throw new Error('VITE_API_URL is not set');
+      }
+      return unwrap(await createApiClient({ baseUrl }).api.health.$get());
+    },
+  });
+
+  if (health.isError) {
+    return <p className="text-muted-foreground">{strings.apiUnreachable}</p>;
+  }
+  if (!health.data) {
+    return null;
+  }
+  return (
+    <p>
+      {strings.apiVersion} <code>{health.data.version}</code>
+    </p>
+  );
+}
+
 function Ping() {
   const { getToken } = useAuth();
   const [userId, setUserId] = useState<string | null>(null);
@@ -170,6 +198,7 @@ function Shell() {
       </header>
       <main className="flex flex-1 flex-col items-center justify-center gap-4 px-4">
         <h1 className="font-semibold text-2xl">{strings.heading}</h1>
+        <HealthVersion />
         <Ping />
       </main>
     </div>
