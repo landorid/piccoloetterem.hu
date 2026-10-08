@@ -9,7 +9,8 @@
   },
   "scripts": {
     "typecheck": "pnpm -r --stream typecheck",
-    "lint": "biome check .",
+    "lint": "biome check . && pnpm run lint:strings",
+    "lint:strings": "pnpm --filter @piccolo/admin lint:strings",
     "format": "biome check --write .",
     "test": "vitest run",
     "build:packages": "pnpm -r --stream --filter \"./packages/*\" build",

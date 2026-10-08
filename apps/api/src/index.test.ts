@@ -171,6 +171,24 @@ describe('GET /api/admin/ping', () => {
   });
 });
 
+describe('GET /api/admin/config', () => {
+  it('returns 401 without a session', async () => {
+    const res = await app.request('/api/admin/config', {}, { ...staffEnv, RESTAURANT: 'piccolo' });
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthenticated' });
+  });
+
+  it('returns the restaurant name to a member of CLERK_ORG_ID', async () => {
+    const res = await app.request(
+      '/api/admin/config',
+      { headers: { Authorization: 'Bearer member' } },
+      { ...staffEnv, RESTAURANT: 'piccolo' },
+    );
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ name: 'Piccolo Club Étterem' });
+  });
+});
+
 describe('GET /api/health', () => {
   it('returns 200 without any binding', async () => {
     const res = await app.request('/api/health', {}, {});
