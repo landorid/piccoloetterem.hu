@@ -9,12 +9,6 @@ import type { Db } from '@piccolo/db';
 export interface KvStore {
   get(key: string, type: 'text'): Promise<string | null>;
   put(key: string, value: string): Promise<void>;
-  delete(key: string): Promise<void>;
-  list(options: { prefix: string; cursor?: string }): Promise<{
-    keys: { name: string }[];
-    list_complete: boolean;
-    cursor?: string;
-  }>;
 }
 
 /** Bindings, vars and secrets of the API Worker; see wrangler.toml and README.md. */
