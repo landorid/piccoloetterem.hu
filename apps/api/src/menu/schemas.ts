@@ -7,7 +7,7 @@ import {
 import { z } from 'zod';
 
 /*
- * The admin menu API on the wire. These schemas check shape and types only; the domain rules
+ * The menu API on the wire. These schemas check shape and types only; the domain rules
  * (prices, allergens, categories, consistent ids) are `packages/core`'s, so their codes are
  * the same wherever an item is validated. The `satisfies` clauses keep each schema in step with
  * the core type it mirrors.
@@ -82,3 +82,13 @@ export const closedDateRangeQuery = z
 export const closedDateBody = z.object({ date: isoDate });
 
 export const closedDateParams = z.object({ date: isoDate });
+
+/** `GET /api/menu?week=2026-W42`: one ISO week, as `{ isoYear, isoWeek }`. */
+export const publicMenuQuery = z.object({
+  week: z
+    .string()
+    .regex(/^\d{4}-W\d{2}$/)
+    .transform((week) => ({ isoYear: Number(week.slice(0, 4)), isoWeek: Number(week.slice(6)) }))
+    .refine(({ isoYear, isoWeek }) => isoYear >= 2000 && isIsoWeek(isoYear, isoWeek))
+    .optional(),
+});

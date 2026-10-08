@@ -1,9 +1,13 @@
 import {
+  datesOfIsoWeek,
+  isoDate,
   type MenuDay,
   type MenuItem,
   type MenuItemContent,
+  type MenuWeek,
   type PermanentItemsPlan,
   permanentCategories,
+  type ScheduleEntry,
   type WeekPlan,
 } from '@piccolo/core';
 import {
@@ -20,12 +24,13 @@ import {
   menuWeeks,
   notExists,
   notInArray,
+  or,
   sql,
 } from '@piccolo/db';
 
 /*
- * The admin menu queries. Thin: the rules (what a valid item, week or permanent menu is) are
- * checked by `packages/core` before anything here runs.
+ * The menu queries: the admin's, and the public menu's at the end. Thin: the rules (what a valid
+ * item, week or permanent menu is) are checked by `packages/core` before anything here runs.
  */
 
 export interface IsoWeek {
@@ -355,4 +360,72 @@ export async function removeClosedDate(db: Db, date: string): Promise<boolean> {
     .where(eq(closedDates.date, date))
     .returning({ date: closedDates.date });
   return rows.length > 0;
+}
+
+// ---- Public menu ------------------------------------------------------------------------------
+
+/** What `buildPublicMenu` needs for one published week, and the week's closed dates. */
+export interface PublishedWeekSource {
+  week: MenuWeek;
+  schedule: ScheduleEntry[];
+  /** The active items scheduled on the week and every active permanent item. */
+  items: MenuItem[];
+  closedDates: string[];
+}
+
+/** `null` when the week is not published: one query. Otherwise four. */
+export async function readPublishedWeek(
+  db: Db,
+  isoYear: number,
+  isoWeek: number,
+  timezone: string,
+): Promise<PublishedWeekSource | null> {
+  const [week] = await db
+    .select({ publishedAt: menuWeeks.publishedAt })
+    .from(menuWeeks)
+    .where(and(eq(menuWeeks.isoYear, isoYear), eq(menuWeeks.isoWeek, isoWeek)));
+  if (!week?.publishedAt) {
+    return null;
+  }
+
+  const schedule = await db
+    .select({
+      isoYear: menuSchedule.isoYear,
+      isoWeek: menuSchedule.isoWeek,
+      day: menuSchedule.day,
+      menuItemId: menuSchedule.menuItemId,
+      sortOrder: menuSchedule.sortOrder,
+    })
+    .from(menuSchedule)
+    .where(inWeek(isoYear, isoWeek))
+    .orderBy(asc(menuSchedule.sortOrder), asc(menuSchedule.id));
+
+  const items = await db
+    .select()
+    .from(menuItems)
+    .where(
+      and(
+        eq(menuItems.active, true),
+        or(
+          inArray(menuItems.category, [...permanentCategories]),
+          inArray(
+            menuItems.id,
+            db
+              .select({ id: menuSchedule.menuItemId })
+              .from(menuSchedule)
+              .where(inWeek(isoYear, isoWeek)),
+          ),
+        ),
+      ),
+    )
+    .orderBy(asc(menuItems.sortOrder), asc(menuItems.id));
+
+  const dates = datesOfIsoWeek(isoYear, isoWeek, timezone);
+  return {
+    week: { isoYear, isoWeek, publishedAt: week.publishedAt },
+    // The admin routes write 1–6 or null; `buildPublicMenu` would skip any other day.
+    schedule: schedule.map((entry) => ({ ...entry, day: entry.day as MenuDay | null })),
+    items: items.map(toMenuItem),
+    closedDates: await listClosedDates(db, isoDate(dates[0]), isoDate(dates[6])),
+  };
 }
