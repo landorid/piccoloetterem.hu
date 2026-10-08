@@ -9,6 +9,7 @@ export {
   datesOfIsoWeek,
   formatDateHu,
   isClosedDate,
+  isIsoWeek,
   isOperatingDay,
   isoDate,
   isoWeekOf,
@@ -33,6 +34,23 @@ export {
   type WeeklyCategory,
   weeklyCategories,
 } from './config/types';
+export {
+  checkReorder,
+  type MenuItemContent,
+  type PlannedItem,
+  type PlannedScheduleEntry,
+  planWeek,
+  type ReorderErrorCode,
+  type ReorderResult,
+  type WeekDayDraft,
+  type WeekDraft,
+  type WeekDraftErrorCode,
+  type WeekDraftErrors,
+  type WeekItemDraft,
+  type WeekPlan,
+  type WeekPlanResult,
+  weekDraftIds,
+} from './menu/edit';
 export { priceFor } from './menu/price';
 export { buildPublicMenu } from './menu/public';
 export {

@@ -1,5 +1,5 @@
 import { zValidator } from '@hono/zod-validator';
-import type { ValidationTargets } from 'hono';
+import type { Context, ValidationTargets } from 'hono';
 import type { z } from 'zod';
 
 /**
@@ -19,6 +19,20 @@ export function validate<Target extends keyof ValidationTargets, Schema extends 
       );
     }
   });
+}
+
+/**
+ * The same 400 for a rule `packages/core` rejects after the request parsed: `fields` maps each
+ * invalid path to core's error code.
+ */
+export function validationFailed(c: Context, fields: Readonly<Partial<Record<string, string>>>) {
+  const codes: Record<string, string> = {};
+  for (const [path, code] of Object.entries(fields)) {
+    if (code !== undefined) {
+      codes[path] = code;
+    }
+  }
+  return c.json({ error: 'validation' as const, fields: codes }, 400);
 }
 
 export function issueFields(

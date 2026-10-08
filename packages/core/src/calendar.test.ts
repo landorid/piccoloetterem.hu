@@ -4,6 +4,7 @@ import {
   datesOfIsoWeek,
   formatDateHu,
   isClosedDate,
+  isIsoWeek,
   isOperatingDay,
   isoDate,
   isoWeekOf,
@@ -182,7 +183,16 @@ describe('ISO week boundaries', () => {
     [2026, 1.5],
     [2026.5, 1],
   ])('rejects %d-W%d', (isoYear, isoWeek) => {
+    expect(isIsoWeek(isoYear, isoWeek)).toBe(false);
     expect(() => datesOfIsoWeek(isoYear, isoWeek, tz)).toThrow(RangeError);
+  });
+
+  it.each([
+    [2025, 1],
+    [2025, 52],
+    [2026, 53],
+  ])('accepts %d-W%d', (isoYear, isoWeek) => {
+    expect(isIsoWeek(isoYear, isoWeek)).toBe(true);
   });
 });
 
