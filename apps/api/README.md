@@ -53,6 +53,7 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 |---|---|
 | `GET /api/health` | `{ ok: true, version }`. Never touches the database, so it is safe for uptime pings (docs/STACK.md rule 3). |
 | `GET /api/health/db` | `{ ok: true }` after `select 1`, or 500. Wakes the Neon compute, so call it rarely. |
+| `GET /api/admin/config` | `{ name }`: the restaurant name from `RestaurantConfig`, for the admin's top bar. No database. Same 401 / 403 as `/api/admin/ping`. |
 | `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
 | `/api/admin/menu/*` | Staff menu management, below. Same 401 / 403 as `/api/admin/ping`. |
 | anything else | 404 `{ error: 'not_found', message }` |
