@@ -1,0 +1,5 @@
+---
+// Release 1 has no home page. The web Worker answers `/` with a 302 from public/_redirects; this
+// page covers `astro dev`, which does not read that file.
+return Astro.redirect('/megrendeles', 302);
+---

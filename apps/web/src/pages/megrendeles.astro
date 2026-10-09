@@ -1,45 +1,33 @@
 ---
-import { createApiClient, unwrap } from '@piccolo/api-client';
+import Footer from '../components/Footer.astro';
+import Masthead from '../components/Masthead.astro';
+import { OrderingApp } from '../components/OrderingApp';
+import Layout from '../layouts/Layout.astro';
+import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
 import { strings } from '../strings';
 
-// Runs at build time (`output: 'static'`) and per request under `astro dev`.
-// Dev defaults to the local Worker, like the admin; a build without PUBLIC_API_URL skips the call.
-const baseUrl =
-  import.meta.env.PUBLIC_API_URL || (import.meta.env.DEV ? 'http://localhost:8787' : null);
-
-let version: string | null = null;
+// Runs at build time (`output: 'static'`) and per request under `astro dev`. The public config
+// changes only when the API is deployed, and CI builds the web right after that, so it is baked
+// into the page. A build without PUBLIC_API_URL (the CI checks job) renders without it.
+const baseUrl = apiOrigin();
+let config: PublicConfig | null = null;
 if (baseUrl) {
+  const api = createWebApi(baseUrl, (input, init) =>
+    // An unreachable API fails the build instead of stalling it.
+    fetch(input, { ...init, signal: AbortSignal.timeout(10_000) }),
+  );
   try {
-    const client = createApiClient({
-      baseUrl,
-      // An unreachable API must not stall the build.
-      fetch: (input: RequestInfo | URL, init?: RequestInit) =>
-        fetch(input, { ...init, signal: AbortSignal.timeout(3_000) }),
-    });
-    version = (await unwrap(await client.api.health.$get())).version;
-  } catch {
-    version = null;
+    config = await loadPublicConfig(api);
+  } catch (error) {
+    throw new Error(`GET ${baseUrl}/api/config/public failed`, { cause: error });
   }
 }
 ---
 
-<!doctype html>
-<html lang="hu">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{strings.order.title}</title>
-  </head>
-  <body>
-    <h1>{strings.order.heading}</h1>
-    {
-      version ? (
-        <p>
-          {strings.order.apiVersion} <code>{version}</code>
-        </p>
-      ) : (
-        <p>{strings.order.apiUnreachable}</p>
-      )
-    }
-  </body>
-</html>
+<Layout title={strings.meta.title} description={strings.meta.description} apiOrigin={baseUrl}>
+  <Masthead config={config} />
+  <main class="screen">
+    <OrderingApp client:load initial={{ config }} />
+  </main>
+  <Footer config={config} />
+</Layout>

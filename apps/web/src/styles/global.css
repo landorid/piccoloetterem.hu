@@ -1,0 +1,347 @@
+/*
+ * The public site's tokens and shell, from the O2 mockup (docs/design/megrendeles/README.md):
+ * one brand brown, warm neutrals, a 4 px spacing scale. O6 adds the order form's components.
+ */
+:root {
+  color-scheme: light;
+
+  --brand-900: #33210f;
+  --brand-800: #4a3018;
+  --brand-700: #5f4222;
+  --brand-600: #7a5230;
+  --brand-500: #96693f;
+  --brand-200: #e7d3ba;
+  --brand-100: #f3e7d7;
+  --brand-50: #faf4ec;
+
+  --ink-900: #211c16;
+  --ink-700: #4b4239;
+  --ink-500: #7b7065;
+  --ink-400: #8a7f72;
+
+  --line: #e8dfd2;
+  --line-strong: #d6c8b4;
+
+  --paper: #ffffff;
+  --ground: #faf6f0;
+
+  --danger-700: #a3251d;
+  --danger-100: #fbe8e5;
+
+  --font-ui: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --font-display: ui-serif, Georgia, 'Times New Roman', serif;
+  --t-xs: 0.75rem;
+  --t-sm: 0.8125rem;
+  --t-md: 0.9375rem;
+  --t-base: 1rem;
+  --t-lg: 1.125rem;
+  --t-xl: 1.25rem;
+  --t-2xl: 1.5rem;
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-6: 24px;
+  --s-8: 32px;
+  --s-10: 40px;
+
+  --radius-sm: 8px;
+  --radius: 12px;
+  --tap: 44px;
+
+  --shadow-1: 0 1px 2px rgba(33, 28, 22, 0.05), 0 1px 3px rgba(33, 28, 22, 0.08);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-ui);
+  font-size: var(--t-base);
+  line-height: 1.5;
+  color: var(--ink-900);
+  background: var(--ground);
+  -webkit-font-smoothing: antialiased;
+}
+
+:is(h1, h2, h3, p, ul) {
+  margin: 0;
+}
+
+ul {
+  padding: 0;
+  list-style: none;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand-500);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- masthead and footer ------------------------------------------------------------------ */
+.masthead {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  height: 72px;
+  padding: 0 var(--s-4);
+  background: var(--brand-800);
+  color: #fff;
+}
+.masthead svg {
+  flex: none;
+  width: auto;
+  height: 42px;
+  fill: currentColor;
+}
+.masthead-meta {
+  margin-left: auto;
+  text-align: right;
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  color: var(--brand-200);
+}
+.masthead-meta a {
+  display: inline-block;
+  padding-block: 2px;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  color: #fff;
+  text-decoration: none;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+  padding: var(--s-6) var(--s-4) var(--s-8);
+  background: var(--brand-900);
+  color: var(--brand-200);
+  font-size: var(--t-sm);
+  line-height: 1.6;
+}
+.footer b {
+  color: #fff;
+}
+
+/* --- the island ---------------------------------------------------------------------------- */
+.screen {
+  flex: 1;
+  width: 100%;
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--s-4) var(--s-4) var(--s-10);
+}
+
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.week h1,
+.message h1 {
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.week-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-size: var(--t-xs);
+  font-weight: 600;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.card h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+.card h3 {
+  margin-top: var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-700);
+}
+.card-note {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+
+.dishes > li + li {
+  border-top: 1px solid var(--line);
+}
+.dish {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-block: var(--s-2);
+}
+.dish-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.dish-name {
+  font-weight: 600;
+}
+.dish-price {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-700);
+}
+.dish-meta {
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+}
+.dish.sold-out .dish-name {
+  text-decoration: line-through;
+  color: var(--ink-500);
+}
+.tag {
+  align-self: flex-start;
+  padding: 0 6px;
+  border-radius: 4px;
+  background: var(--danger-100);
+  color: var(--danger-700);
+  font-size: var(--t-xs);
+  font-weight: 700;
+}
+
+/* Tall enough that the footer starts below the fold, so the loaded menu shifts nothing in view. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-height: 80vh;
+}
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.skeleton-line {
+  display: block;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--brand-50);
+}
+.skeleton-pill {
+  width: 12rem;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--brand-100);
+}
+.skeleton-title {
+  width: 40%;
+  height: 20px;
+  background: var(--brand-100);
+}
+.skeleton-short {
+  width: 60%;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-6) var(--s-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.message p {
+  max-width: 56ch;
+  color: var(--ink-700);
+}
+.message .contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  font-size: var(--t-md);
+}
+.message .contact a {
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
+.btn {
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--brand-600);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:active {
+  background: var(--brand-700);
+}
+
+/* The mockup's breakpoint. */
+@media (min-width: 900px) {
+  .masthead {
+    height: 96px;
+    padding: 0 var(--s-8);
+  }
+  .masthead svg {
+    height: 54px;
+  }
+  .screen {
+    padding: var(--s-6) var(--s-8) var(--s-10);
+  }
+  .week h1,
+  .message h1 {
+    font-size: var(--t-2xl);
+  }
+  .footer {
+    padding: var(--s-8);
+  }
+}
