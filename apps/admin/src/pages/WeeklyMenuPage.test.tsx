@@ -241,8 +241,9 @@ async function openWeek(week = '2026-W42') {
   return view;
 }
 
-function addVariation(cardName: string, variation: string) {
-  const input = field(cardName, strings.variationsInput.label);
+const variationsField = (cardName: string) => field(cardName, strings.variationsInput.label);
+
+function addVariation(input: HTMLElement, variation: string) {
   type(input, variation);
   fireEvent.keyDown(input, { key: 'Enter' });
 }
@@ -372,33 +373,56 @@ describe('acceptance 1: a full week survives save and reload', () => {
   it('saves six days of two soups and five mains plus three featured items, and reloads them identical', async () => {
     const view = await openWeek();
 
-    for (const day of days) {
-      for (const n of [1, 2]) {
-        type(field(soupName(day, n), t.fields.name), `Leves ${day}/${n}`);
+    // Every field is found before anything is typed into one. Each change makes jsdom drop its
+    // computed styles, which a role query reads for every element it checks, so a query over
+    // the whole grid right after a change costs five to ten times one that follows another
+    // query. Finding and typing in turn took this test past 30 s on CI.
+    const week = days.map((day) => ({
+      day,
+      soups: [1, 2].map((n) => field(soupName(day, n), t.fields.name)),
+      mains: [1, 2, 3, 4, 5].map((n) => field(mainName(day, n), t.fields.name)),
+      description: field(mainName(day, 1), t.fields.description),
+      variations: variationsField(mainName(day, 2)),
+      soupIncluded: within(card(mainName(day, 4))).getByRole('checkbox', {
+        name: t.fields.soupIncluded,
+      }),
+    }));
+    const wednesdayPrice = field(mainName(3, 5), t.fields.price);
+    for (const { day, soups, mains, description, variations, soupIncluded } of week) {
+      for (const [i, input] of soups.entries()) {
+        type(input, `Leves ${day}/${i + 1}`);
       }
-      for (const n of [1, 2, 3, 4, 5]) {
-        type(field(mainName(day, n), t.fields.name), `Főétel ${day}/${n}`);
+      for (const [i, input] of mains.entries()) {
+        type(input, `Főétel ${day}/${i + 1}`);
       }
-      type(field(mainName(day, 1), t.fields.description), 'rizzsel, salátával');
-      addVariation(mainName(day, 2), 'Kicsi');
-      addVariation(mainName(day, 2), 'Nagy');
-      fireEvent.click(
-        within(card(mainName(day, 4))).getByRole('checkbox', { name: t.fields.soupIncluded }),
-      );
+      type(description, 'rizzsel, salátával');
+      addVariation(variations, 'Kicsi');
+      addVariation(variations, 'Nagy');
+      fireEvent.click(soupIncluded);
     }
-    type(field(mainName(3, 5), t.fields.price), '1290');
+    type(wednesdayPrice, '1290');
     await pickAllergens(soupName(1, 1), [/Zeller/]);
     await pickAllergens(mainName(2, 3), [/Tej/, /Glutén/]);
     await pickAllergens(mainName(6, 1), [/Tojás/]);
 
-    for (const n of [1, 2, 3]) {
-      fireEvent.click(screen.getByRole('button', { name: t.add.featured }));
-      type(field(featuredName(n), t.fields.name), `Ajánlat ${n}`);
-      type(field(featuredName(n), t.fields.priceWeekday), String(2190 + n * 100));
+    const addFeatured = screen.getByRole('button', { name: t.add.featured });
+    for (const _ of [1, 2, 3]) {
+      fireEvent.click(addFeatured);
     }
-    type(field(featuredName(2), t.fields.priceWeekend), '2590');
+    const featured = [1, 2, 3].map((n) => ({
+      n,
+      name: field(featuredName(n), t.fields.name),
+      priceWeekday: field(featuredName(n), t.fields.priceWeekday),
+    }));
+    const secondWeekendPrice = field(featuredName(2), t.fields.priceWeekend);
+    const firstVariations = variationsField(featuredName(1));
+    for (const { n, name, priceWeekday } of featured) {
+      type(name, `Ajánlat ${n}`);
+      type(priceWeekday, String(2190 + n * 100));
+    }
+    type(secondWeekendPrice, '2590');
     await pickAllergens(featuredName(3), [/Halak/, /Mustár/]);
-    addVariation(featuredName(1), 'Közepes');
+    addVariation(firstVariations, 'Közepes');
 
     const entered = gridContents();
     expect(entered).toHaveLength(6 * 7 + 3);
