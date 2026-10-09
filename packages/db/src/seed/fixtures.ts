@@ -47,13 +47,13 @@ export const permanentItems = [
     id: '00000000-0000-4000-8000-000000000103',
     category: 'side',
     name: 'Hasábburgonya',
-    priceWeekday: 600,
+    priceWeekday: 0,
   }),
   item({
     id: '00000000-0000-4000-8000-000000000104',
     category: 'side',
     name: 'Párolt rizs',
-    priceWeekday: 500,
+    priceWeekday: 0,
     sortOrder: 1,
   }),
   item({
