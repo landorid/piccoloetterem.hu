@@ -108,11 +108,10 @@ describe('signed in as staff', () => {
     [paths.summary, strings.pages.summary.title, strings.nav.summary],
     [paths.weeklyMenu, strings.pages.weeklyMenu.title, strings.nav.weeklyMenu],
     [paths.items, strings.pages.items.title, strings.nav.items],
-  ])('renders %s with its placeholder and the sidebar', async (path, title, activeLabel) => {
+  ])('renders %s with its heading and the sidebar', async (path, title, activeLabel) => {
     renderAt(path);
 
     expect(await screen.findByRole('heading', { level: 1, name: title })).toBeTruthy();
-    expect(screen.getByText(strings.placeholder.title)).toBeTruthy();
     const nav = screen.getByRole('navigation', { name: strings.nav.label });
     for (const label of navLabels) {
       const link = within(nav).getByRole('link', { name: label });

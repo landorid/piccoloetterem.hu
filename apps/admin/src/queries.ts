@@ -15,3 +15,9 @@ export const healthQuery = queryOptions({
   queryFn: async () => unwrap(await api.api.health.$get()),
   staleTime: Number.POSITIVE_INFINITY,
 });
+
+/** Every permanent item, active and inactive, by section (`GET /api/admin/menu/items`). */
+export const permanentItemsQuery = queryOptions({
+  queryKey: ['admin', 'menu', 'items'],
+  queryFn: async () => unwrap(await api.api.admin.menu.items.$get()),
+});
