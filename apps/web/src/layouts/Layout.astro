@@ -1,0 +1,30 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description: string;
+  /** The API origin, preconnected because the island calls it as soon as it loads. */
+  apiOrigin: string | null;
+}
+
+const { title, description, apiOrigin } = Astro.props;
+---
+
+<!doctype html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#4a3018" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16" />
+    <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    {apiOrigin && <link rel="preconnect" href={apiOrigin} crossorigin="anonymous" />}
+  </head>
+  <body>
+    <slot />
+  </body>
+</html>

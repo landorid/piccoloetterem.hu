@@ -5,6 +5,7 @@ import { cors } from 'hono/cors';
 import { HTTPException } from 'hono/http-exception';
 import pkg from '../package.json';
 import { requireStaff } from './auth';
+import { publicConfig } from './config/public';
 import type { AppEnv, Bindings } from './env';
 import { HttpError } from './errors';
 import { adminMenuRoutes } from './menu/admin.routes';
@@ -54,6 +55,8 @@ export const app = new Hono<AppEnv>()
   })
   // The published menu guests order from. Anonymous; cached in KV, purged by the admin routes.
   .route('/menu', publicMenuRoutes(menuCacheFor))
+  // The restaurant's name, contact, prices and extras for the public site. Anonymous; no database.
+  .get('/config/public', withConfig, (c) => c.json(publicConfig(c.get('config'))))
   // Every staff route. `requireStaff` runs before the handler and before notFound,
   // so an unknown `/api/admin/*` path is still 401 without a session.
   .use('/admin/*', requireStaff)

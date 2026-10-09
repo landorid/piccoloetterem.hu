@@ -1,0 +1,31 @@
+---
+import { forint } from '../format';
+import type { PublicConfig } from '../lib/api';
+import { strings } from '../strings';
+
+interface Props {
+  config: PublicConfig | null;
+}
+
+const { config } = Astro.props;
+---
+
+{
+  config && (
+    <footer class="footer">
+      <p>
+        <b>{strings.footer.openingTitle}</b> · {config.contact.openingHours}
+      </p>
+      <p>
+        <b>{strings.footer.deliveryTitle}</b> ·{' '}
+        {strings.footer.delivery(
+          forint(config.pricing.deliveryFee),
+          forint(config.pricing.minimumOrder),
+        )}
+      </p>
+      <p>
+        <b>{strings.footer.contactTitle}</b> · {config.contact.phone} · {config.contact.address}
+      </p>
+    </footer>
+  )
+}

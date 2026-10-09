@@ -1,0 +1,4 @@
+# Workers Static Assets redirects (https://developers.cloudflare.com/workers/static-assets/redirects/).
+# 302, not 301: release 1 has no home page, and a browser caches a 301 for good, so it would keep
+# skipping the real "/" once that page exists (docs/PLAN.md section 7).
+/ /megrendeles 302
