@@ -1,4 +1,5 @@
 import {
+  firstOrderableDay,
   groupPermanentItems,
   isoWeekOf,
   isWeeklyCategory,
@@ -48,8 +49,13 @@ import {
  * - saving the permanent menu, or a permanent item's sold-out flag → every week (once per request),
  *   because permanent items appear on every week's menu.
  * Purging is idempotent, so a repeated request purges again even when it changed nothing.
+ *
+ * `now` is the request time; tests pass a fixed clock.
  */
-export function adminMenuRoutes(cacheFor: (env: Bindings) => MenuCache) {
+export function adminMenuRoutes(
+  cacheFor: (env: Bindings) => MenuCache,
+  now: () => Date = () => new Date(),
+) {
   return (
     new Hono<AppEnv>()
       .use(withConfig, withDb)
@@ -96,6 +102,10 @@ export function adminMenuRoutes(cacheFor: (env: Bindings) => MenuCache) {
       )
 
       // ---- Weeks ----
+
+      // The week the weekly menu editor opens on: the week of the first day guests can order for
+      // now, so next week once this week's ordering is over. Reads the config, never the database.
+      .get('/default-week', (c) => c.json(isoWeekOf(firstOrderableDay(now(), c.get('config')))))
 
       .get('/weeks/:year/:week', validate('param', weekParams), async (c) => {
         const { year, week } = c.req.valid('param');
