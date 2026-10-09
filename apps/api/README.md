@@ -21,9 +21,12 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/errors.ts` | `HttpError(status, code, message)` |
 | `src/env.ts` | The bindings type (`Bindings`) and the Hono env (`AppEnv`) |
 | `src/menu/admin.routes.ts` | `/api/admin/menu/*`: permanent items, weeks, closed dates (see below) |
+| `src/menu/public.routes.ts` | `GET /api/menu`: the published menu guests order from (see below) |
+| `src/menu/public.ts` | `publicWeek()`: one week from the cache, or from the database and cached |
 | `src/menu/schemas.ts` | The zod schemas of those routes, kept in step with the `packages/core` types |
 | `src/menu/repo.ts` | Their Drizzle queries |
-| `src/menu/cache.ts` | `MenuCache` (`purgeWeek`, `purgeAll`) and `menuCacheFor(env)`; a no-op until #25 |
+| `src/menu/cache.ts` | The menu cache on Workers KV: `purgeWeek`, `purgeAll`, `week`; `menuCacheFor(env)` |
+| `src/menu/memoryKv.ts` | An in-memory `KvStore` for tests |
 
 ## Run it locally
 
@@ -55,6 +58,7 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 |---|---|
 | `GET /api/health` | `{ ok: true, version }`. Never touches the database, so it is safe for uptime pings (docs/STACK.md rule 3). |
 | `GET /api/health/db` | `{ ok: true }` after `select 1`, or 500. Wakes the Neon compute, so call it rarely. |
+| `GET /api/menu` | The published menu and the dates a guest can order for now, below. Anonymous. |
 | `GET /api/admin/config` | `{ name }`: the restaurant name from `RestaurantConfig`, for the admin's top bar. No database. Same 401 / 403 as `/api/admin/ping`. |
 | `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
 | `/api/admin/menu/*` | Staff menu management, below. Same 401 / 403 as `/api/admin/ping`. |
@@ -111,15 +115,58 @@ is the list order.
 Purges are idempotent and run on every such request, also when it changed nothing (publishing
 again, closing a date twice), so a retry after a failed purge heals the cache.
 
-Integration tests (`src/menu/admin.integration.test.ts`) run when `DATABASE_URL` is set in the
-shell, and are skipped otherwise (as in CI). They pick a random unused week of the 2090s and delete
-what they create; the permanent items that existed before the run are restored column for column.
-From the repo root:
+Integration tests (`src/menu/admin.integration.test.ts`, `src/menu/public.integration.test.ts`)
+run when `DATABASE_URL` is set in the shell, and are skipped otherwise (as in CI). They pick random
+unused weeks of the 2090s and delete what they create; the permanent items that existed before the
+run are restored column for column. From the repo root:
 
 ```bash
 set -a; source .env; set +a
 pnpm exec vitest run --project=@piccolo/api
 ```
+
+## Public menu
+
+`GET /api/menu` is anonymous and the same for every guest at a given moment. The clock is the
+request time. `orderWindow` (`packages/core`) decides the state from the week of the first
+orderable day (this week, or next week after the Friday cutoff):
+
+| Body | When |
+|---|---|
+| `{ state: 'open', menu, orderableDates, weekLabel }` | That week is published and has a day left to order. `menu` is core's `PublicMenu` (sold-out items included, flagged); `orderableDates` are `YYYY-MM-DD`, ascending, without closed dates |
+| `{ state: 'next_week_not_published' }` | Ordering has rolled over to next week, which is not published. No `message`: the text is the web app's (`apps/web/src/strings.ts`, #60) |
+| `{ state: 'closed' }` | This week is not published, or every remaining day of it is closed |
+
+`?week=2026-W42` returns that week as `state: 'open'` if it is published, with the dates of it a
+guest can order for now (none, for a week other than the order window's). Otherwise 404
+`{ error: 'week_not_published' }`; a malformed week is 400 `validation`.
+
+**Headers.** `Cache-Control: no-cache` and an `ETag` (SHA-1 of the body, so of the menu and the
+orderable dates): the browser may keep the response but asks every time, because
+`orderableDates` changes at the cutoff. A matching `If-None-Match` (weak or strong) is 304. Outside
+production `X-Db-Queries` says how many database queries the request sent: 0 from the cache, 1 for
+an unpublished week, 4 for a published one.
+
+**The cache** (`src/menu/cache.ts`, docs/STACK.md rule 4) is the `MENU_CACHE` KV namespace. Each
+week is stored under `menu:<isoYear>-<isoWeek>` without expiry: whether it is published, its
+closed dates and its `PublicMenu`, so a cached request sends no query. An unpublished week is
+cached too. The admin routes purge it (the table above).
+
+- A purge writes a new random value to `menu-version:<isoYear>-<isoWeek>` (`purgeWeek`) or
+  `menu-version:all` (`purgeAll`) instead of deleting entries. An entry is used only while it
+  carries both current versions, read *before* its database read. So a guest whose read ran
+  just before a write committed cannot leave the old week cached forever, and `purgeAll` does not
+  depend on KV's eventually consistent `list`. A request reads three keys, in parallel.
+- KV is eventually consistent: a purge is visible at once in the Cloudflare location that made
+  it, and within about a minute in the others.
+- KV allows about one write per second per key. A guest's store that KV rejects is skipped (the
+  next request stores it); a purge is retried twice, a second and two seconds apart.
+- **Bump `CACHE_FORMAT`** in `cache.ts` whenever `PublicMenu` or the cached week changes shape or
+  meaning: entries never expire, so a deploy would otherwise keep serving the old ones.
+  `cache.test.ts` fails on a shape change as a reminder.
+
+Locally `wrangler dev` uses Miniflare's KV, kept under `.wrangler/state`. Delete that folder to
+start with an empty cache.
 
 ## CORS
 
@@ -210,7 +257,7 @@ Gotchas:
 
 - **Bundle size.** Import `createClerkClient` from `@clerk/backend` and nothing else from that
   package. The Worker already has `nodejs_compat`. A dry-run upload of this Worker is about
-  2170 KiB uncompressed / 400 KiB gzip (zod is ~760 KiB of it since the admin menu routes, #24),
+  2190 KiB uncompressed / 410 KiB gzip (zod is ~760 KiB of it since the admin menu routes, #24),
   under the Paid plan's 10 MB limit. Do not pull Clerk into a second bundle.
 - **`authorizedParties`.** Clerk puts the admin origin in the token's `azp` claim. Pass that
   origin, exactly, including scheme and port (`http://localhost:5173` in local dev,
@@ -248,8 +295,13 @@ admin, `https://piccolo-web.honlapvarazslo.workers.dev` and
 admin origins only: `http://localhost:5173` and `https://piccolo-admin.honlapvarazslo.workers.dev`.
 
 `staging` and `production` each set `ENVIRONMENT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES`,
-and bind `HYPERDRIVE`. Their Hyperdrive ids and origin URLs are **placeholders** until manual
-issue #40 creates the resources and replaces them.
+and bind `HYPERDRIVE` and `MENU_CACHE`. Their Hyperdrive and KV ids and origin URLs are
+**placeholders** until manual issue #40 creates the resources and replaces them.
+
+`MENU_CACHE` is a KV namespace per environment. The top level binds
+`piccolo-menu-cache-development`. Create the others with
+`wrangler kv namespace create piccolo-menu-cache-<staging|production>` and put the printed id in
+`[[env.<staging|production>.kv_namespaces]]`.
 
 Secrets are never written into `wrangler.toml`. Set them per environment:
 
@@ -269,3 +321,4 @@ wrangler secret put SENTRY_DSN --env staging
 | `RESTAURANT` | var | `wrangler.toml`: the `RestaurantConfig` instance (`loadConfig`) |
 | `CORS_ORIGINS` | var | `wrangler.toml`: the web and admin origins for that environment |
 | `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
+| `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment. Locally Miniflare's |

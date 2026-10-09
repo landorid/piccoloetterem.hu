@@ -18,6 +18,12 @@ CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
 CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev"
 
+# The public menu cache (src/menu/cache.ts): entries never expire, the admin menu routes purge
+# them. Locally `wrangler dev` uses Miniflare's KV instead of this namespace.
+[[kv_namespaces]]
+binding = "MENU_CACHE"
+id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
+
 # Secrets are never written in this file. Set them per environment with
 #   wrangler secret put SENTRY_DSN --env <staging|production>
 #   wrangler secret put CLERK_SECRET_KEY --env <staging|production>
@@ -43,6 +49,12 @@ binding = "HYPERDRIVE"
 # for the staging Neon branch (manual issue #40).
 id = "00000000000000000000000000000000"
 
+[[env.staging.kv_namespaces]]
+binding = "MENU_CACHE"
+# Placeholder. Replace with the id printed by
+# `wrangler kv namespace create piccolo-menu-cache-staging` (manual issue #40).
+id = "22222222222222222222222222222222"
+
 [env.production]
 name = "piccolo-api-production"
 
@@ -60,3 +72,9 @@ binding = "HYPERDRIVE"
 # Placeholder. Replace with the id printed by `wrangler hyperdrive create piccolo-production`
 # for the production Neon branch (manual issue #40).
 id = "11111111111111111111111111111111"
+
+[[env.production.kv_namespaces]]
+binding = "MENU_CACHE"
+# Placeholder. Replace with the id printed by
+# `wrangler kv namespace create piccolo-menu-cache-production` (manual issue #40).
+id = "33333333333333333333333333333333"

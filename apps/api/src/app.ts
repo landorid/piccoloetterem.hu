@@ -9,6 +9,7 @@ import type { AppEnv, Bindings } from './env';
 import { HttpError } from './errors';
 import { adminMenuRoutes } from './menu/admin.routes';
 import { menuCacheFor } from './menu/cache';
+import { publicMenuRoutes } from './menu/public.routes';
 import { withConfig, withDb } from './middleware';
 
 /** Parses `CORS_ORIGINS`: comma-separated exact origins, e.g. `https://admin.example.hu`. */
@@ -51,6 +52,8 @@ export const app = new Hono<AppEnv>()
     await c.get('db').execute(sql`select 1`);
     return c.json({ ok: true as const });
   })
+  // The published menu guests order from. Anonymous; cached in KV, purged by the admin routes.
+  .route('/menu', publicMenuRoutes(menuCacheFor))
   // Every staff route. `requireStaff` runs before the handler and before notFound,
   // so an unknown `/api/admin/*` path is still 401 without a session.
   .use('/admin/*', requireStaff)

@@ -11,16 +11,26 @@ export const withConfig = createMiddleware<AppEnv>(async (c, next) => {
 
 /**
  * `c.get('db')`: a Drizzle client created for this request only. Hyperdrive does the pooling in
- * deployed environments; locally `DATABASE_URL` from `.dev.vars` is used. The client is released
- * after the response, whether the handler succeeded or threw.
+ * deployed environments; locally `DATABASE_URL` from `.dev.vars` is used. The client connects on
+ * its first query, so a request that sends none never opens a connection, and it is released
+ * after the response, whether the handler succeeded or threw. `c.get('dbQueries')()` counts the
+ * queries sent so far.
  */
 export const withDb = createMiddleware<AppEnv>(async (c, next) => {
   const connectionString = c.env.HYPERDRIVE?.connectionString ?? c.env.DATABASE_URL;
   if (!connectionString) {
     throw new Error('No database configured: bind HYPERDRIVE or set DATABASE_URL in .dev.vars.');
   }
-  const db = createDb(connectionString);
+  let queries = 0;
+  const db = createDb(connectionString, {
+    logger: {
+      logQuery() {
+        queries += 1;
+      },
+    },
+  });
   c.set('db', db);
+  c.set('dbQueries', () => queries);
   try {
     await next();
   } finally {

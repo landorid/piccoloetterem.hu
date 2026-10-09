@@ -1,10 +1,22 @@
 import type { RestaurantConfig } from '@piccolo/core';
 import type { Db } from '@piccolo/db';
 
+/**
+ * The part of a Workers KV namespace the API uses. Declared here instead of using `KVNamespace`,
+ * because the frontends typecheck this file without `@cloudflare/workers-types`
+ * (`packages/api-client`); `src/menu/cache.test.ts` checks that a real `KVNamespace` fits it.
+ */
+export interface KvStore {
+  get(key: string, type: 'text'): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+}
+
 /** Bindings, vars and secrets of the API Worker; see wrangler.toml and README.md. */
 export interface Bindings {
   /** Deployed environments only. Local development uses `DATABASE_URL` instead. */
   HYPERDRIVE?: Hyperdrive;
+  /** The public menu cache (`src/menu/cache.ts`). Locally, Miniflare's KV. */
+  MENU_CACHE: KvStore;
   /** Local development only, from `.dev.vars`. */
   DATABASE_URL?: string;
   SENTRY_DSN?: string;
@@ -41,6 +53,8 @@ export interface AppEnv {
   Variables: {
     config: RestaurantConfig;
     db: Db;
+    /** How many queries `db` has sent so far in this request (the `X-Db-Queries` debug header). */
+    dbQueries: () => number;
     staff: Staff;
   };
 }
