@@ -228,7 +228,9 @@ Másold ügyfelenként, és pipáld végig.
 - [ ] SES domain identity + DKIM verifikáció
 - [ ] SPF, DKIM és DMARC rekordok az ügyfél DNS-ében
       — enélkül a visszaigazolók spambe esnek: rendelési rendszernél ez üzleti hiba
-- [ ] `RestaurantConfig` kitöltése: határidő, működési napok, menüciklus, fogástípusok, ünnepnaptár, branding
+- [ ] `RestaurantConfig` kitöltése: határidő, működési napok, menüciklus, fogástípusok, branding
+      — ünnepnaptár nincs benne: azokat a napokat, amelyekre nem lehet rendelni, a személyzet
+      jelöli be az adminban (`closed_dates` tábla), deploy nélkül (2026-09-13-i döntés, #60)
 - [ ] SendOps csatlakoztatása az AWS fiókhoz
 
 ---
