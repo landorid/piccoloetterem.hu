@@ -15,6 +15,9 @@ import type {
   SubmissionDraft,
 } from './types';
 
+/** The part of `RestaurantConfig` that prices an order. */
+export type PricingConfig = Pick<RestaurantConfig, 'timezone' | 'pricing' | 'extras'>;
+
 const slots = [
   ['soup', 'soupId'],
   ['main', 'mainId'],
@@ -75,11 +78,7 @@ export function priceMenu(
   return { items, adjustments, price };
 }
 
-export function priceDay(
-  day: DayDraft,
-  publicMenu: PublicMenu,
-  config: RestaurantConfig,
-): PricedDay {
+export function priceDay(day: DayDraft, publicMenu: PublicMenu, config: PricingConfig): PricedDay {
   const menus = day.menus.map((menu) => priceMenu(menu, publicMenu, day.deliveryDate, config));
   const extras: PricedExtra[] = [];
   for (const extra of day.extras) {
@@ -112,9 +111,9 @@ export function priceDay(
 }
 
 export function priceSubmission(
-  draft: SubmissionDraft,
+  draft: Pick<SubmissionDraft, 'days'>,
   publicMenu: PublicMenu,
-  config: RestaurantConfig,
+  config: PricingConfig,
 ): PricedSubmission {
   const days = draft.days.map((day) => priceDay(day, publicMenu, config));
   const foodSubtotal = days.reduce((sum, day) => sum + day.foodSubtotal, 0);

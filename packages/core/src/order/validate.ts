@@ -4,7 +4,13 @@ import type { MenuItem, PublicMenu, Slot } from '../menu/types';
 import { type IsPublished, isOrderable } from '../menu/window';
 import { findItem } from './lookup';
 import { isEmail, normalisePhone } from './normalise';
-import type { ComposedMenuDraft, DayDraft, FieldErrors, SubmissionDraft } from './types';
+import {
+  type ComposedMenuDraft,
+  type DayDraft,
+  type FieldErrors,
+  maxExtraQuantity,
+  type SubmissionDraft,
+} from './types';
 
 function prefix(errors: FieldErrors, path: string): FieldErrors {
   const prefixed: FieldErrors = {};
@@ -120,7 +126,11 @@ export function validateDay(
     if (!known) errors[`extras.${index}.key`] = 'unknown_extra';
     else if (seenExtras.has(extra.key)) errors[`extras.${index}.key`] = 'duplicate';
     else seenExtras.add(extra.key);
-    if (!Number.isInteger(extra.quantity) || extra.quantity < 1 || extra.quantity > 20) {
+    if (
+      !Number.isInteger(extra.quantity) ||
+      extra.quantity < 1 ||
+      extra.quantity > maxExtraQuantity
+    ) {
       errors[`extras.${index}.quantity`] = 'invalid_quantity';
     }
   }
