@@ -7,7 +7,7 @@ import type { Bindings } from '../env';
  * rejection and reports it to Sentry.
  *
  * A listener runs after the request's database client is released, so one that reads the orders
- * opens its own client from the same bindings (`HYPERDRIVE`, or `DATABASE_URL` locally).
+ * opens its own client from the same bindings (`HYPERDRIVE`, or `DATABASE_URL` in tests).
  *
  * The confirmation e-mail (O4, #32) is the first listener.
  */

@@ -2,6 +2,7 @@
 # Comments only. No real values. See README.md, "Clerk on Workers".
 
 # Neon pooled URL. Quote it, because it contains `&`. Same value as DATABASE_URL in the repo-root .env.
+# `pnpm dev` also hands it to wrangler as the HYPERDRIVE binding's local connection string.
 DATABASE_URL=
 
 # Optional. Without it, Sentry is disabled locally.

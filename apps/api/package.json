@@ -9,7 +9,7 @@
     }
   },
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "node ./scripts/dev.mjs",
     "build": "wrangler deploy --dry-run --outdir dist",
     "typecheck": "tsc"
   },

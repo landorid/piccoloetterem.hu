@@ -57,6 +57,13 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
    [Environments and secrets](#environments-and-secrets)). Run the API alone with
    `pnpm --filter @piccolo/api dev`.
 
+   The top level binds `HYPERDRIVE`, because CI deploys it as the development Worker, and
+   `wrangler dev` will not start a Hyperdrive binding without a local connection string in
+   `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE`. Wrangler reads that variable from
+   the shell only, not from `.dev.vars`. The package's `dev` script (`scripts/dev.mjs`) sets it
+   from `DATABASE_URL` in `.dev.vars`, so the Worker talks to the same Neon branch either way. If
+   you start `wrangler dev` yourself, export the variable in the shell first.
+
 To try a frontend exactly as its Worker serves it, build it and run `pnpm --filter @piccolo/web preview`
 (<http://localhost:8788>) or `pnpm --filter @piccolo/admin preview` (<http://localhost:8789>).
 The preview origin is not in `CORS_ORIGINS` or `CLERK_AUTHORIZED_PARTIES`. Sign-in against the
@@ -295,8 +302,8 @@ complete for the RPC client (`packages/api-client`).
 
 - **Where the middleware goes.** Attach `withConfig` and `withDb` where they are needed, never
   globally, so `/api/health` and unknown paths touch no database. `withDb` opens one client per
-  request and releases it after the response. Deployed environments pool through Hyperdrive;
-  locally it uses `DATABASE_URL`.
+  request and releases it after the response, through the `HYPERDRIVE` binding: deployed,
+  Hyperdrive pools the connections; under `wrangler dev` it connects straight to `DATABASE_URL`.
 - **Reading query results.** `db.execute(sql\`…\`)` returns a node-postgres `QueryResult`: read `.rows`.
 
 ### Error bodies
@@ -378,6 +385,10 @@ admin, `https://piccolo-web.honlapvarazslo.workers.dev` and
 `https://piccolo-admin.honlapvarazslo.workers.dev`. Its `CLERK_AUTHORIZED_PARTIES` lists the two
 admin origins only: `http://localhost:5173` and `https://piccolo-admin.honlapvarazslo.workers.dev`.
 
+The top level binds `HYPERDRIVE` to the Hyperdrive config `piccolo-development`, in front of the
+Neon development branch. The deployed development Worker has no `DATABASE_URL`: without this
+binding its database routes fail with 500.
+
 `staging` and `production` each set `ENVIRONMENT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES`,
 and bind `HYPERDRIVE` and `MENU_CACHE`. Their Hyperdrive and KV ids and origin URLs are
 **placeholders** until manual issue #40 creates the resources and replaces them.
@@ -396,7 +407,8 @@ wrangler secret put SENTRY_DSN --env staging
 | Name | Kind | Where |
 |---|---|---|
 | `SENTRY_DSN` | secret | `wrangler secret put` per environment; `.dev.vars` locally |
-| `DATABASE_URL` | secret | `.dev.vars` only. Deployed environments use the `HYPERDRIVE` binding instead |
+| `DATABASE_URL` | secret | `.dev.vars` only; `pnpm dev` passes it to the local `HYPERDRIVE`. Deployed environments use the `HYPERDRIVE` binding instead |
+| `HYPERDRIVE` | Hyperdrive binding | `wrangler.toml`: the top level binds `piccolo-development`; staging and production are placeholders (#40). Locally `wrangler dev` connects it straight to `DATABASE_URL` |
 | `CLERK_SECRET_KEY` | secret | `wrangler secret put` per environment; `.dev.vars` locally |
 | `CLERK_PUBLISHABLE_KEY` | secret | same. Not secret in the cryptographic sense, but it is not written into `wrangler.toml`. The admin build uses `VITE_CLERK_PUBLISHABLE_KEY` |
 | `CLERK_JWT_KEY` | secret | same. PEM public key for networkless session JWT verification (`jwtKey`) |
