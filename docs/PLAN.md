@@ -31,8 +31,10 @@ to make the first build small. The old site keeps running untouched.
 
 Revised 2026-09-13: `/megrendeles` no longer lists the browsable weekly menu below the order form;
 the weekly menu gets a public page of its own. Every dish is still chosen in the order form, with
-its allergens (§2 "Menu"). Decided by Dávid while reviewing the O2 mockup (#30, #58). **Still
-open (#58):** whether the weekly menu page is in release 1 or the backlog, and at which route.
+its allergens (§2 "Menu"). Decided by Dávid while reviewing the O2 mockup (#30, #58). Revised
+2026-10-09: the weekly menu page is **not in release 1**. It is backlog, together with `/` and the
+other public pages (§7, #46), and #46 plans `/` as the weekly menu landing page, as in the old app.
+Until it lands, no public page shows the menu outside the order form. Decided by Dávid (#58).
 
 ## 2. Decisions (from the planning interview, 2026-09-06)
 
@@ -100,11 +102,9 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   day's difference to the minimum, which the guest pays on delivery. `packages/core` exposes it
   as `PricedDay.missingToMinimum`. Revised 2026-09-13: the original decision rejected the
   submission, client and server; Dávid reversed it while reviewing the O2 mockup (#30), recorded
-  in #57. **Still open (#57), not decided here:**
-  1. Is the difference a priced line of the order (priced by `packages/core` and snapshotted like
-     the delivery fee), or only a notice on checkout?
-  2. Do the admin delivery list and order detail show the amount the courier has to collect?
-  3. Does the confirmation e-mail mention it?
+  in #57. Revised 2026-10-09: the difference is **a checkout notice only**, as in the old app. It
+  is not a priced line and is not stored on the order. The admin delivery list and order detail
+  do not show it, and the confirmation e-mail does not mention it. Decided by Dávid (#57).
 - Pickup exists behind a config flag: no fee, no minimum, no address. **Off for Piccolo.**
 - No payment method selection, no online payment. Cash on delivery is implied.
 - "Sold out" is a manual per-item switch, enforced server-side at submission. No stock counting.
@@ -116,6 +116,10 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 
 - One `menu_items` model with a category from config: `daily_soup`, `daily_main`, `featured`
   (weekly), and `all_week`, `dessert`, `pickle`, `side`, `side_extra` (permanent).
+- A plain side (`side`, alap köret) is always free: its price is 0. Only a `side_extra` (feláras
+  köret) carries a price. `validateMenuItem` enforces it the way it enforces a daily soup's 0.
+  Revised 2026-10-09: until then a side was priced like any other item. Decided by Dávid, as in
+  the old app, where a köret had a name and no price field (LEGACY-INVENTORY.md §2, "Étlap").
 - Weekly items are scheduled to an ISO week and day (1–6; featured items have no day).
 - A week is a draft until published (`published_at`). Publishing invalidates the public menu cache.
 - Editing a week upserts; it never deletes and recreates. Orders snapshot item name and price.
