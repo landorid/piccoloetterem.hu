@@ -14,14 +14,14 @@ export interface KvStore {
 
 /** Bindings, vars and secrets of the API Worker; see wrangler.toml and README.md. */
 export interface Bindings {
-  /** Deployed environments only. Local development uses `DATABASE_URL` instead. */
+  /** Every environment. Under `wrangler dev`, a direct connection to `DATABASE_URL` (scripts/dev.mjs). */
   HYPERDRIVE?: Hyperdrive;
   /**
    * The public menu cache (`src/menu/cache.ts`), and the per-IP order limit under its own
    * `order-rate:` prefix (`src/orders/rateLimit.ts`). Locally, Miniflare's KV.
    */
   MENU_CACHE: KvStore;
-  /** Local development only, from `.dev.vars`. */
+  /** Local only, from `.dev.vars`; `HYPERDRIVE` wins when both are set. The tests pass it alone. */
   DATABASE_URL?: string;
   SENTRY_DSN?: string;
   ENVIRONMENT?: string;

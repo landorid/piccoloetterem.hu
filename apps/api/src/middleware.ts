@@ -10,8 +10,9 @@ export const withConfig = createMiddleware<AppEnv>(async (c, next) => {
 });
 
 /**
- * `c.get('db')`: a Drizzle client created for this request only. Hyperdrive does the pooling in
- * deployed environments; locally `DATABASE_URL` from `.dev.vars` is used. The client connects on
+ * `c.get('db')`: a Drizzle client created for this request only, through `HYPERDRIVE`: Hyperdrive
+ * pools when deployed, and under `wrangler dev` the binding connects straight to `DATABASE_URL`
+ * (scripts/dev.mjs). Without the binding, as in the tests, `DATABASE_URL`. The client connects on
  * its first query, so a request that sends none never opens a connection, and it is released
  * after the response, whether the handler succeeded or threw. `c.get('dbQueries')()` counts the
  * queries sent so far.

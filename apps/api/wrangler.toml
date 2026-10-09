@@ -5,8 +5,8 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
-# Local development (`wrangler dev`, http://localhost:8787). There is no Hyperdrive binding here:
-# the Worker falls back to DATABASE_URL from .dev.vars (see README.md).
+# The top level is local development (`wrangler dev`, http://localhost:8787) and the development
+# Worker that CI deploys from `develop` as `piccolo-api`.
 [vars]
 ENVIRONMENT = "development"
 RESTAURANT = "piccolo"
@@ -17,6 +17,12 @@ CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.
 # Exact origin, including scheme and port. The public site is not an authorized party.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
 CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev"
+
+# The deployed development Worker's database. Locally `pnpm dev` (scripts/dev.mjs) hands wrangler
+# DATABASE_URL from .dev.vars as CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "7578b36062614eb78fbb76c441014493" # piccolo-development (manual issue #40)
 
 # The public menu cache (src/menu/cache.ts): entries never expire, the admin menu routes purge
 # them. Locally `wrangler dev` uses Miniflare's KV instead of this namespace.
