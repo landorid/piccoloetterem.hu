@@ -254,10 +254,12 @@ type SummaryRow = {
 
 /**
  * The kitchen's view of a delivery date, over its orders that are not cancelled: how many of each
- * dish (`name` and `variation` as snapshotted) per slot, most first; each extra's total quantity;
- * the order and menu counts and the revenue (the sum of `total`, delivery fees included).
+ * dish (`name` and `variation` as snapshotted) per slot, most first, then by name; each extra's
+ * total quantity; the order and menu counts and the revenue (the sum of `total`, delivery fees
+ * included). Names sort with `natural_sort`, as the delivery list's addresses do.
  */
 export async function daySummary(db: Db, date: string) {
+  const collation = sql.identifier(naturalSort);
   const {
     rows: [summary],
   } = await db.execute<SummaryRow>(sql`
@@ -287,9 +289,11 @@ export async function daySummary(db: Db, date: string) {
       coalesce(sum(total), 0)::int as revenue,
       (count(*) filter (where fulfilment = 'delivery'))::int as "deliveryCount",
       (count(*) filter (where fulfilment = 'pickup'))::int as "pickupCount",
-      (select coalesce(json_agg(dishes order by slot, count desc, name, variation nulls first), '[]'::json)
+      (select coalesce(json_agg(dishes order by slot, count desc, name collate ${collation},
+          variation collate ${collation} nulls first), '[]'::json)
         from dishes) as dishes,
-      (select coalesce(json_agg(extras order by name), '[]'::json) from extras) as extras
+      (select coalesce(json_agg(extras order by name collate ${collation}), '[]'::json)
+        from extras) as extras
     from day_orders`);
   // An aggregate without `group by` always returns one row.
   const { dishes, ...counts } = summary as SummaryRow;
