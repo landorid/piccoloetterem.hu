@@ -20,3 +20,6 @@ coverage/
 
 .DS_Store
 *.log
+
+# Verification runs (.claude/skills/verify): server state, logs and evidence.
+.verify/
