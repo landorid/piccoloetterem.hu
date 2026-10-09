@@ -74,6 +74,6 @@ export const strings = {
   },
   common: {
     /** `amount` is already grouped by `Intl.NumberFormat('hu-HU')`; see format.ts. */
-    forint: (amount: string) => `${amount} Ft`,
+    forint: (amount: string) => `${amount}\u00a0Ft`,
   },
 } as const;

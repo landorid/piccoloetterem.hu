@@ -81,13 +81,13 @@ describe('MenuScaffold', () => {
 
   it('prices a daily main by its day, and gives a soup no price of its own', () => {
     const html = render([]);
-    expect(html).toContain('Rakott krumpli</span><span class="dish-price">2090 Ft');
+    expect(html).toContain('Rakott krumpli</span><span class="dish-price">2090\u00a0Ft');
     expect(html).toContain(strings.scaffold.soupHint);
     expect(html).not.toContain('Gulyásleves</span><span class="dish-price">');
   });
 
   it('shows the weekend price of a weekly item when it differs', () => {
-    expect(render([])).toContain('2290 Ft · hétvégén 2490 Ft');
+    expect(render([])).toContain('2290\u00a0Ft · hétvégén 2490\u00a0Ft');
   });
 
   it('names the allergens of each dish in the EU order, with their numbers', () => {

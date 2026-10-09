@@ -3,8 +3,8 @@ import { strings } from './strings';
 const number = new Intl.NumberFormat('hu-HU');
 
 /**
- * `4680 Ft`, `10 400 Ft`. Hungarian groups thousands only from five digits, with a narrow
- * no-break space (U+202F); both are `Intl`'s, do not "fix" them.
+ * `4680 Ft`, `10 400 Ft`. Hungarian groups thousands only from five digits, with a no-break space
+ * (U+00A0, or the narrow U+202F in some ICU versions); both are `Intl`'s, do not "fix" them.
  */
 export function forint(amount: number): string {
   return strings.common.forint(number.format(amount));

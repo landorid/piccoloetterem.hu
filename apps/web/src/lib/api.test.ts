@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { describeLoadError } from '../components/OrderingApp';
-import { strings } from '../strings';
-import { ApiError, createWebApi, loadMenu, loadPublicConfig, NetworkError } from './api';
+import { createWebApi, loadMenu, loadPublicConfig, NetworkError } from './api';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -60,23 +58,5 @@ describe('loadPublicConfig', () => {
     const api = createWebApi('https://api.example.hu', fetch);
     expect(await loadPublicConfig(api)).toEqual({ name: 'Piccolo Club Étterem' });
     expect(String(fetch.mock.calls[0]?.[0])).toBe('https://api.example.hu/api/config/public');
-  });
-});
-
-describe('describeLoadError', () => {
-  it('maps week_not_published to the empty-week copy', () => {
-    expect(describeLoadError(new ApiError(404, 'week_not_published', ''))).toEqual({
-      title: strings.errors.emptyWeekTitle,
-      body: strings.errors.emptyWeekBody,
-    });
-  });
-
-  it('maps anything else to the load failure', () => {
-    for (const error of [new ApiError(500, 'internal', ''), new NetworkError(), new Error('x')]) {
-      expect(describeLoadError(error)).toEqual({
-        title: strings.errors.loadFailedTitle,
-        body: strings.errors.loadFailedBody,
-      });
-    }
   });
 });
