@@ -48,6 +48,7 @@ const honeypot = createMiddleware<AppEnv>(async (c, next) => {
  * | Status | Body | When |
  * |---|---|---|
  * | 201 | `{ submissionId, orders: [{ id, deliveryDate, total }], grandTotal }` | Stored |
+ * | 200 | The same shape, no orders | The honeypot was filled; nothing happened |
  * | 400 | `{ error: 'validation', fields }` | Malformed, over a size cap, days in different weeks, or a rule core rejects |
  * | 409 | `{ error: 'validation', fields }` | Every failure is `cutoff_passed` or `sold_out` |
  * | 409 | `{ error: 'date_closed', dates, fields }` | Staff closed one of the dates (#60) |
