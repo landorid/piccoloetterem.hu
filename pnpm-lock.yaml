@@ -35,6 +35,9 @@ importers:
       '@piccolo/api-client':
         specifier: workspace:^
         version: link:../../packages/api-client
+      '@piccolo/core':
+        specifier: workspace:^
+        version: link:../../packages/core
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.2.8)
