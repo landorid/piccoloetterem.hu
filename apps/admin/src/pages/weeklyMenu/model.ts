@@ -1,4 +1,5 @@
 import {
+  type AllergenCode,
   allergenCodes,
   datesOfIsoWeek,
   isIsoWeek,
@@ -43,7 +44,8 @@ export interface Row {
   priceWeekday: string;
   priceWeekend: string;
   variations: readonly string[];
-  allergens: readonly string[];
+  /** In the EU list's order. */
+  allergens: readonly AllergenCode[];
   soupIncluded: boolean;
   /** Not edited in the grid; kept as stored. */
   requiresSide: boolean;
@@ -136,7 +138,7 @@ function rowFromItem(path: ListPath, item: WeekItemDraft): Row {
     priceWeekday: String(item.priceWeekday),
     priceWeekend: item.priceWeekend === null ? '' : String(item.priceWeekend),
     variations: item.variations,
-    allergens: item.allergens,
+    allergens: sortAllergens(item.allergens),
     soupIncluded: item.soupIncluded,
     requiresSide: item.requiresSide,
   };
@@ -209,7 +211,7 @@ export function updateList(grid: Grid, path: ListPath, update: (list: Row[]) => 
 }
 
 /** Allergen codes in the EU list's order, unknown ones dropped. */
-export function sortAllergens(codes: Iterable<string>): string[] {
+export function sortAllergens(codes: Iterable<string>): AllergenCode[] {
   const set = new Set(codes);
   return allergenCodes.filter((code) => set.has(code));
 }

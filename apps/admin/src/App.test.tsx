@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
-import { MemoryRouter, useLocation } from 'react-router';
+import { createMemoryRouter, useLocation } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { App } from '@/App';
 import { QueryProvider } from '@/components/QueryProvider';
@@ -42,15 +43,23 @@ function LocationProbe() {
 function renderAt(path: string) {
   // The 401 handler reads window.location, as it does under BrowserRouter.
   window.history.replaceState(null, '', path);
-  return render(
-    <MemoryRouter initialEntries={[path]}>
-      <QueryProvider>
-        <App />
-        <LocationProbe />
-        <Toaster />
-      </QueryProvider>
-    </MemoryRouter>,
+  // A data router, as in main.tsx: the weekly menu's `useBlocker` needs one.
+  const router = createMemoryRouter(
+    [
+      {
+        path: '*',
+        element: (
+          <QueryProvider>
+            <App />
+            <LocationProbe />
+            <Toaster />
+          </QueryProvider>
+        ),
+      },
+    ],
+    { initialEntries: [path] },
   );
+  return render(<RouterProvider router={router} />);
 }
 
 function sidebarState(): string | null | undefined {
