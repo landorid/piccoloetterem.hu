@@ -119,7 +119,7 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
       queryClient.setQueryData(weekKey(week), saved);
       setDraft({ base: saved, grid: gridFromWeek(saved) });
       setErrors({});
-      toast.success(t.toasts.saved);
+      toast.success(t.toasts.saved, { id: 'week-saved' });
     },
     onError: (error) => {
       if (error instanceof ApiError && error.fields) {
@@ -219,7 +219,7 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
         weekKey(week),
         (current) => current && { ...current, week: result.week },
       );
-      toast.success(t.toasts.published);
+      toast.success(t.toasts.published, { id: 'week-published' });
     },
   });
   const noMains = stored.data ? daysWithoutMains(stored.data) : [];
