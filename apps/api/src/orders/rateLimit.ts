@@ -111,12 +111,14 @@ export function submissionLimiterFor(env: Bindings): RateLimiter {
 /**
  * Who a request counts against: the client IP Cloudflare puts in `CF-Connecting-IP`, an IPv6
  * address cut to its /64 (one subscriber's network, where the low bits are free to change).
- * `null` without the header, which only happens outside Cloudflare (tests); the route then does
- * not limit.
+ *
+ * `null`, so the route does not limit, without the header (tests) and for a loopback address:
+ * `wrangler dev` reports the developer's own machine, which Cloudflare never does, and limiting it
+ * would stop local checkout testing after ten submissions.
  */
 export function clientKey(connectingIp: string | undefined): string | null {
   const ip = connectingIp?.trim().toLowerCase();
-  if (!ip) {
+  if (!ip || ip === '::1' || ip.startsWith('127.')) {
     return null;
   }
   if (!ip.includes(':')) {

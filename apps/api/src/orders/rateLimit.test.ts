@@ -77,12 +77,17 @@ describe('clientKey', () => {
     expect(clientKey('2001:db8:85a3:12:8a2e:370:7334:1')).toBe('2001:db8:85a3:12::/64');
     expect(clientKey('2001:DB8:85A3:0012:abcd::1')).toBe('2001:db8:85a3:12::/64');
     expect(clientKey('2001:db8::1')).toBe('2001:db8:0:0::/64');
-    expect(clientKey('::1')).toBe('0:0:0:0::/64');
+    expect(clientKey('::')).toBe('0:0:0:0::/64');
   });
 
-  it('keeps an address it cannot read as it is, and has no key without one', () => {
+  it('keeps an address it cannot read as it is', () => {
     expect(clientKey('::ffff:192.0.2.1')).toBe('::ffff:192.0.2.1');
+  });
+
+  it('has no key without an address, or for loopback (wrangler dev)', () => {
     expect(clientKey(undefined)).toBeNull();
     expect(clientKey('  ')).toBeNull();
+    expect(clientKey('127.0.0.1')).toBeNull();
+    expect(clientKey('::1')).toBeNull();
   });
 });
