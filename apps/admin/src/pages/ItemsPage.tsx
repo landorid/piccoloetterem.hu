@@ -67,8 +67,11 @@ export function ItemsPage() {
   }, [focusId]);
 
   useEffect(() => {
-    if (errorFocus > 0) {
-      editorRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    const invalid = editorRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (errorFocus > 0 && invalid) {
+      // Centred, so the sticky top bar does not cover it.
+      invalid.focus({ preventScroll: true });
+      invalid.scrollIntoView?.({ block: 'center' });
     }
   }, [errorFocus]);
 
