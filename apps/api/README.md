@@ -79,6 +79,7 @@ week are saved as a whole, in one request: `planPermanentItems` and `planWeek` c
 | `GET /items` | `{ allWeek, desserts, pickles, sides, sideExtras }` (the keys of `PublicMenu.permanent`): every permanent item, active and inactive, each section by `sortOrder` |
 | `PUT /items` | The same shape (server-owned fields are ignored) → the permanent menu as `GET` returns it |
 | `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly and permanent items; 404 `item_not_found` for an unknown id |
+| `GET /default-week` | `{ isoYear, isoWeek }`: the week of `firstOrderableDay` now, so next week after this week's last cutoff. The weekly menu editor opens on it. No database query |
 | `GET /weeks/:year/:week` | `{ week: { isoYear, isoWeek, publishedAt }, days: { 1…6: { soups, mains } }, featured }`; an empty draft if the week has no row |
 | `PUT /weeks/:year/:week` | The same shape (server-owned fields are ignored) → the week as `GET` returns it |
 | `POST /weeks/:year/:week/publish` | → `{ week }`. Sets `publishedAt` once; 404 `week_not_found` before the first `PUT`. There is no unpublish |

@@ -2,7 +2,8 @@ import { huHU } from '@clerk/localizations';
 import { ClerkProvider } from '@clerk/react';
 import { type ReactNode, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, useNavigate } from 'react-router';
+import { createBrowserRouter, useNavigate } from 'react-router';
+import { RouterProvider } from 'react-router/dom';
 import { App } from './App';
 import { QueryProvider } from './components/QueryProvider';
 import { Toaster } from './components/ui/sonner';
@@ -37,9 +38,14 @@ function ClerkWithRouter({ children }: { children: ReactNode }) {
   );
 }
 
-createRoot(container).render(
-  <StrictMode>
-    <BrowserRouter>
+/**
+ * A data router, so a page can hold a navigation back (`useBlocker`: the weekly menu asks before
+ * dropping unsaved changes). Its one splat route renders `App`, whose `<Routes>` match the rest.
+ */
+const router = createBrowserRouter([
+  {
+    path: '*',
+    element: (
       <ClerkWithRouter>
         <QueryProvider>
           <App />
@@ -47,6 +53,12 @@ createRoot(container).render(
           <Toaster theme="light" containerAriaLabel={strings.toaster.label} />
         </QueryProvider>
       </ClerkWithRouter>
-    </BrowserRouter>
+    ),
+  },
+]);
+
+createRoot(container).render(
+  <StrictMode>
+    <RouterProvider router={router} />
   </StrictMode>,
 );

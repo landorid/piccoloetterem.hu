@@ -12,6 +12,7 @@ const routes: [method: string, path: string][] = [
   ['GET', '/items'],
   ['PUT', '/items'],
   ['POST', `/items/${id}/sold-out`],
+  ['GET', '/default-week'],
   ['GET', '/weeks/2026/41'],
   ['PUT', '/weeks/2026/41'],
   ['POST', '/weeks/2026/41/publish'],
@@ -174,5 +175,40 @@ describe('/api/admin/menu request validation', () => {
       error: 'validation',
       fields: { 'days.1.soups.0.priceWeekday': 'must_be_zero' },
     });
+  });
+});
+
+/*
+ * The week the editor opens on. Budapest is UTC+2 until 25 October 2026, UTC+1 after. ISO week
+ * 2026/41 runs from Monday 5 to Sunday 11 October; 2026 has 53 ISO weeks.
+ */
+describe('GET /api/admin/menu/default-week', () => {
+  const env = { DATABASE_URL: 'postgres://nobody@127.0.0.1:1/none', RESTAURANT: 'piccolo' };
+  const ctx = {
+    waitUntil: () => {},
+    passThroughOnException: () => {},
+  } as unknown as ExecutionContext;
+
+  it.each([
+    ['Monday morning', '2026-10-05T09:00:00+02:00', { isoYear: 2026, isoWeek: 41 }],
+    ['Friday before the cutoff', '2026-10-09T09:29:00+02:00', { isoYear: 2026, isoWeek: 41 }],
+    ['Friday at the cutoff', '2026-10-09T09:30:00+02:00', { isoYear: 2026, isoWeek: 42 }],
+    ['Sunday', '2026-10-11T12:00:00+02:00', { isoYear: 2026, isoWeek: 42 }],
+    ['the last Thursday of 2026', '2026-12-31T09:00:00+01:00', { isoYear: 2026, isoWeek: 53 }],
+    ['the first Saturday of 2027', '2027-01-02T10:00:00+01:00', { isoYear: 2027, isoWeek: 1 }],
+  ])('on %s is the week of the first orderable day', async (_, at, expected) => {
+    const api = new Hono<AppEnv>().route(
+      '/',
+      adminMenuRoutes(
+        () => noopMenuCache,
+        () => new Date(at),
+      ),
+    );
+    api.onError(handleError);
+
+    // The database URL points nowhere: a query would fail with a 500.
+    const res = await api.request('/default-week', {}, env, ctx);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual(expected);
   });
 });
