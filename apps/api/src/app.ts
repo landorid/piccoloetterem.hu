@@ -12,6 +12,7 @@ import { adminMenuRoutes } from './menu/admin.routes';
 import { menuCacheFor } from './menu/cache';
 import { publicMenuRoutes } from './menu/public.routes';
 import { withConfig, withDb } from './middleware';
+import { publicOrderRoutes } from './orders/public.routes';
 
 /** Parses `CORS_ORIGINS`: comma-separated exact origins, e.g. `https://admin.example.hu`. */
 export function parseOrigins(value: string | undefined): string[] {
@@ -57,6 +58,8 @@ export const app = new Hono<AppEnv>()
   .route('/menu', publicMenuRoutes(menuCacheFor))
   // The restaurant's name, contact, prices and extras for the public site. Anonymous; no database.
   .get('/config/public', withConfig, (c) => c.json(publicConfig(c.get('config'))))
+  // Guests' submissions. Anonymous; decided from the database, never from the menu cache.
+  .route('/orders', publicOrderRoutes())
   // Every staff route. `requireStaff` runs before the handler and before notFound,
   // so an unknown `/api/admin/*` path is still 401 without a session.
   .use('/admin/*', requireStaff)
