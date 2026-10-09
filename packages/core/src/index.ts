@@ -93,9 +93,23 @@ export {
   type WindowConfig,
 } from './menu/window';
 
-export { isEmail, normaliseEmailKey, normalisePhone } from './order/normalise';
+export {
+  isEmail,
+  normaliseEmailKey,
+  normalisePhone,
+  phoneSearchFragment,
+} from './order/normalise';
 export { orderMessagesHu } from './order/orderMessages.hu';
 export { priceDay, priceMenu, priceSubmission } from './order/price';
+export {
+  canChangeStatus,
+  type OrderStatus,
+  orderStatuses,
+  type StatusChange,
+  statusChanges,
+  statusesBefore,
+} from './order/status';
+export { adjustmentsOf } from './order/stored';
 export {
   type ComposedMenuDraft,
   type DayDraft,

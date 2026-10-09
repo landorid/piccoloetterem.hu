@@ -33,6 +33,26 @@ export function normalisePhone(raw: string): string | null {
   return `+36${national}`;
 }
 
+/**
+ * What a staff search for `query` looks for inside a stored phone number, which `normalisePhone`
+ * keeps as `+36…`: the query without separators, with a leading `06` or `0036` written as `+36`.
+ * Partial numbers are fine (`30 123` → `30123`). `null` when the query is not a phone number at
+ * all, such as a name.
+ */
+export function phoneSearchFragment(query: string): string | null {
+  const compact = query.trim().replace(separators, '');
+  if (!/^\+?\d+$/.test(compact)) {
+    return null;
+  }
+  if (compact.startsWith('0036')) {
+    return `+36${compact.slice(4)}`;
+  }
+  if (compact.startsWith('06')) {
+    return `+36${compact.slice(2)}`;
+  }
+  return compact;
+}
+
 function nationalNumber(compact: string): string | null {
   if (compact.startsWith('+')) {
     return compact.startsWith('+36') ? compact.slice(3) : null;
