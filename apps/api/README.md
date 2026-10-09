@@ -20,6 +20,7 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/validation.ts` | `validate(target, schema)`: `@hono/zod-validator` with the API's 400 shape |
 | `src/errors.ts` | `HttpError(status, code, message)` |
 | `src/env.ts` | The bindings type (`Bindings`) and the Hono env (`AppEnv`) |
+| `src/config/public.ts` | `publicConfig()`: the part of `RestaurantConfig` that `GET /api/config/public` returns |
 | `src/menu/admin.routes.ts` | `/api/admin/menu/*`: permanent items, weeks, closed dates (see below) |
 | `src/menu/public.routes.ts` | `GET /api/menu`: the published menu guests order from (see below) |
 | `src/menu/public.ts` | `publicWeek()`: one week from the cache, or from the database and cached |
@@ -59,6 +60,7 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 | `GET /api/health` | `{ ok: true, version }`. Never touches the database, so it is safe for uptime pings (docs/STACK.md rule 3). |
 | `GET /api/health/db` | `{ ok: true }` after `select 1`, or 500. Wakes the Neon compute, so call it rarely. |
 | `GET /api/menu` | The published menu and the dates a guest can order for now, below. Anonymous. |
+| `GET /api/config/public` | `{ name, contact, pickupEnabled, pricing, extras }` from `RestaurantConfig`, for the public site's masthead, footer and copy. Anonymous; no database. `apps/web` fetches it when it builds `/megrendeles`. |
 | `GET /api/admin/config` | `{ name }`: the restaurant name from `RestaurantConfig`, for the admin's top bar. No database. Same 401 / 403 as `/api/admin/ping`. |
 | `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
 | `/api/admin/menu/*` | Staff menu management, below. Same 401 / 403 as `/api/admin/ping`. |
