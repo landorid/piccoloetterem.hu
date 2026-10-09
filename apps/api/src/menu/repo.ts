@@ -47,7 +47,7 @@ export interface AdminWeek {
 
 type MenuItemRow = typeof menuItems.$inferSelect;
 
-function toMenuItem(row: MenuItemRow): MenuItem {
+export function toMenuItem(row: MenuItemRow): MenuItem {
   return {
     id: row.id,
     category: row.category,

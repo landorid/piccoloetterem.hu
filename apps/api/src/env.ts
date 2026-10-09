@@ -8,14 +8,18 @@ import type { Db } from '@piccolo/db';
  */
 export interface KvStore {
   get(key: string, type: 'text'): Promise<string | null>;
-  put(key: string, value: string): Promise<void>;
+  /** `expirationTtl` is in seconds, at least 60. */
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
 }
 
 /** Bindings, vars and secrets of the API Worker; see wrangler.toml and README.md. */
 export interface Bindings {
   /** Deployed environments only. Local development uses `DATABASE_URL` instead. */
   HYPERDRIVE?: Hyperdrive;
-  /** The public menu cache (`src/menu/cache.ts`). Locally, Miniflare's KV. */
+  /**
+   * The public menu cache (`src/menu/cache.ts`), and the per-IP order limit under its own
+   * `order-rate:` prefix (`src/orders/rateLimit.ts`). Locally, Miniflare's KV.
+   */
   MENU_CACHE: KvStore;
   /** Local development only, from `.dev.vars`. */
   DATABASE_URL?: string;

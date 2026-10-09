@@ -28,6 +28,13 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/menu/repo.ts` | Their Drizzle queries |
 | `src/menu/cache.ts` | The menu cache on Workers KV: `purgeWeek`, `purgeAll`, `week`; `menuCacheFor(env)` |
 | `src/menu/memoryKv.ts` | An in-memory `KvStore` for tests |
+| `src/orders/public.routes.ts` | `POST /api/orders`: a guest's submission (see below) |
+| `src/orders/submit.ts` | `submitOrder()`: the transaction that decides and stores a submission |
+| `src/orders/submission.ts` | Its steps without HTTP or database: the week, the rejection, the snapshot rows |
+| `src/orders/repo.ts` | Its Drizzle queries |
+| `src/orders/schemas.ts` | The zod schema of the submission and its size caps |
+| `src/orders/rateLimit.ts` | The per-IP submission limit on Workers KV |
+| `src/orders/events.ts` | `OrderEvents`, told after a submission commits; `orderEventsFor(env)` |
 
 ## Run it locally
 
@@ -61,6 +68,7 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 | `GET /api/health/db` | `{ ok: true }` after `select 1`, or 500. Wakes the Neon compute, so call it rarely. |
 | `GET /api/menu` | The published menu and the dates a guest can order for now, below. Anonymous. |
 | `GET /api/config/public` | `{ name, contact, pickupEnabled, pricing, extras }` from `RestaurantConfig`, for the public site's masthead, footer and copy. Anonymous; no database. `apps/web` fetches it when it builds `/megrendeles`. |
+| `POST /api/orders` | A guest's submission: one order per delivery day, below. Anonymous. |
 | `GET /api/admin/config` | `{ name }`: the restaurant name from `RestaurantConfig`, for the admin's top bar. No database. Same 401 / 403 as `/api/admin/ping`. |
 | `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
 | `/api/admin/menu/*` | Staff menu management, below. Same 401 / 403 as `/api/admin/ping`. |
@@ -170,6 +178,79 @@ cached too. The admin routes purge it (the table above).
 
 Locally `wrangler dev` uses Miniflare's KV, kept under `.wrangler/state`. Delete that folder to
 start with an empty cache.
+
+## Orders
+
+`POST /api/orders` is anonymous. The body is core's `SubmissionDraft` (`name`, `phone`, `email`,
+`address`, `note`, `days: [{ deliveryDate, fulfilment, menus, extras }]`) plus the honeypot
+`website`, which must be empty. The clock is the request time.
+
+| Status | Body | When |
+|---|---|---|
+| 201 | `{ submissionId, orders: [{ id, deliveryDate, total }], grandTotal }` | Stored: one order per day, in the order of `days` |
+| 200 | The same shape, a random `submissionId`, no orders | `website` was filled. Nothing is validated, counted or stored |
+| 400 | `{ error: 'validation', fields }` | The shape is wrong or over a cap (zod codes), the days are in different ISO weeks (`other_week`), or core rejects a field |
+| 409 | `{ error: 'validation', fields }` | Every failure is `cutoff_passed` or `sold_out`: the client drops the day or the item and sends again |
+| 409 | `{ error: 'date_closed', dates, fields }` | Staff closed one of the dates (#60). `fields` marks the same days (`days.1.deliveryDate: 'date_closed'`), so the typed client's `ApiError.fields` carries them |
+| 413 | `{ error: 'payload_too_large', message }` | The body is over 64 KB |
+| 429 | `{ error: 'rate_limited', message }`, `Retry-After` | Over 10 submissions in 10 minutes from one IP |
+
+`fields` maps a path to a code, as everywhere else. When a 409 and a 400 code come back together,
+the status is 400 and every field is listed. A delivery day under the minimum order is accepted;
+its difference (`missingToMinimum`) is not stored (#57).
+
+**Caps.** 7 days, 30 menus per day, 20 extras per day, bounded string lengths, item ids that are
+UUIDs (or `''` for an empty slot); extra quantities are core's (1–20, `invalid_quantity`).
+
+**Decided from the database, never from the cache.** The menu cache can lag about a minute behind
+a sold-out switch at another Cloudflare location, so `submitOrder` reads everything that decides
+the outcome inside its transaction: the week's publication and closed dates, and each submitted
+item's schedule entries, `active`, `sold_out`, name and prices. The items are locked `FOR SHARE`
+until the commit, so a sold-out switch or a menu save that touches them waits for the submission.
+Core's `validateSubmission` and `priceSubmission` then run against a `PublicMenu` built from those
+rows. Core reports a closed date as `cutoff_passed`; `rejectionOf` recognises it with core's
+`isClosedDate` and answers `date_closed` instead.
+
+**One transaction, five round trips** (`X-Db-Queries: 5` outside production; 4 for a rejection):
+`begin`, the items, the week, one `INSERT` whose data-modifying CTEs upsert the customer and insert
+the orders, menus, items and extras, and `commit`. Ids are generated in the Worker, so nothing
+waits for `RETURNING` except the customer's id inside the statement. A rejection writes nothing.
+
+**What is stored.**
+- `customers`, upserted on `email_key` (trimmed, lowercased e-mail): e-mail, name, phone, address
+  and `last_order_at` are the submission's. An empty address (pickup only) keeps the stored one.
+- `orders`: status `received`, the submission's name, e-mail, address (`''` for pickup) and note
+  (`null` when empty), trimmed; the phone normalised to `+36…`; core's food subtotal, delivery fee
+  and total. Every order of a submission shares `submission_id`.
+- `order_menus`: `position` from 1 within the day (`1. menü`, #56), `price` as core priced the
+  menu, adjustments included.
+- `order_items`: slot, `menu_item_id`, name, variation (`null` when none) and `unit_price`, each
+  item's own price (daily soups 0). `order_menus.price` minus the sum of its items' `unit_price`
+  is the menu's adjustment: negative is `no_soup_discount`, positive is `soup_charge`.
+- `order_extras`: key, name, quantity and unit price from the config.
+
+**After the commit** the route calls `OrderEvents.orderSubmitted(submissionId, orderIds)` inside
+`executionCtx.waitUntil` (`src/orders/events.ts`). The response does not wait for it, and a
+listener that throws is reported to Sentry, never to the guest. The request's database client is
+released by then, so a listener that reads opens its own. The default listens to nothing; the
+confirmation e-mail (#32) plugs in at `orderEventsFor`.
+
+**The per-IP limit** (`src/orders/rateLimit.ts`) keeps the times of a client's recent submissions
+in `MENU_CACHE` under `order-rate:<ip>` (an IPv6 address by its /64), a sliding window that
+expires 10 minutes after the last one. Only requests that pass validation are counted.
+- Workers KV, not the Workers Rate Limiting binding: the binding's period can only be 10 or 60
+  seconds, so it cannot say 10 per 10 minutes. No new resource: the menu cache's namespace,
+  another prefix.
+- It is an abuse brake, not an exact count. KV is eventually consistent, read-then-write is not
+  atomic, and KV takes about one write per second per key, so a burst from one client can get a
+  few requests past the limit. A failed write is logged and the request goes through.
+- `wrangler dev` reports the developer's own machine as `CF-Connecting-IP` (`127.0.0.1` / `::1`),
+  which Cloudflare never does; loopback is not limited, so local checkout testing is not stopped
+  after ten submissions.
+
+Integration tests: `src/orders/public.integration.test.ts`, with `DATABASE_URL` set as above. They
+work in a random unused week of the 2090s with e-mail addresses of their own, and delete every row
+they create.
 
 ## CORS
 
@@ -324,4 +405,4 @@ wrangler secret put SENTRY_DSN --env staging
 | `RESTAURANT` | var | `wrangler.toml`: the `RestaurantConfig` instance (`loadConfig`) |
 | `CORS_ORIGINS` | var | `wrangler.toml`: the web and admin origins for that environment |
 | `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
-| `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment. Locally Miniflare's |
+| `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment, also holding the per-IP order limit (`order-rate:`). Locally Miniflare's |
