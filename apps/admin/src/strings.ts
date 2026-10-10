@@ -95,7 +95,7 @@ export const strings = {
       mains: 'Főételek',
       featured: 'Kiemelt ajánlat',
     },
-    featuredHint: 'Egész héten rendelhető, legfeljebb 5 tétel.',
+    featuredHint: 'Egész héten rendelhető.',
     /** A row's name for screen readers: `Hétfő, 2. leves`. */
     rowNames: {
       soups: 'leves',

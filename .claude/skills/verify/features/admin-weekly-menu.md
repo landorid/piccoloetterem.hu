@@ -1,7 +1,7 @@
 # Weekly menu
 
 At `/heti-menu` staff plan one ISO week as a grid. Monday to Saturday each have soups and mains,
-and the week has up to five featured items. They save the week as a whole and publish it once,
+and the week has any number of featured items. They save the week as a whole and publish it once,
 after which guests can order from it. They can mark a day "Nincs rendelés" (closed), and mark
 items sold out. The week is in the URL, so a reload keeps it.
 

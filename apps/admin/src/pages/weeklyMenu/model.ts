@@ -64,8 +64,6 @@ export type RowField = Exclude<keyof Row, 'key'>;
 /** Per row key, the error code of each invalid field: core's codes, or this module's. */
 export type RowErrors = Record<string, Partial<Record<RowField, string>>>;
 
-export const maxFeatured = 5;
-
 /** A day has at most three soups; a new week opens with that many blank slots. */
 export const maxSoups = 3;
 const templateSoups = maxSoups;

@@ -723,6 +723,9 @@ describe('the Word menu card', () => {
     expect(field(mainName(6, 1), t.fields.priceWeekday).value).toBe('2850');
     expect(field(mainName(6, 1), t.fields.priceWeekend).value).toBe('3050');
     expect(screen.queryByRole('group', { name: featuredName(7) })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t.add.featured }).hasAttribute('disabled')).toBe(
+      false,
+    );
 
     fireEvent.click(saveButton());
     await screen.findByText(t.toasts.saved);
