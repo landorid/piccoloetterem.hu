@@ -43,10 +43,11 @@ api.sh`, `Gotchas`.
 
 ## Features
 
-- [Public ordering page](./public-ordering-page.md): `/megrendeles` loads the week guests can
-  order from, or explains why there is none.
+- [Public ordering page](./public-ordering-page.md): `/megrendeles` is the order form for the
+  week guests can order from (day strip, form, day's order, summary), or explains why there is
+  none.
 - [Order submission](./order-submission.md): `POST /api/orders` stores one order per day, or
-  rejects with field codes. The order form (O6, #34) is not built yet.
+  rejects with field codes. The form builds the cart; checkout (O7, #35) is not built yet.
 - [Staff access](./staff-access.md): the admin shell behind sign-in; 401/403 on `/api/admin/*`.
 - [Permanent menu (Étlap)](./admin-etlap.md): editing permanent items and the sold-out switch at
   `/etlap`.
