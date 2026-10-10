@@ -312,7 +312,14 @@ export function Checkout({
           </label>
         </div>
         <p className="payment">{checkout.payment}</p>
-        <button type="submit" className="btn btn-primary btn-block" disabled={submitting || empty}>
+        <button
+          type="submit"
+          className="btn btn-primary btn-block"
+          disabled={submitting || empty}
+          // Pressing it would blur the field being typed in, and the error that blur shows moves
+          // the button down before the click lands. Focus stays put; submit checks every field.
+          onMouseDown={(event) => event.preventDefault()}
+        >
           {submitting && <span className="spinner" aria-hidden="true" />}
           {submitting ? checkout.submitting : checkout.submit}
         </button>

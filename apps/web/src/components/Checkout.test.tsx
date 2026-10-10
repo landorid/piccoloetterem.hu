@@ -140,6 +140,8 @@ describe('checkout', () => {
     fireEvent.change(phone(), { target: { value: '06 30 123 4567' } });
     expect(screen.queryByText(checkout.errors.phoneInvalid)).toBeNull();
 
+    // Pressing submit leaves focus in the field, so no blur error moves the button mid-click.
+    expect(fireEvent.mouseDown(submitButton())).toBe(false);
     await submit();
     expect(screen.getByText(checkout.errors.summary)).toBeTruthy();
     expect(screen.getByText(checkout.errors.nameRequired)).toBeTruthy();
