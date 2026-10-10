@@ -30,6 +30,7 @@ import {
   type Row,
   type RowErrors,
   type RowField,
+  removeRow,
   shiftWeek,
   updateList,
   weekDates,
@@ -180,8 +181,7 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
         return current[key]?.[field] ? { ...current, [key]: rest } : current;
       });
     },
-    onRemove: (path: ListPath, key: string) =>
-      edit((grid) => updateList(grid, path, (rows) => rows.filter((row) => row.key !== key))),
+    onRemove: (path: ListPath, key: string) => edit((grid) => removeRow(grid, path, key)),
     onAdd: (path: ListPath) =>
       edit((grid) => updateList(grid, path, (rows) => [...rows, newRow(path, rows.length)])),
     onSoldOutChange: (id: string, soldOut: boolean) => soldOutMutation.mutate({ id, soldOut }),

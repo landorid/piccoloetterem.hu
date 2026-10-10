@@ -19,7 +19,8 @@ import { addDays } from 'date-fns';
  *
  * The grid holds rows, not items: prices are the inputs' text, and a blank row (nothing typed in
  * it yet) is an empty slot that is left out of the save. A new week starts as the old system's
- * template, 2 soups and 5 mains per day, so staff fill in slots instead of adding rows.
+ * template, 3 soups and 5 mains per day, so staff fill in slots instead of adding rows. A day always
+ * shows 3 soup slots: soups cannot be added, and a stored week with fewer is padded with blanks.
  */
 
 export const menuDays = [1, 2, 3, 4, 5, 6] as const satisfies readonly MenuDay[];
@@ -64,7 +65,7 @@ export type RowErrors = Record<string, Partial<Record<RowField, string>>>;
 
 export const maxFeatured = 5;
 
-const templateSoups = 2;
+const templateSoups = 3;
 
 /** The old system's default prices of the five daily mains; Saturday's weekend price is +100. */
 const defaultMainPrices = [1020, 1020, 1120, 1120, 1170] as const;
@@ -162,9 +163,18 @@ export function isEmptyWeek(week: WeekDraft): boolean {
   return listsOf(week).every(([, list]) => list.length === 0);
 }
 
+/** `rows` with blank soup slots added after them until the day has `templateSoups`. */
+function padSoups(day: MenuDay, rows: Row[]): Row[] {
+  const path: ListPath = `days.${day}.soups`;
+  const blanks = Array.from({ length: Math.max(0, templateSoups - rows.length) }, (_, i) =>
+    newRow(path, rows.length + i),
+  );
+  return [...rows, ...blanks];
+}
+
 /**
- * The grid of a stored week, row for item. A week with no items opens as the template: 2 soups
- * and 5 mains a day, no featured rows.
+ * The grid of a stored week, row for item. A week with no items opens as the template: 3 soups
+ * and 5 mains a day, no featured rows. A day with fewer than 3 soups gets blank slots up to 3.
  */
 export function gridFromWeek(week: WeekDraft): Grid {
   if (isEmptyWeek(week)) {
@@ -178,7 +188,10 @@ export function gridFromWeek(week: WeekDraft): Grid {
     };
   }
   const day = (d: MenuDay) => ({
-    soups: week.days[d].soups.map((item) => rowFromItem(`days.${d}.soups`, item)),
+    soups: padSoups(
+      d,
+      week.days[d].soups.map((item) => rowFromItem(`days.${d}.soups`, item)),
+    ),
     mains: week.days[d].mains.map((item) => rowFromItem(`days.${d}.mains`, item)),
   });
   return {
@@ -208,6 +221,18 @@ export function updateList(grid: Grid, path: ListPath, update: (list: Row[]) => 
     ...grid,
     days: { ...grid.days, [day]: { ...grid.days[day], [kind]: update(grid.days[day][kind]) } },
   };
+}
+
+/**
+ * The grid without the row `key` of the list at `path`. A soup slot is not taken away, since soups
+ * cannot be added back: it is emptied in place.
+ */
+export function removeRow(grid: Grid, path: ListPath, key: string): Grid {
+  return updateList(grid, path, (rows) =>
+    kindOf(path) === 'soups'
+      ? rows.map((row, index) => (row.key === key ? newRow(path, index) : row))
+      : rows.filter((row) => row.key !== key),
+  );
 }
 
 /** Allergen codes in the EU list's order, unknown ones dropped. */

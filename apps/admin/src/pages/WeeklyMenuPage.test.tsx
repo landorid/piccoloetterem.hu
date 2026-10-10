@@ -334,9 +334,9 @@ describe('opening the page', () => {
     ).toBeTruthy();
     expect(screen.getByText(t.week.draft)).toBeTruthy();
     for (const day of days) {
-      expect(screen.getByRole('columnheader', { name: new RegExp(t.days[day]) })).toBeTruthy();
-      expect(screen.queryByRole('group', { name: soupName(day, 2) })).toBeTruthy();
-      expect(screen.queryByRole('group', { name: soupName(day, 3) })).toBeNull();
+      expect(screen.getByRole('region', { name: new RegExp(t.days[day]) })).toBeTruthy();
+      expect(screen.queryByRole('group', { name: soupName(day, 3) })).toBeTruthy();
+      expect(screen.queryByRole('group', { name: soupName(day, 4) })).toBeNull();
       expect(screen.queryByRole('group', { name: mainName(day, 5) })).toBeTruthy();
       expect(screen.queryByRole('group', { name: mainName(day, 6) })).toBeNull();
     }
@@ -370,7 +370,7 @@ describe('opening the page', () => {
 });
 
 describe('acceptance 1: a full week survives save and reload', () => {
-  it('saves six days of two soups and five mains plus three featured items, and reloads them identical', async () => {
+  it('saves six days of three soups and five mains plus three featured items, and reloads them identical', async () => {
     const view = await openWeek();
 
     // Every field is found before anything is typed into one. Each change makes jsdom drop its
@@ -379,7 +379,7 @@ describe('acceptance 1: a full week survives save and reload', () => {
     // query. Finding and typing in turn took this test past 30 s on CI.
     const week = days.map((day) => ({
       day,
-      soups: [1, 2].map((n) => field(soupName(day, n), t.fields.name)),
+      soups: [1, 2, 3].map((n) => field(soupName(day, n), t.fields.name)),
       mains: [1, 2, 3, 4, 5].map((n) => field(mainName(day, n), t.fields.name)),
       description: field(mainName(day, 1), t.fields.description),
       variations: variationsField(mainName(day, 2)),
@@ -425,7 +425,7 @@ describe('acceptance 1: a full week survives save and reload', () => {
     addVariation(firstVariations, 'Közepes');
 
     const entered = gridContents();
-    expect(entered).toHaveLength(6 * 7 + 3);
+    expect(entered).toHaveLength(6 * 8 + 3);
     // The comparison below sees the chips, not only the text fields.
     const entry = (name: string) => entered.find((contents) => contents.card === name);
     expect(entry(mainName(2, 2))?.variations).toEqual(['Kicsi', 'Nagy']);
@@ -519,7 +519,10 @@ describe('a stored week', () => {
     await openWeek();
 
     expect(field(soupName(1, 1), t.fields.name).value).toBe('Gulyásleves');
-    expect(screen.queryByRole('group', { name: soupName(1, 2) })).toBeNull();
+    // Soups are always three slots a day: the stored week's one is padded with blanks.
+    expect(field(soupName(1, 2), t.fields.name).value).toBe('');
+    expect(field(soupName(1, 3), t.fields.name).value).toBe('');
+    expect(screen.queryByRole('group', { name: soupName(1, 4) })).toBeNull();
     expect(screen.queryByRole('group', { name: mainName(3, 1) })).toBeNull();
 
     const addMain = screen.getAllByRole('button', { name: t.add.mains });
@@ -527,6 +530,10 @@ describe('a stored week', () => {
     expect(field(mainName(3, 1), t.fields.price).value).toBe('1020');
     fireEvent.click(within(card(mainName(2, 1))).getByRole('button', { name: t.removeRow }));
     expect(screen.queryByRole('group', { name: mainName(2, 1) })).toBeNull();
+    // A soup slot is emptied, not taken away.
+    fireEvent.click(within(card(soupName(1, 1))).getByRole('button', { name: t.removeRow }));
+    expect(field(soupName(1, 1), t.fields.name).value).toBe('');
+    expect(screen.queryByRole('group', { name: soupName(1, 3) })).toBeTruthy();
     expect(saveButton().hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(saveButton());
@@ -600,8 +607,8 @@ describe('closed dates', () => {
     fireEvent.click(wednesday);
     // Before the API answers.
     await waitFor(() => expect(wednesday.getAttribute('aria-checked')).toBe('true'));
-    expect(card(mainName(3, 1)).closest('td')?.hasAttribute('data-closed')).toBe(true);
-    expect(card(mainName(2, 1)).closest('td')?.hasAttribute('data-closed')).toBe(false);
+    expect(card(mainName(3, 1)).closest('section')?.hasAttribute('data-closed')).toBe(true);
+    expect(card(mainName(2, 1)).closest('section')?.hasAttribute('data-closed')).toBe(false);
     await act(async () => release());
     expect(await screen.findByText(t.toasts.closed)).toBeTruthy();
     expect(api.closed.has('2026-10-14')).toBe(true);
