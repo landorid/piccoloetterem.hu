@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { fromIsoDate } from '@/dates';
 import { strings } from '@/strings';
-import { ItemCard } from './ItemCard';
+import { ItemRow } from './ItemRow';
 import {
   type Grid,
   type ListKind,
@@ -27,7 +27,6 @@ const t = strings.weeklyMenu;
 
 export type GridHandlers = {
   onChange: (path: ListPath, key: string, patch: Partial<Row>, field: RowField) => void;
-  onRemove: (path: ListPath, key: string) => void;
   onAdd: (path: ListPath) => void;
   onSoldOutChange: (id: string, soldOut: boolean) => void;
 };
@@ -41,7 +40,7 @@ type ListProps = GridHandlers & {
   soldOut: ReadonlyMap<string, boolean>;
 };
 
-/** The cards of one list, and the button that adds a row to it. */
+/** The rows of one list, and the button that adds a row to it. */
 function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps) {
   const path = listPath(kind, day);
   const rows = listAt(grid, path);
@@ -51,7 +50,7 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
   return (
     <>
       {rows.map((row, index) => (
-        <ItemCard
+        <ItemRow
           key={row.key}
           row={row}
           kind={kind}
@@ -60,7 +59,6 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
           errors={errors[row.key]}
           soldOut={row.id === undefined ? undefined : (soldOut.get(row.id) ?? false)}
           onChange={(patch, field) => handlers.onChange(path, row.key, patch, field)}
-          onRemove={() => handlers.onRemove(path, row.key)}
           onSoldOutChange={(next) => row.id && handlers.onSoldOutChange(row.id, next)}
         />
       ))}
@@ -97,8 +95,8 @@ function dayDate(date: string): string {
 }
 
 /**
- * Monday to Saturday one below the other, each day's soups above its mains. A day closed for
- * ordering stays editable, shaded.
+ * Monday to Saturday one below the other, each day's soups above its mains, a dish to a line. A day
+ * closed for ordering stays editable, shaded.
  */
 export function WeekGrid({
   grid,
@@ -121,11 +119,14 @@ export function WeekGrid({
             key={day}
             aria-labelledby={headingId}
             data-closed={closed || undefined}
-            className={cn('min-w-0 rounded-lg border', closed && 'bg-muted')}
+            className={cn(
+              '@container -mx-3 min-w-0 rounded-lg border-b px-3 py-4 last:border-b-0',
+              closed && 'bg-muted/60',
+            )}
           >
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <h2 id={headingId} className="flex items-baseline gap-2">
-                <span className="font-semibold text-lg">{t.days[day]}</span>
+                <span className="font-semibold text-xl">{t.days[day]}</span>
                 <span className="text-muted-foreground text-sm tabular-nums">
                   {dayDate(dates[day])}
                 </span>
@@ -149,11 +150,11 @@ export function WeekGrid({
                 </Label>
               </div>
             </div>
-            <div className="flex flex-col gap-4 p-3">
+            <div className="mt-2 flex flex-col gap-3">
               {(['soups', 'mains'] as const).map((kind) => (
-                <div key={kind} className="flex flex-col gap-2">
+                <div key={kind} className="flex flex-col">
                   <h3 className="font-semibold text-muted-foreground text-sm">{t.groups[kind]}</h3>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-2">
+                  <div className="flex flex-col">
                     <ListEditor
                       grid={grid}
                       kind={kind}
@@ -190,7 +191,7 @@ export function FeaturedSection({ grid, errors, soldOut, ...handlers }: Featured
         </h2>
         <p className="text-muted-foreground text-sm">{t.featuredHint}</p>
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-2">
+      <div className="@container flex flex-col">
         <ListEditor
           grid={grid}
           kind="featured"

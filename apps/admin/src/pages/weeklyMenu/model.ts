@@ -223,18 +223,6 @@ export function updateList(grid: Grid, path: ListPath, update: (list: Row[]) => 
   };
 }
 
-/**
- * The grid without the row `key` of the list at `path`. A soup slot is not taken away, since soups
- * cannot be added back: it is emptied in place.
- */
-export function removeRow(grid: Grid, path: ListPath, key: string): Grid {
-  return updateList(grid, path, (rows) =>
-    kindOf(path) === 'soups'
-      ? rows.map((row, index) => (row.key === key ? newRow(path, index) : row))
-      : rows.filter((row) => row.key !== key),
-  );
-}
-
 /** Allergen codes in the EU list's order, unknown ones dropped. */
 export function sortAllergens(codes: Iterable<string>): AllergenCode[] {
   const set = new Set(codes);

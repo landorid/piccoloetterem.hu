@@ -101,8 +101,8 @@ export const strings = {
       priceWeekend: 'Hétvégi ár',
       price: 'Ár',
       currency: 'Ft',
+      weekendShort: 'Hétvége',
       weekendEmpty: 'Üresen hagyva a hétköznapi ár érvényes.',
-      soupPrice: 'A menü ára tartalmazza',
       soupIncluded: 'Leves az árban',
       soldOut: 'Elfogyott',
       soldOutUnsaved: 'Mentés után állítható',
@@ -111,7 +111,6 @@ export const strings = {
       mains: 'Főétel hozzáadása',
       featured: 'Ajánlat hozzáadása',
     },
-    removeRow: 'Sor törlése',
     closed: 'Nincs rendelés',
     actions: {
       save: 'Mentés',

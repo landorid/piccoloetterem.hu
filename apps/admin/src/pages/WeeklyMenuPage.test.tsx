@@ -344,7 +344,7 @@ describe('opening the page', () => {
     expect(field(mainName(1, 3), t.fields.price).value).toBe('1120');
     expect(field(mainName(6, 5), t.fields.priceWeekday).value).toBe('1170');
     expect(field(mainName(6, 5), t.fields.priceWeekend).value).toBe('1270');
-    expect(within(card(soupName(1, 1))).getByText(t.fields.soupPrice)).toBeTruthy();
+    expect(within(card(soupName(1, 1))).queryByLabelText(t.fields.price)).toBeNull();
     expect(
       within(card(mainName(1, 1)))
         .getByRole('checkbox', { name: t.fields.soupIncluded })
@@ -514,7 +514,7 @@ describe('acceptance 3: validation errors at their field', () => {
 });
 
 describe('a stored week', () => {
-  it('opens with its items only, and adds and removes rows', async () => {
+  it('opens with its items only, adds rows, and leaves out a row emptied of its text', async () => {
     api.seedWeek(2026, 42, oneDayWeek);
     await openWeek();
 
@@ -528,18 +528,14 @@ describe('a stored week', () => {
     const addMain = screen.getAllByRole('button', { name: t.add.mains });
     fireEvent.click(addMain[2] as HTMLElement);
     expect(field(mainName(3, 1), t.fields.price).value).toBe('1020');
-    fireEvent.click(within(card(mainName(2, 1))).getByRole('button', { name: t.removeRow }));
-    expect(screen.queryByRole('group', { name: mainName(2, 1) })).toBeNull();
-    // A soup slot is emptied, not taken away.
-    fireEvent.click(within(card(soupName(1, 1))).getByRole('button', { name: t.removeRow }));
-    expect(field(soupName(1, 1), t.fields.name).value).toBe('');
-    expect(screen.queryByRole('group', { name: soupName(1, 3) })).toBeTruthy();
+    // Rows cannot be deleted: emptying the text takes a stored item out of the save.
+    type(field(mainName(2, 1), t.fields.name), '');
     expect(saveButton().hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(saveButton());
     await screen.findByText(t.toasts.saved);
     const sent = api.requests.find((r) => r.method === 'PUT')?.body as WeekDraft;
-    // The blank new row is left out; the removed one is missing from the payload.
+    // The blank new row is left out, and so is the emptied one.
     expect(sent.days[2].mains).toEqual([]);
     expect(sent.days[3].mains).toEqual([]);
   });
