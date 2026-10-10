@@ -45,8 +45,11 @@ function useFocusAfterRender() {
 
 /** The order page of an open week: week bar, day rail, the day's form and order, the summary. */
 export function OrderScreen({ open, config, now }: OrderScreenProps) {
-  const { menu, orderableDates } = open;
-  const days = useMemo(() => weekDays(menu, orderableDates), [menu, orderableDates]);
+  const { menu, orderableDates, closedDates } = open;
+  const days = useMemo(
+    () => weekDays(menu, orderableDates, closedDates),
+    [menu, orderableDates, closedDates],
+  );
   const pricing = useMemo(() => pricingConfig(config), [config]);
   const storedDate = useOrder((s) => s.activeDate);
   const selectDate = useOrder((s) => s.selectDate);
