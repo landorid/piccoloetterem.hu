@@ -1,9 +1,9 @@
 import {
+  adjustmentsOf,
   formatDateHu,
   isoWeekOf,
   parseIsoDate,
   type RestaurantConfig,
-  storedMenuAdjustment,
   weekLabel,
 } from '@piccolo/core';
 import { strings } from '../strings';
@@ -137,8 +137,8 @@ function menuLines(menu: StoredMenu): PriceLine[] {
       amount: item.unitPrice,
     };
   });
-  const adjustment = storedMenuAdjustment(menu);
-  if (adjustment) {
+  const unitPrices = menu.items.map((item) => item.unitPrice);
+  for (const adjustment of adjustmentsOf(menu.price, unitPrices)) {
     lines.push({ label: text.adjustments[adjustment.code], amount: adjustment.amount });
   }
   return lines;

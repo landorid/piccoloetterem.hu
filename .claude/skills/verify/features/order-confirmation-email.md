@@ -30,7 +30,7 @@ failed send never reaches the guest. In every run it is a dry run: `wrangler.tom
 
 Preconditions: the `order-201` preconditions of [order-submission.md](./order-submission.md)
 (menu state `open`, `$ORDER_EMAIL`), and the run's database has `orders.confirmation_sent_at`
-(migration `0001_order_confirmation_sent_at`; see Gotchas).
+(migration `0002_order_confirmation_sent_at`; see Gotchas).
 
 - **Submit.** Follow `order-201`: `api.sh --save email.order POST /api/orders @"$EVIDENCE/order.json"`.
   Expect 201.
@@ -48,7 +48,7 @@ Preconditions: the `order-201` preconditions of [order-submission.md](./order-su
 
 ## Gotchas
 
-- **The column comes with the migration.** CI applies `0001_order_confirmation_sent_at` to the
+- **The column comes with the migration.** CI applies `0002_order_confirmation_sent_at` to the
   shared development database when the PR merges into `develop`, not before. Running this branch
   against that database earlier makes the listener fail with
   `column "confirmation_sent_at" does not exist` (`OrderEvents failed for submission …` in the log;

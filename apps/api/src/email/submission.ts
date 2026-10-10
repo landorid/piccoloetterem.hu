@@ -44,7 +44,7 @@ export interface StoredOrder {
 export interface StoredMenu {
   /** From 1 within the day: `1. menü`. */
   position: number;
-  /** Adjustments included: `storedMenuAdjustment` recovers them. */
+  /** Adjustments included: core's `adjustmentsOf` recovers them. */
   price: number;
   items: StoredItem[];
 }
