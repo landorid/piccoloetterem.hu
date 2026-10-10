@@ -89,7 +89,7 @@ describe('/api/admin/menu request validation', () => {
     category: 'side',
     name: 'Hasábburgonya',
     description: null,
-    priceWeekday: 600,
+    priceWeekday: 0,
     priceWeekend: null,
     variations: [],
     allergens: [],

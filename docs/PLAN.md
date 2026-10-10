@@ -118,8 +118,9 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   (weekly), and `all_week`, `dessert`, `pickle`, `side`, `side_extra` (permanent).
 - A plain side (`side`, alap köret) is always free: its price is 0. Only a `side_extra` (feláras
   köret) carries a price. `validateMenuItem` enforces it the way it enforces a daily soup's 0.
-  Revised 2026-10-09: until then a side was priced like any other item. Decided by Dávid, as in
-  the old app, where a köret had a name and no price field (LEGACY-INVENTORY.md §2, "Étlap").
+  Revised 2026-10-09: M6 (#28) already hid a side's price, but core did not enforce 0 and the dev
+  seed priced both sides. Decided by Dávid, as in the old app, where a köret had a name and no
+  price field (LEGACY-INVENTORY.md §2, "Étlap"); recorded in PR #87.
 - Weekly items are scheduled to an ISO week and day (1–6; featured items have no day).
 - A week is a draft until published (`published_at`). Publishing invalidates the public menu cache.
 - Editing a week upserts; it never deletes and recreates. Orders snapshot item name and price.
