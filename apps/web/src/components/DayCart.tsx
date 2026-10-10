@@ -1,11 +1,12 @@
 import type { PricingConfig, PublicMenu } from '@piccolo/core';
-import { type RefObject, useMemo } from 'react';
+import { type RefObject, useEffect, useMemo, useRef } from 'react';
 import { dayFull, forint, signedForint } from '../format';
 import type { IsoDate } from '../order/cart';
+import type { UnavailableItem } from '../order/checkout';
 import { priceCartDay, priceLines } from '../order/pricing';
 import { useOrder } from '../order/store';
 import { strings } from '../strings';
-import { adjustmentLabels, cls } from './parts';
+import { adjustmentLabels, cls, SoldOut } from './parts';
 
 const { cart, composer } = strings;
 
@@ -20,6 +21,10 @@ interface DayCartProps {
   onRemove: () => void;
   /** `cart.addAnother`: back to the form, as it is. */
   onAddAnother: () => void;
+  /** Dishes the API refused at the last submission, marked "Elfogyott" wherever they are. */
+  unavailable: readonly UnavailableItem[];
+  /** The refused dish to scroll to and focus once, when the screen opens on it. */
+  reveal?: UnavailableItem;
 }
 
 /** The day's order: numbered menus as receipts, the day's extras as plain lines, the subtotal. */
@@ -31,6 +36,8 @@ export function DayCart({
   onEdit,
   onRemove,
   onAddAnother,
+  unavailable,
+  reveal,
 }: DayCartProps) {
   const menus = useOrder((s) => s.menusByDate[date]);
   const extras = useOrder((s) => s.extrasByDate[date]);
@@ -40,6 +47,13 @@ export function DayCart({
     () => (menus ? priceCartDay(date, menus, extras ?? {}, menu, pricing) : null),
     [date, menus, extras, menu, pricing],
   );
+  const gone = new Set(unavailable.filter((item) => item.date === date).map((item) => item.itemId));
+  const revealed = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!reveal) return;
+    revealed.current?.scrollIntoView?.({ block: 'center' });
+    revealed.current?.focus();
+  }, [reveal]);
 
   return (
     <div className="card">
@@ -59,8 +73,16 @@ export function DayCart({
       ) : (
         <>
           {priced.menus.map((pricedMenu, index) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: a menu is identified by its place in the day
-            <div key={index} className="cart-menu">
+            <div
+              // biome-ignore lint/suspicious/noArrayIndexKey: a menu is identified by its place in the day
+              key={index}
+              className={cls(
+                'cart-menu',
+                pricedMenu.items.some((item) => gone.has(item.itemId)) && 'is-gone',
+              )}
+              ref={reveal?.date === date && reveal.menu === index ? revealed : undefined}
+              tabIndex={reveal?.date === date && reveal.menu === index ? -1 : undefined}
+            >
               <div className="cart-who">{cart.menuNumber(index + 1)}</div>
               <div className="cart-lines">
                 {priceLines(pricedMenu).map((line) =>
@@ -71,6 +93,7 @@ export function DayCart({
                         {line.item.variation
                           ? composer.withVariation(line.item.name, line.item.variation)
                           : line.item.name}
+                        {gone.has(line.item.itemId) && <SoldOut />}
                       </span>
                       <span className="amt num">{forint(line.item.unitPrice)}</span>
                     </div>

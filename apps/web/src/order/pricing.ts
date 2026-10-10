@@ -127,19 +127,31 @@ export interface PricedCart {
   total: number;
 }
 
+/**
+ * The cart's days as core's drafts, in date order: what checkout submits, so the API's
+ * `days.N.…` error paths index this list.
+ */
+export function cartDays(
+  state: Pick<CartState, 'menusByDate' | 'extrasByDate'>,
+  config: PricingConfig,
+): DayDraft[] {
+  return Object.keys(state.menusByDate)
+    .sort()
+    .map((date) =>
+      dayDraft(date, state.menusByDate[date] ?? [], state.extrasByDate[date] ?? {}, config),
+    );
+}
+
 export function priceCart(
   state: Pick<CartState, 'menusByDate' | 'extrasByDate'>,
   publicMenu: PublicMenu,
   config: PricingConfig,
 ): PricedCart {
-  const dates = Object.keys(state.menusByDate).sort();
-  const drafts = dates.map((date) =>
-    dayDraft(date, state.menusByDate[date] ?? [], state.extrasByDate[date] ?? {}, config),
-  );
+  const drafts = cartDays(state, config);
   const submission = priceSubmission({ days: drafts }, publicMenu, config);
   return {
     days: submission.days.flatMap((priced, i) => {
-      const date = dates[i];
+      const date = drafts[i]?.deliveryDate;
       return date === undefined ? [] : [{ date, priced }];
     }),
     menuCount: drafts.reduce((count, day) => count + day.menus.length, 0),

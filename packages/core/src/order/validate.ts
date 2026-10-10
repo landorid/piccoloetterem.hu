@@ -137,6 +137,34 @@ export function validateDay(
   return errors;
 }
 
+export type ContactDraft = Pick<SubmissionDraft, 'name' | 'phone' | 'email' | 'address'>;
+
+/**
+ * The checkout fields of a submission: name, phone, email, and the address, which `delivery`
+ * makes required. Part of `validateSubmission`; a browser runs it alone, without the config and
+ * clock the days need.
+ */
+export function validateContact(contact: ContactDraft, delivery: boolean): FieldErrors {
+  const errors: FieldErrors = {};
+  const name = contact.name.trim();
+  if (name.length === 0) errors.name = 'required';
+  else if (name.length < 2) errors.name = 'too_short';
+  else if (name.length > 80) errors.name = 'too_long';
+
+  if (contact.phone.trim().length === 0) errors.phone = 'required';
+  else if (!normalisePhone(contact.phone)) errors.phone = 'invalid_phone';
+
+  const email = contact.email.trim();
+  if (email.length === 0) errors.email = 'required';
+  else if (!isEmail(email)) errors.email = 'invalid_email';
+
+  const address = contact.address?.trim() ?? '';
+  if (delivery && address.length === 0) errors.address = 'required';
+  else if (address.length > 0 && address.length < 5) errors.address = 'too_short';
+  else if (address.length > 200) errors.address = 'too_long';
+  return errors;
+}
+
 export function validateSubmission(
   draft: SubmissionDraft,
   publicMenu: PublicMenu,
@@ -145,24 +173,8 @@ export function validateSubmission(
   isPublished: IsPublished,
   closedDates: readonly string[],
 ): FieldErrors {
-  const errors: FieldErrors = {};
-  const name = draft.name.trim();
-  if (name.length === 0) errors.name = 'required';
-  else if (name.length < 2) errors.name = 'too_short';
-  else if (name.length > 80) errors.name = 'too_long';
-
-  if (draft.phone.trim().length === 0) errors.phone = 'required';
-  else if (!normalisePhone(draft.phone)) errors.phone = 'invalid_phone';
-
-  const email = draft.email.trim();
-  if (email.length === 0) errors.email = 'required';
-  else if (!isEmail(email)) errors.email = 'invalid_email';
-
-  const address = draft.address?.trim() ?? '';
   const delivery = draft.days.some((day) => day.fulfilment === 'delivery');
-  if (delivery && address.length === 0) errors.address = 'required';
-  else if (address.length > 0 && address.length < 5) errors.address = 'too_short';
-  else if (address.length > 200) errors.address = 'too_long';
+  const errors: FieldErrors = validateContact(draft, delivery);
 
   if (draft.days.length === 0) errors.days = 'required';
   else if (draft.days.length > 7) errors.days = 'too_many';

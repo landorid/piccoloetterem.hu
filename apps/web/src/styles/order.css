@@ -458,8 +458,25 @@
 .banner-warn .icon {
   background: var(--warn-700);
 }
+.banner-danger {
+  background: var(--danger-100);
+  border-color: #eeb7b1;
+  color: #7d1c16;
+}
+.banner-danger .icon {
+  background: var(--danger-700);
+}
 .banner .banner-action {
   margin-top: var(--s-3);
+}
+.banner ul {
+  margin-top: var(--s-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-1);
+}
+.banner li::before {
+  content: '— ';
 }
 
 /* --- the day's order --------------------------------------------------------------------------- */
@@ -1117,6 +1134,195 @@
   color: var(--brand-700);
 }
 
+/* --- checkout and success ---------------------------------------------------------------------- */
+.col-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+.col-main > .back {
+  align-self: flex-start;
+}
+.checkout-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--t-2xl);
+}
+.card-head h3 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.remembered {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.remembered .btn-quiet {
+  min-height: 0;
+  font-size: inherit;
+}
+.field label {
+  display: block;
+  font-size: var(--t-md);
+  font-weight: 700;
+  margin-bottom: var(--s-1);
+}
+.field .req {
+  color: var(--danger-700);
+}
+.field .control {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px var(--s-3);
+  font: inherit;
+  color: var(--ink-900);
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+}
+.field textarea.control {
+  min-height: 88px;
+  resize: vertical;
+}
+.field .control::placeholder {
+  color: var(--ink-500);
+}
+.field .help {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.field.has-error .control {
+  border-color: var(--danger-700);
+  background: var(--danger-100);
+}
+.field .error {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--danger-700);
+}
+.payment {
+  font-size: var(--t-md);
+  color: var(--ink-700);
+}
+.btn .spinner {
+  margin-right: var(--s-2);
+}
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}
+.cartsum {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.eyebrow {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+.cartsum-total {
+  font-family: var(--font-display);
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  line-height: 1;
+  margin-top: calc(var(--s-2) * -1);
+}
+.cartsum-totals {
+  padding: var(--s-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.recap .recap-price {
+  font-weight: 700;
+}
+.recap .recap-totals {
+  border-top: 1px solid var(--line);
+}
+/* A dish the API refused at submission, until it is replaced. */
+.cart-menu.is-gone {
+  background: var(--danger-100);
+}
+.cart-menu:focus-visible {
+  outline: 2px solid var(--brand-500);
+  outline-offset: -2px;
+}
+.section-h h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.success-mark {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--ok-100);
+  color: var(--ok-700);
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 700;
+}
+.success h1 {
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+.success .lead,
+.success .questions {
+  color: var(--ink-700);
+  max-width: 60ch;
+}
+.success .questions a {
+  font-weight: 700;
+  color: var(--brand-700);
+}
+.success > .btn {
+  align-self: flex-start;
+}
+.order-id {
+  margin-top: var(--s-2);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+  overflow-wrap: anywhere;
+}
+.pay-note {
+  margin-top: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+
 /* --- desktop: the same components in two columns ----------------------------------------------- */
 @media (min-width: 900px) {
   .composer-form {
@@ -1187,6 +1393,9 @@
   .week h1,
   .message h1 {
     font-size: var(--t-2xl);
+  }
+  .success h1 {
+    font-size: var(--t-3xl);
   }
   /* Row placement belongs to the menu screen only. */
   .screen-menu > .banners {

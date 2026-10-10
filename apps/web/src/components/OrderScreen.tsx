@@ -10,6 +10,7 @@ import {
 import { dayFull, timeOfDay, weekdayName } from '../format';
 import type { OpenMenu, PublicConfig } from '../lib/api';
 import type { IsoDate } from '../order/cart';
+import type { UnavailableItem } from '../order/checkout';
 import { cutoffNote, weekDays } from '../order/days';
 import { pricingConfig } from '../order/pricing';
 import { useOrder } from '../order/store';
@@ -24,6 +25,12 @@ interface OrderScreenProps {
   open: OpenMenu;
   config: PublicConfig;
   now: () => Date;
+  /** Dishes the API refused at the last submission: marked in the day's order. */
+  unavailable: readonly UnavailableItem[];
+  /** One of them to scroll to and focus when the screen opens. */
+  reveal?: UnavailableItem;
+  /** `summary.continue`. */
+  onContinue: () => void;
 }
 
 /**
@@ -44,7 +51,14 @@ function useFocusAfterRender() {
 }
 
 /** The order page of an open week: week bar, day rail, the day's form and order, the summary. */
-export function OrderScreen({ open, config, now }: OrderScreenProps) {
+export function OrderScreen({
+  open,
+  config,
+  now,
+  unavailable,
+  reveal,
+  onContinue,
+}: OrderScreenProps) {
   const { menu, orderableDates, closedDates } = open;
   const days = useMemo(
     () => weekDays(menu, orderableDates, closedDates),
@@ -157,6 +171,8 @@ export function OrderScreen({ open, config, now }: OrderScreenProps) {
               onEdit={focusPanel}
               onRemove={() => focusAfterRender(cartHeading)}
               onAddAnother={focusPanel}
+              unavailable={unavailable}
+              reveal={reveal}
             />
           )}
           <Summary
@@ -164,6 +180,7 @@ export function OrderScreen({ open, config, now }: OrderScreenProps) {
             menu={menu}
             pricing={pricing}
             deliveryFee={config.pricing.deliveryFee}
+            onContinue={onContinue}
           />
         </div>
       </div>
@@ -172,6 +189,7 @@ export function OrderScreen({ open, config, now }: OrderScreenProps) {
         menu={menu}
         pricing={pricing}
         deliveryFee={config.pricing.deliveryFee}
+        onContinue={onContinue}
       />
     </AllergenTipProvider>
   );

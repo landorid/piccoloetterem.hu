@@ -120,6 +120,19 @@ export function removeMenu(state: CartState, date: IsoDate, index: number): Cart
   };
 }
 
+/** The days leave the cart, menus, extras and form alike. Nothing records why. */
+export function removeDays(state: CartState, dates: readonly IsoDate[]): CartState {
+  const gone = new Set(dates);
+  const keep = <V>(record: Record<IsoDate, V>) =>
+    Object.fromEntries(Object.entries(record).filter(([date]) => !gone.has(date)));
+  return {
+    ...state,
+    menusByDate: keep(state.menusByDate),
+    extrasByDate: keep(state.extrasByDate),
+    formsByDate: keep(state.formsByDate),
+  };
+}
+
 export function selectDate(state: CartState, date: IsoDate): CartState {
   return { ...state, activeDate: date };
 }

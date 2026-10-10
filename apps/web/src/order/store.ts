@@ -10,6 +10,7 @@ import {
   emptyCart,
   type IsoDate,
   reconcile,
+  removeDays,
   removeMenu,
   resetForm,
   selectDate,
@@ -28,6 +29,8 @@ export interface OrderStore extends CartState {
   removeMenu(date: IsoDate, index: number): void;
   /** Fits the cart to a fresh `open` answer and records the days it dropped. */
   reconcile(orderableDates: readonly IsoDate[]): void;
+  /** Days the API refused at checkout leave the cart; checkout explains them itself. */
+  removeDays(dates: readonly IsoDate[]): void;
   /** Empties the cart for an answer with nothing to order; nothing is explained. */
   clear(): void;
   dismissDropped(date: IsoDate): void;
@@ -63,6 +66,7 @@ export function createOrderStore(storage?: StateStorage): OrderStoreApi {
               ? { ...next, droppedDates: [...state.droppedDates, ...dropped] }
               : next;
           }),
+        removeDays: (dates) => set((state) => removeDays(state, dates)),
         clear: () => set({ ...emptyCart, droppedDates: [] }),
         dismissDropped: (date) =>
           set((state) => ({ droppedDates: state.droppedDates.filter((d) => d !== date) })),
