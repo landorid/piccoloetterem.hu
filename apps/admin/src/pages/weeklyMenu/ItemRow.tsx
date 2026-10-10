@@ -20,8 +20,8 @@ const t = strings.weeklyMenu;
  * 4xl); below that the rows have no header and keep a visible label beside each toggle.
  */
 const cell = {
-  name: 'w-44 min-w-0 shrink',
-  description: 'w-36 min-w-0 shrink',
+  name: 'w-56 min-w-0 shrink',
+  description: 'w-48 min-w-0 shrink',
   price: 'w-24 shrink-0',
   priceWeekend: 'w-32 shrink-0',
   variations: 'min-w-30 flex-[1_1_9rem]',
