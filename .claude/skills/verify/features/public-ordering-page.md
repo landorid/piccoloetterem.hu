@@ -72,8 +72,8 @@ Preconditions:
   day, its extras and its badge.
 - **Reload keeps the cart.** Reload the tab; the day's order and the badges are unchanged. A new
   tab starts empty (`sessionStorage`).
-- **Closed and past days.** Compare the tabs with `api.sh GET /api/menu`: days before the first
-  of `orderableDates` are disabled; later days missing from it are closed by staff.
+- **Closed and past days.** Compare the tabs with `api.sh GET /api/menu`: days in
+  `closedDates` are closed by staff; the other days missing from `orderableDates` are disabled.
 - **Refetch.** Switch to another tab and back after an admin change (or after 09:30). The API log
   shows a second `GET /api/menu` (200, or 304 when nothing changed, with no `OPTIONS` preflight).
 - **Any week as a guest sees it.** `api.sh GET '/api/menu?week=2026-W40'` returns a published
@@ -98,9 +98,10 @@ Preconditions:
   not help after the Friday cutoff. Do not run it without asking.
 - The cart is `sessionStorage` key `piccolo:order` (version 1). Clear it between scenarios
   (`sessionStorage.clear()` in the page, then reload), or the previous run's cart reappears.
-- A day is `closed` (staff closed it, #60) only when it falls after the first orderable day. The
-  API sends no closed dates, so a staff-closed day *before* it looks like a past day (disabled,
-  "intake already closed"). A selected closed day stays selected across a refetch and a reload.
+- A day is `closed` (staff closed it, #60) when it is in the API's `closedDates`: closed days
+  from the first orderable day on, so today before 09:30 too. A day staff closed whose intake is
+  over anyway is not in it and looks like any past day. A selected closed day stays selected
+  across a refetch and a reload.
 - The dev database's 2026/40 daily soups carry an item price of 650 Ft (the seed and core say 0),
   so beside a daily main the soup row says 0 Ft but the price box adds 650 Ft. Plain sides are
   priced there too (600/500 Ft). The page shows what core prices; it is data, not the page.

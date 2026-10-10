@@ -287,7 +287,11 @@ describe('the day cart', () => {
 
 describe('the day rail', () => {
   it('lets a closed day be selected to say it cannot be ordered, and disables past days', async () => {
-    answer = { ...openMenu, orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'] };
+    answer = {
+      ...openMenu,
+      orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'],
+      closedDates: ['2026-09-10'],
+    };
     await renderOrderPage();
 
     expect(tab(/^Hétfő/)).toHaveProperty('disabled', true);
@@ -304,8 +308,32 @@ describe('the day rail', () => {
     );
   });
 
+  it('shows today closed, not past, when staff closed it and its intake is still open', async () => {
+    answer = {
+      ...openMenu,
+      orderableDates: ['2026-09-10', '2026-09-11', '2026-09-12'],
+      closedDates: ['2026-09-09'],
+    };
+    await renderOrderPage();
+
+    expect(tab(/^Kedd/)).toHaveProperty('disabled', true);
+    const today = tab(/^Szerda, szept\. 9\., Zárva$/);
+    expect(today).toHaveProperty('disabled', false);
+    expect(today.getAttribute('aria-disabled')).toBe('true');
+    expect(tab(/^Csütörtök/).getAttribute('aria-selected')).toBe('true');
+    expect(screen.queryByText(strings.week.cutoffPassed('9:30'))).toBeNull();
+
+    fireEvent.click(today);
+    expect(screen.getByText(strings.errors.closedDay)).toBeTruthy();
+    expect(screen.queryByRole('region', { name: /menü összeállítása$/ })).toBeNull();
+  });
+
   it('keeps a selected closed day when the tab comes back to the same menu', async () => {
-    answer = { ...openMenu, orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'] };
+    answer = {
+      ...openMenu,
+      orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'],
+      closedDates: ['2026-09-10'],
+    };
     await renderOrderPage();
     fireEvent.click(tab(/^Csütörtök/));
 

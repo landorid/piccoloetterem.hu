@@ -112,6 +112,7 @@ describe('GET /api/menu', () => {
       state: 'open',
       menu: menuOf(published(41)),
       orderableDates: ['2026-10-08', '2026-10-09', '2026-10-10'],
+      closedDates: [],
       weekLabel: '2026/41. hét (10.05 – 10.10)',
     });
     expect(res.headers.get('cache-control')).toBe('no-cache');
@@ -119,13 +120,14 @@ describe('GET /api/menu', () => {
     expect(res.headers.get('x-db-queries')).toBe('0');
   });
 
-  it('includes today before the cutoff and leaves out closed dates', async () => {
+  it('includes today before the cutoff and lists closed dates still ahead apart', async () => {
     const { get } = await setup('2026-10-07T09:29:00+02:00', {
-      '2026-41': published(41, ['2026-10-09']),
+      '2026-41': published(41, ['2026-10-05', '2026-10-09']),
     });
     expect(await (await get()).json()).toMatchObject({
       state: 'open',
       orderableDates: ['2026-10-07', '2026-10-08', '2026-10-10'],
+      closedDates: ['2026-10-09'],
     });
   });
 
@@ -145,6 +147,7 @@ describe('GET /api/menu', () => {
         '2026-10-16',
         '2026-10-17',
       ],
+      closedDates: [],
       weekLabel: '2026/42. hét (10.12 – 10.17)',
     });
   });
@@ -205,6 +208,7 @@ describe('GET /api/menu?week=', () => {
       state: 'open',
       menu: menuOf(published(40)),
       orderableDates: [],
+      closedDates: [],
       weekLabel: '2026/40. hét (09.28 – 10.03)',
     });
   });

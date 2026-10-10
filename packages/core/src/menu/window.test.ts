@@ -23,13 +23,16 @@ function published(...weeks: [isoYear: number, isoWeek: number][]): IsPublished 
 }
 
 const view = (window: OrderWindow) =>
-  window.kind === 'open' ? { ...window, dates: window.dates.map(isoDate) } : window;
+  window.kind === 'open'
+    ? { ...window, dates: window.dates.map(isoDate), closed: window.closed.map(isoDate) }
+    : window;
 
-const open = (isoYear: number, isoWeek: number, dates: string[]) => ({
+const open = (isoYear: number, isoWeek: number, dates: string[], closed: string[] = []) => ({
   kind: 'open' as const,
   isoYear,
   isoWeek,
   dates,
+  closed,
 });
 
 // 2026/37 is Mon 09-07 … Sun 09-13; 2026/38 is Mon 09-14 … Sun 09-20.
@@ -154,16 +157,27 @@ describe('orderWindow — rule: the week must be published', () => {
 describe('orderWindow — rule: closed dates are never orderable', () => {
   runTable([
     {
-      name: 'a Monday closed date is removed from dates',
+      name: 'a Monday closed date is moved from dates to closed',
       now: bud(2026, 9, 7, 9, 29),
       closedDates: ['2026-09-07'],
-      expected: open(2026, 37, w37.slice(1)),
+      expected: open(2026, 37, w37.slice(1), ['2026-09-07']),
     },
     {
       name: 'a closed Wednesday is skipped inside the window',
       now: bud(2026, 9, 7, 9, 31),
       closedDates: ['2026-09-09'],
-      expected: open(2026, 37, ['2026-09-08', '2026-09-10', '2026-09-11', '2026-09-12']),
+      expected: open(
+        2026,
+        37,
+        ['2026-09-08', '2026-09-10', '2026-09-11', '2026-09-12'],
+        ['2026-09-09'],
+      ),
+    },
+    {
+      name: 'Wed 09:31: only closed days after the cutoff are closed; past and Sunday ones are not',
+      now: bud(2026, 9, 9, 9, 31),
+      closedDates: ['2026-09-07', '2026-09-09', '2026-09-11', '2026-09-13'],
+      expected: open(2026, 37, ['2026-09-10', '2026-09-12'], ['2026-09-11']),
     },
     {
       name: 'a closed date in an unrelated week has no effect',
@@ -172,10 +186,10 @@ describe('orderWindow — rule: closed dates are never orderable', () => {
       expected: open(2026, 37, w37),
     },
     {
-      name: 'a closed next Monday after roll-over is removed from dates',
+      name: 'a closed next Monday after roll-over is moved from dates to closed',
       now: bud(2026, 9, 11, 9, 31),
       closedDates: ['2026-09-14'],
-      expected: open(2026, 38, w38.slice(1)),
+      expected: open(2026, 38, w38.slice(1), ['2026-09-14']),
     },
     {
       name: 'Thu 09:31 with Fri and Sat closed → closed_week, no early roll-over',

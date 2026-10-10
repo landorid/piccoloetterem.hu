@@ -88,6 +88,7 @@ const huslevesFor = (day: string) => soup(`${day}-husleves`, 'Húsleves cérname
 export const openMenu: OpenMenu = {
   state: 'open',
   orderableDates: ['2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12'],
+  closedDates: [],
   weekLabel: '2026/37. hét (09.07 – 09.12)',
   menu: {
     isoYear: 2026,

@@ -3,9 +3,9 @@ import {
   type IsPublished,
   isoDate,
   isoWeekOf,
+  type OrderWindow,
   orderWindow,
   type PublicMenu,
-  type TZDate,
 } from '@piccolo/core';
 import { Hono } from 'hono';
 import { etag, RETAINED_304_HEADERS } from 'hono/etag';
@@ -73,10 +73,10 @@ export function publicMenuRoutes(
             `No published menu for ${isoYear}/${isoWeek}`,
           );
         }
-        return c.json(open(week.menu, window?.kind === 'open' ? window.dates : []));
+        return c.json(open(week.menu, window?.kind === 'open' ? window : null));
       }
       if (window?.kind === 'open' && week.published) {
-        return c.json(open(week.menu, window.dates));
+        return c.json(open(week.menu, window));
       }
       if (window?.kind === 'next_week_not_published') {
         // The guest-facing text is the web app's (apps/web/src/strings.ts), not the API's.
@@ -87,12 +87,17 @@ export function publicMenuRoutes(
   );
 }
 
-function open(menu: PublicMenu, dates: readonly TZDate[]) {
+type OpenWindow = Extract<OrderWindow, { kind: 'open' }>;
+
+/** `window` is `null` for a requested week other than the window's: nothing to order in it now. */
+function open(menu: PublicMenu, window: OpenWindow | null) {
   return {
     state: 'open' as const,
     menu,
     /** `YYYY-MM-DD`, ascending, all in `menu`'s week. */
-    orderableDates: dates.map(isoDate),
+    orderableDates: (window?.dates ?? []).map(isoDate),
+    /** Days staff closed that could otherwise still be ordered: `YYYY-MM-DD`, ascending. */
+    closedDates: (window?.closed ?? []).map(isoDate),
     weekLabel: menu.weekLabel,
   };
 }

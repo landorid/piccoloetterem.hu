@@ -3,8 +3,12 @@ import { openMenu } from '../test/fixtures';
 import { cutoffNote, weekDays } from './days';
 
 describe('weekDays', () => {
-  it('marks days before the first orderable one past, and later gaps closed', () => {
-    const days = weekDays(openMenu.menu, ['2026-09-09', '2026-09-11', '2026-09-12']);
+  it('marks orderable days open, closed ones closed and the rest past', () => {
+    const days = weekDays(
+      openMenu.menu,
+      ['2026-09-09', '2026-09-11', '2026-09-12'],
+      ['2026-09-10'],
+    );
     expect(days.map(({ date, index, state }) => [date, index, state])).toEqual([
       ['2026-09-07', 0, 'past'],
       ['2026-09-08', 1, 'past'],
@@ -12,6 +16,22 @@ describe('weekDays', () => {
       ['2026-09-10', 3, 'closed'],
       ['2026-09-11', 4, 'open'],
       ['2026-09-12', 5, 'open'],
+    ]);
+  });
+
+  it('marks a closed day before the first orderable one closed, not past', () => {
+    const days = weekDays(
+      openMenu.menu,
+      ['2026-09-10', '2026-09-11'],
+      ['2026-09-09', '2026-09-12'],
+    );
+    expect(days.map(({ state }) => state)).toEqual([
+      'past',
+      'past',
+      'closed',
+      'open',
+      'open',
+      'closed',
     ]);
   });
 });
