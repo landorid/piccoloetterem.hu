@@ -1,7 +1,8 @@
+import { isoDate, staffOrdersDay } from '@piccolo/core';
 import { Hono } from 'hono';
 import type { AppEnv } from '../env';
 import { HttpError } from '../errors';
-import { withDb } from '../middleware';
+import { withConfig, withDb } from '../middleware';
 import { validate } from '../validation';
 import { changeStatus, daySummary, deliveryList, listOrders, readOrder } from './admin.repo';
 import { dateQuery, orderListQuery, orderParams, statusBody } from './admin.schemas';
@@ -9,8 +10,10 @@ import { dateQuery, orderListQuery, orderParams, statusBody } from './admin.sche
 /**
  * Staff order work, mounted at `/api/admin/orders` behind `requireStaff`. Orders are never edited
  * or deleted here: the only write is a status change, and it sends no e-mail.
+ *
+ * `now` is the request time; tests pass a fixed clock.
  */
-export function adminOrderRoutes() {
+export function adminOrderRoutes(now: () => Date = () => new Date()) {
   return (
     new Hono<AppEnv>()
       .use(withDb)
@@ -20,6 +23,13 @@ export function adminOrderRoutes() {
       })
 
       // Before `/:id`, which would otherwise take these paths.
+
+      // The day the order list opens on: today until the cutoff, then the next operating day.
+      // Reads the config, never the database.
+      .get('/default-date', withConfig, (c) =>
+        c.json({ date: isoDate(staffOrdersDay(now(), c.get('config'))) }),
+      )
+
       .get('/summary', validate('query', dateQuery), async (c) => {
         return c.json(await daySummary(c.get('db'), c.req.valid('query').date));
       })

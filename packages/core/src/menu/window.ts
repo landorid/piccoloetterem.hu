@@ -57,6 +57,36 @@ export function firstOrderableDay(now: Date, config: WindowConfig): TZDate {
 }
 
 /**
+ * The delivery date the staff's order list opens on at `now`: today until the cutoff, then the
+ * next operating day, whose orders are the ones coming in. Today counts only if it is an
+ * operating day. Unlike `firstOrderableDay`, this ignores `lastSameWeekOrderDay`: a Saturday's
+ * orders are taken by Friday's cutoff, and staff still work them on Saturday. Closed dates are
+ * not skipped; the caller has no database.
+ */
+export function staffOrdersDay(
+  now: Date,
+  config: Pick<RestaurantConfig, 'timezone' | 'cutoff' | 'operatingDays'>,
+): TZDate {
+  const local = toZoned(now, config.timezone);
+  const { isoYear, isoWeek } = isoWeekOf(local);
+  const today = addDays<TZDate>(
+    datesOfIsoWeek(isoYear, isoWeek, config.timezone)[0],
+    weekday(local) - 1,
+  );
+  const beforeCutoff = local.getHours() * 60 + local.getMinutes() < minutesOfDay(config.cutoff);
+  if (beforeCutoff && isOperatingDay(today, config)) {
+    return today;
+  }
+  for (let offset = 1; offset <= 7; offset += 1) {
+    const day = addDays<TZDate>(today, offset);
+    if (isOperatingDay(day, config)) {
+      return day;
+    }
+  }
+  throw new RangeError('operatingDays must list at least one weekday');
+}
+
+/**
  * The days a guest may order for at `now`: from the first orderable day to the end of that ISO
  * week, keeping only operating days that are not in `closedDates` (`YYYY-MM-DD`). The week must be
  * published. The operating days left out for being in `closedDates` come back as `closed`.

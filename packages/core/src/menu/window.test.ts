@@ -8,6 +8,7 @@ import {
   isOrderable,
   type OrderWindow,
   orderWindow,
+  staffOrdersDay,
 } from './window';
 
 const config = loadConfig({ RESTAURANT: 'piccolo' });
@@ -303,6 +304,30 @@ describe('firstOrderableDay', () => {
 
   it.each(['9:30', '24:00', '09:60', ''])('rejects the cutoff "%s"', (cutoff) => {
     expect(() => firstOrderableDay(bud(2026, 9, 7), { ...config, cutoff })).toThrow(RangeError);
+  });
+});
+
+describe('staffOrdersDay', () => {
+  it.each([
+    ['Mon 09:29 → Mon', bud(2026, 9, 7, 9, 29), '2026-09-07'],
+    ['Mon 09:30 → the cutoff minute itself moves on: Tue', bud(2026, 9, 7, 9, 30), '2026-09-08'],
+    ['Fri 09:31 → Sat, which still has orders', bud(2026, 9, 11, 9, 31), '2026-09-12'],
+    ['Sat 08:00 → Sat', bud(2026, 9, 12, 8, 0), '2026-09-12'],
+    ['Sat 09:31 → next Mon, skipping Sunday', bud(2026, 9, 12, 9, 31), '2026-09-14'],
+    ['Sun 08:00 → next Mon: not an operating day', bud(2026, 9, 13, 8, 0), '2026-09-14'],
+    ['Thu 31 Dec 23:59 → Fri 1 Jan', bud(2026, 12, 31, 23, 59), '2027-01-01'],
+  ])('%s', (_name, now, expected) => {
+    expect(isoDate(staffOrdersDay(now, config))).toBe(expected);
+  });
+
+  it('reads the clock in the restaurant timezone', () => {
+    // 07:00 UTC is 09:00 in Budapest (CEST): before the cutoff.
+    expect(isoDate(staffOrdersDay(new Date('2026-09-07T07:00:00Z'), config))).toBe('2026-09-07');
+  });
+
+  it('follows operatingDays from config', () => {
+    const weekdaysOnly = { ...config, operatingDays: [1, 2, 3, 4, 5] as const };
+    expect(isoDate(staffOrdersDay(bud(2026, 9, 11, 9, 31), weekdaysOnly))).toBe('2026-09-14');
   });
 });
 

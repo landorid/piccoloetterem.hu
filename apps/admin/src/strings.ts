@@ -60,6 +60,11 @@ export const strings = {
   datePicker: {
     placeholder: 'Válassz dátumot',
   },
+  /** The day header of the orders screen and the summary (`DayNavigator`). */
+  dayNavigator: {
+    previous: 'Előző nap',
+    next: 'Következő nap',
+  },
   /** The weekly menu grid (`/heti-menu`, M5). */
   weeklyMenu: {
     week: {
@@ -157,6 +162,93 @@ export const strings = {
       fallback: 'Hibás érték.',
     },
   },
+  /** The orders of one day at /rendelesek (S2). */
+  orders: {
+    statusFilter: {
+      label: 'Állapot szerinti szűrés',
+      all: 'Mind',
+    },
+    /** By core's `OrderStatus`. */
+    status: {
+      received: 'Beérkezett',
+      processed: 'Feldolgozva',
+      cancelled: 'Lemondva',
+    },
+    search: {
+      label: 'Keresés',
+      placeholder: 'Név, telefonszám vagy e-mail',
+    },
+    refresh: 'Frissítés',
+    count: (count: number) => `${count} rendelés`,
+    columns: {
+      name: 'Név',
+      address: 'Cím',
+      phone: 'Telefon',
+      createdAt: 'Beérkezett',
+      menus: 'Menük',
+      total: 'Összeg',
+      status: 'Állapot',
+    },
+    pickup: 'Elvitel',
+    empty: {
+      title: 'Erre a napra nincs rendelés',
+      description: 'Válassz másik napot, vagy nézz vissza később: a lista magától frissül.',
+    },
+    loadFailed: 'Nem sikerült betölteni a rendeléseket.',
+    retry: 'Újra',
+    noMatch: {
+      title: 'Nincs találat',
+      description: 'Próbálj más keresést, vagy válaszd a „Mind” szűrőt.',
+    },
+    shortcuts: {
+      label: 'Billentyűparancsok',
+      next: 'j vagy ↓: következő rendelés',
+      previous: 'k vagy ↑: előző rendelés',
+      open: 'Enter: a kijelölt rendelés megnyitása',
+      process: 'p: a megnyitott rendelés feldolgozva',
+      arrowsInDetail: 'Megnyitott rendelésnél a nyilak görgetnek, a j és a k lapoz.',
+    },
+    detail: {
+      title: 'Rendelés részletei',
+      loadFailed: 'Nem sikerült betölteni a rendelést.',
+      retry: 'Újra',
+      customer: 'Megrendelő',
+      name: 'Név',
+      phone: 'Telefon',
+      email: 'E-mail',
+      address: 'Cím',
+      menu: (position: number) => `${position}. menü`,
+      /** By core's `PriceAdjustment` codes, as the checkout labels them. */
+      adjustments: {
+        no_soup_discount: 'Leves nélkül',
+        soup_charge: 'Leves felár',
+      },
+      extras: 'Extrák',
+      note: 'Megjegyzés',
+      foodSubtotal: 'Ételek',
+      deliveryFee: 'Kiszállítás',
+      total: 'Végösszeg',
+      createdAt: 'Beérkezett',
+      processedAt: 'Feldolgozva',
+      cancelledAt: 'Lemondva',
+      siblings: 'A rendelés további napjai',
+      process: 'Feldolgozva',
+      cancel: 'Lemondás',
+    },
+    cancelDialog: {
+      title: 'Lemondod a rendelést?',
+      description: (name: string, date: string) =>
+        `${name} rendelése (${date}) lemondott állapotba kerül. Visszavonni nem lehet.`,
+      confirm: 'Lemondás',
+      cancel: 'Mégse',
+    },
+    toasts: {
+      processed: 'Feldolgozottnak jelölve.',
+      cancelled: 'A rendelés lemondva.',
+      alreadyDone: 'Ezt már valaki más megtette.',
+    },
+    currency: 'Ft',
+  },
   toaster: {
     label: 'Értesítések',
   },
@@ -242,6 +334,8 @@ export const strings = {
       validation: 'Néhány mező hibás. Javítsd, majd próbáld újra.',
       bad_request: 'A kérés hibás volt.',
       internal: 'Hiba történt a szerveren. Próbáld újra később.',
+      order_not_found: 'Ez a rendelés nem található.',
+      invalid_transition: 'A rendelés állapota közben megváltozott. Frissítettük.',
     },
   },
 } as const;
