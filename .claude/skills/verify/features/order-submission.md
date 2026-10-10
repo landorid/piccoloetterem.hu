@@ -4,8 +4,7 @@ A guest's checkout sends one submission covering one or more delivery days in on
 API decides from the database, never from the menu cache. It stores one order per day (status
 `received`), upserts the customer by e-mail and answers with the totals. Otherwise it rejects with
 field codes and stores nothing. The order form on `/megrendeles` (O6, #34) builds the cart but
-does not submit it; checkout arrives with O7 (#35). Until then the real user path is the HTTP
-contract checkout will use.
+submits it from checkout (O7, #35); see `public-ordering-page.md` (`checkout`).
 
 ## Sub-features
 
@@ -22,11 +21,10 @@ contract checkout will use.
 
 ## How to get to it (user POV)
 
-- Today: `POST $API_URL/api/orders` with the public site's Origin, through `api.sh`. The form on
-  `$WEB_URL/megrendeles` shows the menus and totals a submission would carry
-  (`public-ordering-page.md`), but "Tovább a rendeléshez" does nothing yet.
-- After O7: checkout on `$WEB_URL/megrendeles`. From then on, drive the form, and keep `api.sh`
-  only for the cases the form cannot produce. Rewrite this section when it lands.
+- Checkout on `$WEB_URL/megrendeles`: compose, "Tovább a rendeléshez", fill the contact card,
+  "Rendelés elküldése". Drive that for `order-201` and the 409s.
+- `api.sh POST /api/orders` only for what the form cannot produce: the honeypot, malformed
+  bodies, 413 and 429.
 
 ## Driving it with the browser pane and api.sh
 

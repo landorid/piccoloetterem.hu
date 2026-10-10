@@ -6,7 +6,7 @@ an open week the page is the order form (O6, #34): a week bar and day strip, the
 selected day a form for the next menu, the day's order beside it (below it on a phone) and a
 summary with the grand total. Every price is computed by `@piccolo/core` in the browser. The cart
 lives in the tab's `sessionStorage`. Otherwise the page shows why ordering is unavailable, with
-the phone number. Checkout ("Tovább a rendeléshez") is O7 (#35); in O6 the button does nothing.
+the phone number. "Tovább a rendeléshez" opens checkout (O7, #35), a screen of the same island.
 
 ## Sub-features
 
@@ -32,6 +32,24 @@ the phone number. Checkout ("Tovább a rendeléshez") is O7 (#35); in O6 the but
 - `summary`: on a phone a sticky bar ("3 menü · 2 nap", the total, "Részletek"); on desktop a
   card in the rail. Per day "Ételek" and "Kiszállítás", then "Fizetendő összesen". No minimum
   warning anywhere.
+- `checkout`: "Rendelés véglegesítése": "Vissza a menühöz", the minimum notice ("Nem éred el a
+  napi minimumot", one "<nap>: N Ft különbözet" line per day under it; it never blocks), the
+  contact card (Név, Telefonszám, E-mail cím, Szállítási cím, Megjegyzés), "Rendelés elküldése";
+  the whole order in the rail ("Kosár értéke"). Fields are checked on blur and on submit with
+  core's `validateContact`; a failed submit shows "Nézd át a pirossal jelölt mezőket." and focuses
+  the first marked field. While sending, the button reads "Küldés folyamatban…" and is disabled.
+- `checkout-prefill`: after a stored order, `localStorage['piccolo.customer']` keeps name, phone,
+  e-mail and address (never the note); the next checkout is filled from it, with "Az adataidat a
+  legutóbbi rendelésedből töltöttük ki. Törlés". "Törlés" forgets and empties them.
+- `checkout-success`: "Köszönjük, megkaptuk a rendelésed!", the e-mail address, one card per day
+  with "Azonosító: <order id>", "Fizetendő összesen" (the API's `grandTotal`), "Új rendelés
+  indítása". The cart is emptied.
+- `checkout-refused`: 409 `sold_out` → "Időközben elfogyott" listing "<nap> · N. menü · <étel>",
+  "Vissza a kosárhoz" opens the day with that menu marked "Elfogyott" and focused; 409
+  `cutoff_passed` / `date_closed` → the day leaves the cart with "Lejárt a rendelési határidő" /
+  "Erre a napra időközben nem lehet rendelni"; 400 on a field → the field is marked; no answer
+  or 5xx → "Nem sikerült elküldeni a rendelést" with "Újraküldés"; 429 → "Most túl sok rendelés
+  érkezett".
 - `refetch`: the menu is fetched again when the tab becomes visible. A day that left
   `orderableDates` leaves the cart with a "Lejárt a rendelési határidő" banner ("Értem" closes it).
 - `menu-next-week`: after the Friday cutoff with next week unpublished, the page shows "A jövő
@@ -107,8 +125,12 @@ Preconditions:
   priced there too (600/500 Ft). The page shows what core prices; it is data, not the page.
 - The main-course dialog is a native modal `<dialog>`; Escape or "Bezár" closes it and focus
   returns to the main row. The allergen bubble is a popover, so it shows above the dialog too.
-- The minimum (2200 Ft per day) is never warned about on this page; that notice is checkout's
-  (O7, #57).
+- The minimum (2200 Ft per day) is never warned about on the order form; checkout names each day
+  under it (#57).
+- Checkout submits for real: use `$ORDER_EMAIL` so `down.sh` deletes the orders. Toggling an item
+  sold out in the admin (`admin-weekly-menu.md`) after it is in the cart reaches the 409 path.
+- A click on "Rendelés elküldése" keeps focus in the field being typed in (mousedown is
+  prevented), so a blur error cannot move the button away mid-click.
 - The menu cache is this run's private Miniflare KV, empty at launch. `X-Db-Queries: 4` on the
   first read of a week is a load, not a missed purge. After an admin write, 0 means the purge
   did not happen. A run's cache is never shared with the deployed site's KV.
