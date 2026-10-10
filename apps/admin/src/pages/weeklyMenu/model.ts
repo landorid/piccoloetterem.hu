@@ -19,8 +19,9 @@ import { addDays } from 'date-fns';
  *
  * The grid holds rows, not items: prices are the inputs' text, and a blank row (nothing typed in
  * it yet) is an empty slot that is left out of the save. A new week starts as the old system's
- * template, 3 soups and 5 mains per day, so staff fill in slots instead of adding rows. A day always
- * shows 3 soup slots: soups cannot be added, and a stored week with fewer is padded with blanks.
+ * template, 3 soups and 5 mains per day and 4 featured, so staff fill in slots instead of adding
+ * rows. A day always shows 3 soup slots (soups cannot be added) and the week 4 featured ones: a
+ * stored week with fewer is padded with blanks.
  */
 
 export const menuDays = [1, 2, 3, 4, 5, 6] as const satisfies readonly MenuDay[];
@@ -66,6 +67,7 @@ export type RowErrors = Record<string, Partial<Record<RowField, string>>>;
 export const maxFeatured = 5;
 
 const templateSoups = 3;
+const templateFeatured = 4;
 
 /** The old system's default prices of the five daily mains; Saturday's weekend price is +100. */
 const defaultMainPrices = [1020, 1020, 1120, 1120, 1170] as const;
@@ -163,10 +165,9 @@ export function isEmptyWeek(week: WeekDraft): boolean {
   return listsOf(week).every(([, list]) => list.length === 0);
 }
 
-/** `rows` with blank soup slots added after them until the day has `templateSoups`. */
-function padSoups(day: MenuDay, rows: Row[]): Row[] {
-  const path: ListPath = `days.${day}.soups`;
-  const blanks = Array.from({ length: Math.max(0, templateSoups - rows.length) }, (_, i) =>
+/** `rows` with blank slots of the list at `path` added after them, up to `count` rows. */
+function padTo(path: ListPath, rows: Row[], count: number): Row[] {
+  const blanks = Array.from({ length: Math.max(0, count - rows.length) }, (_, i) =>
     newRow(path, rows.length + i),
   );
   return [...rows, ...blanks];
@@ -174,7 +175,8 @@ function padSoups(day: MenuDay, rows: Row[]): Row[] {
 
 /**
  * The grid of a stored week, row for item. A week with no items opens as the template: 3 soups
- * and 5 mains a day, no featured rows. A day with fewer than 3 soups gets blank slots up to 3.
+ * and 5 mains a day, 4 featured rows. A day with fewer than 3 soups, or a week with fewer than 4
+ * featured items, gets blank slots up to that.
  */
 export function gridFromWeek(week: WeekDraft): Grid {
   if (isEmptyWeek(week)) {
@@ -184,19 +186,24 @@ export function gridFromWeek(week: WeekDraft): Grid {
     });
     return {
       days: { 1: day(1), 2: day(2), 3: day(3), 4: day(4), 5: day(5), 6: day(6) },
-      featured: [],
+      featured: padTo('featured', [], templateFeatured),
     };
   }
   const day = (d: MenuDay) => ({
-    soups: padSoups(
-      d,
+    soups: padTo(
+      `days.${d}.soups`,
       week.days[d].soups.map((item) => rowFromItem(`days.${d}.soups`, item)),
+      templateSoups,
     ),
     mains: week.days[d].mains.map((item) => rowFromItem(`days.${d}.mains`, item)),
   });
   return {
     days: { 1: day(1), 2: day(2), 3: day(3), 4: day(4), 5: day(5), 6: day(6) },
-    featured: week.featured.map((item) => rowFromItem('featured', item)),
+    featured: padTo(
+      'featured',
+      week.featured.map((item) => rowFromItem('featured', item)),
+      templateFeatured,
+    ),
   };
 }
 

@@ -418,10 +418,6 @@ describe('acceptance 1: a full week survives save and reload', () => {
     await pickAllergens(mainName(6, 1), [/Tojás/]);
     await addVariations(mainName(2, 2), ['Kicsi', 'Nagy']);
 
-    const addFeatured = screen.getByRole('button', { name: t.add.featured });
-    for (const _ of [1, 2, 3]) {
-      fireEvent.click(addFeatured);
-    }
     const featured = [1, 2, 3].map((n) => ({
       n,
       name: field(featuredName(n), t.fields.name),
@@ -437,7 +433,8 @@ describe('acceptance 1: a full week survives save and reload', () => {
     await addVariations(featuredName(1), ['Közepes']);
 
     const entered = gridContents();
-    expect(entered).toHaveLength(6 * 8 + 3);
+    // Eight rows a day, and the week's four featured slots.
+    expect(entered).toHaveLength(6 * 8 + 4);
     // The comparison below sees the variations, not only the text fields.
     const entry = (name: string) => entered.find((contents) => contents.card === name);
     expect(entry(mainName(2, 2))?.variations).toEqual(['Kicsi', 'Nagy']);
@@ -504,7 +501,6 @@ describe('acceptance 3: validation errors at their field', () => {
   it('does not send a price that is not a number, and says so at the field', async () => {
     await openWeek();
 
-    fireEvent.click(screen.getByRole('button', { name: t.add.featured }));
     type(field(featuredName(1), t.fields.name), 'Steak');
     type(field(featuredName(1), t.fields.priceWeekend), 'sok');
     fireEvent.click(saveButton());
@@ -617,6 +613,9 @@ describe('closed dates', () => {
     await waitFor(() => expect(wednesday.getAttribute('aria-checked')).toBe('true'));
     expect(card(mainName(3, 1)).closest('section')?.hasAttribute('data-closed')).toBe(true);
     expect(card(mainName(2, 1)).closest('section')?.hasAttribute('data-closed')).toBe(false);
+    // A closed day's inputs are disabled (and its rows hidden by CSS); the other days stay editable.
+    expect(field(mainName(3, 1), t.fields.name).matches(':disabled')).toBe(true);
+    expect(field(mainName(2, 1), t.fields.name).matches(':disabled')).toBe(false);
     await act(async () => release());
     expect(await screen.findByText(t.toasts.closed)).toBeTruthy();
     expect(api.closed.has('2026-10-14')).toBe(true);

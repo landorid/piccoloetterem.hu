@@ -104,7 +104,7 @@ export const strings = {
       weekendShort: 'Hétvége',
       variationShort: 'Variáció',
       weekendEmpty: 'Üresen hagyva a hétköznapi ár érvényes.',
-      soupIncluded: 'Leves az árban',
+      soupIncluded: 'Levessel',
       soldOut: 'Elfogyott',
       soldOutUnsaved: 'Mentés után állítható',
     },

@@ -92,7 +92,9 @@ describe('gridFromWeek', () => {
     ]);
     expect(grid.days[1].mains.every((row) => row.soupIncluded)).toBe(true);
     expect(grid.days[1].soups.some((row) => row.soupIncluded)).toBe(false);
-    expect(grid.featured).toEqual([]);
+    // Four featured slots, all blank.
+    expect(grid.featured).toHaveLength(4);
+    expect(grid.featured.every(isBlank)).toBe(true);
     expect(
       Object.values(grid.days).every((day) => [...day.soups, ...day.mains].every(isBlank)),
     ).toBe(true);

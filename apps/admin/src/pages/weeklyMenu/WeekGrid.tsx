@@ -153,7 +153,14 @@ export function WeekGrid({
                 </Label>
               </div>
             </div>
-            <div className="mt-2 flex flex-col gap-3">
+            {/* A closed day keeps its rows (and so its draft) but shows only its header. */}
+            <fieldset
+              disabled={closed}
+              className={cn(
+                'm-0 mt-2 flex min-w-0 flex-col gap-3 border-0 p-0',
+                closed && 'hidden',
+              )}
+            >
               {(['soups', 'mains'] as const).map((kind) => (
                 <div key={kind} className="flex flex-col">
                   <h3 className="font-semibold text-muted-foreground text-sm">{t.groups[kind]}</h3>
@@ -169,7 +176,7 @@ export function WeekGrid({
                   </div>
                 </div>
               ))}
-            </div>
+            </fieldset>
           </section>
         );
       })}

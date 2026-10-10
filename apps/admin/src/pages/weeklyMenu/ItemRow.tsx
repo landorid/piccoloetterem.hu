@@ -24,7 +24,7 @@ const cell = {
   description: 'w-36 min-w-0 shrink',
   price: 'w-24 shrink-0',
   priceWeekend: 'w-32 shrink-0',
-  variations: 'w-36 min-w-30 shrink',
+  variations: 'min-w-30 flex-[1_1_9rem]',
   allergens: 'w-44 min-w-24 shrink',
   toggle: 'shrink-0 @4xl:w-16 @4xl:justify-center',
 };
