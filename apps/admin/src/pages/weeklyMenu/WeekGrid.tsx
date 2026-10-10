@@ -64,17 +64,19 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
           onSoldOutChange={(next) => row.id && handlers.onSoldOutChange(row.id, next)}
         />
       ))}
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="justify-start text-muted-foreground"
-        disabled={full}
-        onClick={() => handlers.onAdd(path)}
-      >
-        <PlusIcon />
-        {t.add[kind]}
-      </Button>
+      {kind !== 'soups' && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="justify-start text-muted-foreground"
+          disabled={full}
+          onClick={() => handlers.onAdd(path)}
+        >
+          <PlusIcon />
+          {t.add[kind]}
+        </Button>
+      )}
     </>
   );
 }
@@ -95,9 +97,8 @@ function dayDate(date: string): string {
 }
 
 /**
- * Monday to Saturday side by side, soups above mains. The grid is wider than the page: it
- * scrolls inside its own box, and the page never scrolls sideways. A day closed for ordering
- * stays editable, shaded.
+ * Monday to Saturday one below the other, each day's soups above its mains. A day closed for
+ * ordering stays editable, shaded.
  */
 export function WeekGrid({
   grid,
@@ -109,85 +110,65 @@ export function WeekGrid({
   ...handlers
 }: WeekGridProps) {
   const id = useId();
-  const closed = (day: MenuDay) => closedDates.has(dates[day]);
-  const cellClass = (day: MenuDay) =>
-    cn('border-r p-2 align-top last:border-r-0', closed(day) && 'bg-muted');
-  const group = (kind: 'soups' | 'mains') => (
-    <>
-      <tr>
-        <th scope="colgroup" colSpan={menuDays.length} className="border-y bg-muted/40 p-0">
-          <span className="sticky left-0 block w-fit px-3 py-1.5 text-left font-semibold text-sm">
-            {t.groups[kind]}
-          </span>
-        </th>
-      </tr>
-      <tr>
-        {menuDays.map((day) => (
-          <td key={day} className={cellClass(day)} data-closed={closed(day) || undefined}>
-            <div className="flex flex-col gap-2">
-              <ListEditor
-                grid={grid}
-                kind={kind}
-                day={day}
-                errors={errors}
-                soldOut={soldOut}
-                {...handlers}
-              />
-            </div>
-          </td>
-        ))}
-      </tr>
-    </>
-  );
-
   return (
-    // `contain-inline-size`: the grid's width never widens the page, so only this box scrolls.
-    <div className="overflow-x-auto rounded-lg border contain-inline-size">
-      <table className="w-full min-w-max table-fixed border-collapse">
-        <thead>
-          <tr>
-            {menuDays.map((day) => (
-              <th
-                key={day}
-                scope="col"
-                className={cn(
-                  'w-64 min-w-64 border-r p-2 text-left align-top font-normal last:border-r-0',
-                  closed(day) && 'bg-muted',
-                )}
-              >
-                <div className="flex items-baseline justify-between gap-2">
-                  <span className="font-semibold">{t.days[day]}</span>
-                  <span className="text-muted-foreground text-xs tabular-nums">
-                    {dayDate(dates[day])}
-                  </span>
+    <div className="flex flex-col gap-4">
+      {menuDays.map((day) => {
+        const closed = closedDates.has(dates[day]);
+        const headingId = `${id}-day-${day}`;
+        const switchId = `${id}-closed-${day}`;
+        return (
+          <section
+            key={day}
+            aria-labelledby={headingId}
+            data-closed={closed || undefined}
+            className={cn('min-w-0 rounded-lg border', closed && 'bg-muted')}
+          >
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-3 py-2">
+              <h2 id={headingId} className="flex items-baseline gap-2">
+                <span className="font-semibold text-lg">{t.days[day]}</span>
+                <span className="text-muted-foreground text-sm tabular-nums">
+                  {dayDate(dates[day])}
+                </span>
+              </h2>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id={switchId}
+                  size="sm"
+                  aria-label={`${t.days[day]}: ${t.closed}`}
+                  checked={closed}
+                  onCheckedChange={(next) => onClosedChange(dates[day], next)}
+                />
+                <Label
+                  htmlFor={switchId}
+                  className={cn(
+                    'font-normal text-sm',
+                    closed ? 'font-semibold text-destructive' : 'text-muted-foreground',
+                  )}
+                >
+                  {t.closed}
+                </Label>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4 p-3">
+              {(['soups', 'mains'] as const).map((kind) => (
+                <div key={kind} className="flex flex-col gap-2">
+                  <h3 className="font-semibold text-muted-foreground text-sm">{t.groups[kind]}</h3>
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-2">
+                    <ListEditor
+                      grid={grid}
+                      kind={kind}
+                      day={day}
+                      errors={errors}
+                      soldOut={soldOut}
+                      {...handlers}
+                    />
+                  </div>
                 </div>
-                <div className="mt-1.5 flex items-center gap-2">
-                  <Switch
-                    id={`${id}-closed-${day}`}
-                    size="sm"
-                    aria-label={`${t.days[day]}: ${t.closed}`}
-                    checked={closed(day)}
-                    onCheckedChange={(next) => onClosedChange(dates[day], next)}
-                  />
-                  <Label
-                    htmlFor={`${id}-closed-${day}`}
-                    className={cn(
-                      'font-normal text-xs',
-                      closed(day) ? 'font-semibold text-destructive' : 'text-muted-foreground',
-                    )}
-                  >
-                    {t.closed}
-                  </Label>
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {group('soups')}
-          {group('mains')}
-        </tbody>
-      </table>
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

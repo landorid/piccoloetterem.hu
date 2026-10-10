@@ -12,6 +12,7 @@ import {
   parsePrice,
   parseWeek,
   placeErrors,
+  removeRow,
   shiftWeek,
   sortAllergens,
   updateList,
@@ -66,11 +67,12 @@ function editFirst(grid: Grid, path: Parameters<typeof updateList>[1], edit: obj
 }
 
 describe('gridFromWeek', () => {
-  it('opens a week without items as the template: 2 soups and 5 mains a day', () => {
+  it('opens a week without items as the template: 3 soups and 5 mains a day', () => {
     const grid = gridFromWeek(emptyWeek);
 
     for (const day of [1, 2, 3, 4, 5] as const) {
       expect(grid.days[day].soups.map((row) => [row.priceWeekday, row.priceWeekend])).toEqual([
+        ['0', ''],
         ['0', ''],
         ['0', ''],
       ]);
@@ -114,6 +116,21 @@ describe('gridFromWeek', () => {
     });
   });
 
+  it('pads a stored day to 3 soup slots, and keeps a day that has more', () => {
+    const grid = gridFromWeek(stored);
+
+    expect(grid.days[1].soups.map((row) => row.id)).toEqual([uuid(1), uuid(2), undefined]);
+    expect(grid.days[2].soups).toHaveLength(3);
+    // The blank slots are left out of the save, so the week still saves back unchanged.
+    expect(buildDraft(grid, stored).draft).toEqual(stored);
+
+    const crowded = gridFromWeek({
+      ...stored,
+      days: { ...stored.days, 1: { ...stored.days[1], soups: [1, 2, 3, 4].map((n) => soup(n)) } },
+    });
+    expect(crowded.days[1].soups).toHaveLength(4);
+  });
+
   it('gives every row a key unique in the grid, also for an item on two days', () => {
     const shared = item(7);
     const grid = gridFromWeek({
@@ -126,6 +143,22 @@ describe('gridFromWeek', () => {
     });
 
     expect(grid.days[1].mains[0]?.key).not.toBe(grid.days[2].mains[0]?.key);
+  });
+});
+
+describe('removeRow', () => {
+  it('empties a soup slot in place, and takes a main away', () => {
+    const grid = gridFromWeek(stored);
+    const [firstSoup] = grid.days[1].soups;
+    const [firstMain] = grid.days[1].mains;
+
+    const emptied = removeRow(grid, 'days.1.soups', firstSoup?.key ?? '');
+    expect(emptied.days[1].soups).toHaveLength(3);
+    expect(emptied.days[1].soups[0]).toMatchObject({ id: undefined, name: '', priceWeekday: '0' });
+    expect(emptied.days[1].soups[1]).toBe(grid.days[1].soups[1]);
+
+    const removed = removeRow(grid, 'days.1.mains', firstMain?.key ?? '');
+    expect(removed.days[1].mains).toHaveLength(1);
   });
 });
 
