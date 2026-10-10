@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { fromIsoDate } from '@/dates';
 import { strings } from '@/strings';
-import { ItemRow } from './ItemRow';
+import { ItemRow, ItemRowHeader } from './ItemRow';
 import {
   type Grid,
   type ListKind,
@@ -49,6 +49,9 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
 
   return (
     <>
+      {rows.length > 0 && (
+        <ItemRowHeader kind={kind} weekendPrice={kind === 'featured' || day === 6} />
+      )}
       {rows.map((row, index) => (
         <ItemRow
           key={row.key}

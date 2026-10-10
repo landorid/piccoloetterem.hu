@@ -241,11 +241,22 @@ async function openWeek(week = '2026-W42') {
   return view;
 }
 
-const variationsField = (cardName: string) => field(cardName, strings.variationsInput.label);
-
 function addVariation(input: HTMLElement, variation: string) {
   type(input, variation);
   fireEvent.keyDown(input, { key: 'Enter' });
+}
+
+/** Opens a row's variations popover, adds each one with Enter, and closes it again. */
+async function addVariations(cardName: string, variations: string[]) {
+  fireEvent.click(within(card(cardName)).getByRole('button', { name: /^Variációk/ }));
+  const input = await screen.findByRole('textbox', { name: strings.variationsInput.label });
+  for (const variation of variations) {
+    addVariation(input, variation);
+  }
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  await waitFor(() =>
+    expect(screen.queryByRole('textbox', { name: strings.variationsInput.label })).toBeNull(),
+  );
 }
 
 async function pickAllergens(cardName: string, names: RegExp[]) {
@@ -270,10 +281,14 @@ function gridContents() {
       fields: within(group)
         .getAllByRole('textbox')
         .map((input) => (input as HTMLInputElement).value),
-      // Variation chips; the allergen chips sit inside the allergen button.
-      variations: [...group.querySelectorAll('[data-slot="badge"]')]
-        .filter((chip) => !chip.closest('button'))
-        .map((chip) => chip.textContent),
+      // The variations button's tooltip lists them; it has none when there are no variations.
+      variations: (
+        within(group)
+          .getByRole('button', { name: /^Variációk/ })
+          .getAttribute('title') ?? ''
+      )
+        .split(', ')
+        .filter((variation) => variation !== ''),
       allergens: within(group).getByRole('button', { name: /Allergének/ }).textContent,
       soupIncluded: within(group).queryByRole('checkbox')?.getAttribute('aria-checked') ?? null,
     }));
@@ -382,13 +397,12 @@ describe('acceptance 1: a full week survives save and reload', () => {
       soups: [1, 2, 3].map((n) => field(soupName(day, n), t.fields.name)),
       mains: [1, 2, 3, 4, 5].map((n) => field(mainName(day, n), t.fields.name)),
       description: field(mainName(day, 1), t.fields.description),
-      variations: variationsField(mainName(day, 2)),
       soupIncluded: within(card(mainName(day, 4))).getByRole('checkbox', {
         name: t.fields.soupIncluded,
       }),
     }));
     const wednesdayPrice = field(mainName(3, 5), t.fields.price);
-    for (const { day, soups, mains, description, variations, soupIncluded } of week) {
+    for (const { day, soups, mains, description, soupIncluded } of week) {
       for (const [i, input] of soups.entries()) {
         type(input, `Leves ${day}/${i + 1}`);
       }
@@ -396,14 +410,13 @@ describe('acceptance 1: a full week survives save and reload', () => {
         type(input, `Főétel ${day}/${i + 1}`);
       }
       type(description, 'rizzsel, salátával');
-      addVariation(variations, 'Kicsi');
-      addVariation(variations, 'Nagy');
       fireEvent.click(soupIncluded);
     }
     type(wednesdayPrice, '1290');
     await pickAllergens(soupName(1, 1), [/Zeller/]);
     await pickAllergens(mainName(2, 3), [/Tej/, /Glutén/]);
     await pickAllergens(mainName(6, 1), [/Tojás/]);
+    await addVariations(mainName(2, 2), ['Kicsi', 'Nagy']);
 
     const addFeatured = screen.getByRole('button', { name: t.add.featured });
     for (const _ of [1, 2, 3]) {
@@ -415,18 +428,17 @@ describe('acceptance 1: a full week survives save and reload', () => {
       priceWeekday: field(featuredName(n), t.fields.priceWeekday),
     }));
     const secondWeekendPrice = field(featuredName(2), t.fields.priceWeekend);
-    const firstVariations = variationsField(featuredName(1));
     for (const { n, name, priceWeekday } of featured) {
       type(name, `Ajánlat ${n}`);
       type(priceWeekday, String(2190 + n * 100));
     }
     type(secondWeekendPrice, '2590');
     await pickAllergens(featuredName(3), [/Halak/, /Mustár/]);
-    addVariation(firstVariations, 'Közepes');
+    await addVariations(featuredName(1), ['Közepes']);
 
     const entered = gridContents();
     expect(entered).toHaveLength(6 * 8 + 3);
-    // The comparison below sees the chips, not only the text fields.
+    // The comparison below sees the variations, not only the text fields.
     const entry = (name: string) => entered.find((contents) => contents.card === name);
     expect(entry(mainName(2, 2))?.variations).toEqual(['Kicsi', 'Nagy']);
     expect(entry(mainName(2, 3))?.allergens).toContain('Tej');
