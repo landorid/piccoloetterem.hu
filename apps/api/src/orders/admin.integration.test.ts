@@ -60,7 +60,7 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
   ).join('');
   const emailPrefix = `s1-test-${run}-`;
   let customerId = '';
-  /** Monday … Saturday of the week, `YYYY-MM-DD`. */
+  /** Monday … Sunday of the week, `YYYY-MM-DD`. Sunday never gets an order. */
   let dates: string[] = [];
 
   const api = new Hono<AppEnv>().route('/admin/orders', adminOrderRoutes());
@@ -145,9 +145,7 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
     for (;;) {
       const isoYear = 2070 + Math.floor(Math.random() * 10);
       const isoWeek = 1 + Math.floor(Math.random() * 51);
-      dates = datesOfIsoWeek(isoYear, isoWeek, tz)
-        .slice(0, 6)
-        .map((date) => isoDate(date));
+      dates = datesOfIsoWeek(isoYear, isoWeek, tz).map((date) => isoDate(date));
       const inUse = await db
         .select({ id: orders.id })
         .from(orders)
@@ -191,7 +189,8 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
     unitPrice: 2190,
   });
   const sajt: ItemFixture = { slot: 'main', name: 'S1 Rántott sajt', unitPrice: 2490 };
-  const rizs: ItemFixture = { slot: 'side', name: 'S1 Rizs', unitPrice: 400 };
+  const babgulyas: ItemFixture = { slot: 'soup', name: 'S1 Babgulyás', unitPrice: 0 };
+  const rizs: ItemFixture = { slot: 'side', name: 'S1 Rizs', unitPrice: 0 };
   const uborka: ItemFixture = { slot: 'pickle', name: 'S1 Uborka', unitPrice: 350 };
   const palacsinta: ItemFixture = { slot: 'dessert', name: 'S1 Palacsinta', unitPrice: 600 };
   const doboz = { key: 'doboz', name: 'Doboz', unitPrice: 100 };
@@ -214,13 +213,13 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
           ],
           extras: [{ ...kenyer, quantity: 2 }],
         },
-        // B: (2190 + 350) + (2490 + 400 + 600) + 100 + 50 = 6180, + 150.
+        // B: (2190 + 350) + (2490 + 0 + 600) + 100 + 50 = 5780, + 150.
         {
           date: dates[0] ?? '',
           status: 'processed',
           menus: [
             { items: [gulyas, porkolt('marha'), uborka] },
-            { items: [sajt, rizs, palacsinta] },
+            { items: [babgulyas, sajt, rizs, palacsinta] },
           ],
           extras: [
             { ...doboz, quantity: 1 },
@@ -247,11 +246,15 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
         date: dates[0],
         orderCount: 3,
         menuCount: 5,
-        revenue: 4530 + 6330 + 650,
+        revenue: 4530 + 5930 + 650,
         deliveryCount: 2,
         pickupCount: 1,
         dishes: {
-          soup: [{ name: 'S1 Gulyás', variation: null, count: 3 }],
+          // Most first: by name, Babgulyás would lead.
+          soup: [
+            { name: 'S1 Gulyás', variation: null, count: 3 },
+            { name: 'S1 Babgulyás', variation: null, count: 1 },
+          ],
           main: [
             { name: 'S1 Pörkölt', variation: 'marha', count: 2 },
             { name: 'S1 Pörkölt', variation: 'sertés', count: 1 },
@@ -269,10 +272,10 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
     });
 
     it('is all zeros on a date without orders', async () => {
-      const [status, body] = await send('GET', `/summary?date=${dates[2]}`);
+      const [status, body] = await send('GET', `/summary?date=${dates[6]}`);
       expect(status).toBe(200);
       expect(body).toEqual({
-        date: dates[2],
+        date: dates[6],
         orderCount: 0,
         menuCount: 0,
         revenue: 0,
@@ -529,10 +532,11 @@ describe.skipIf(!url)('/api/admin/orders against DATABASE_URL', () => {
   describe('GET / pagination', () => {
     it('pages 205 orders as 200 + 5 by created_at, then id, without gaps or repeats', async () => {
       const date = dates[4] ?? '';
-      // Five orders share each timestamp, so the id decides inside a group.
+      // Three orders share each timestamp, so the id decides inside a group, and the page ends
+      // inside a group: 1 + 66 × 3 = 199 orders, then the first of the next three.
       const fixtures = Array.from({ length: 205 }, (_, i) => ({
         date,
-        createdAt: new Date(Date.UTC(2070, 0, 1, 8, Math.floor(i / 5))),
+        createdAt: new Date(Date.UTC(2070, 0, 1, 8, Math.floor(i / 3))),
         menus: [{ items: [sajt] }],
       }));
       const ids = await insertOrders(fixtures);

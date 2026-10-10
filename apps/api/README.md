@@ -272,7 +272,7 @@ for a refused status change), and every count and sum is computed in Postgres.
 
 | Route | Response |
 |---|---|
-| `GET /?date=&status=&q=&cursor=` | `{ orders, nextCursor }`: the date's orders, newest first, 200 a page. `status` is `received`, `processed`, `cancelled` or `all` (the default). A row is `{ id, name, phone, address, fulfilment, status, total, menuCount, notePreview, createdAt, processedAt, cancelledAt }`; `address` is `''` for pickup, `notePreview` the first 100 characters (`…` when cut) or `null` |
+| `GET /?date=&status=&q=&cursor=` | `{ orders, nextCursor }`: the date's orders, newest first, 200 a page. `status` is `received`, `processed`, `cancelled` or `all` (the default). A row is `{ id, name, phone, address, fulfilment, status, total, menuCount, notePreview, createdAt, processedAt, cancelledAt }`; `address` is `''` for pickup, `notePreview` the note, its first 99 characters and `…` when it is longer than 100, or `null` |
 | `GET /:id` | The order's columns (with `submissionId` and `customerId`), `menus: [{ position, price, items: [{ slot, name, variation, unitPrice }], adjustments }]` by position and slot, `extras: [{ key, name, quantity, unitPrice }]`, and `siblings: [{ id, deliveryDate, status }]`, the other days of the same submission. 404 `order_not_found` |
 | `POST /:id/status` | `{ status: 'processed' \| 'cancelled' }` → `{ order }`, the list's row. 409 `{ error: 'invalid_transition', status, message }` with the current status when the change is not allowed; 404 `order_not_found` |
 | `GET /summary?date=` | `{ date, orderCount, menuCount, revenue, deliveryCount, pickupCount, dishes: { soup, main, side, pickle, dessert }, extras }` over the orders not cancelled. Each slot lists `{ name, variation, count }`, most first; `extras` are `{ key, name, quantity }`. `revenue` is the sum of `total`, delivery fees included |
@@ -286,12 +286,14 @@ leading `06` or `0036` into `+36`, so `06 30 123`, `30/123` and `+36 30 123` all
 
 **Pages.** `nextCursor` is the id of the page's last order, `null` on the last page. The next page
 starts below that order by `(created_at, id)`, so orders that arrive meanwhile do not shift it;
-they appear on the first page.
+they appear on the first page. A cursor that names no order gives an empty page.
 
 **Status changes.** `received → processed` sets `processed_at`; `received → cancelled` and
 `processed → cancelled` set `cancelled_at` and keep `processed_at`. Anything else, including setting
-the status an order already has, is 409. The rules are core's (`statusesBefore`); the change is one
-conditional `UPDATE`, so of two staff changing one order at once the second gets the 409.
+the status an order already has, is 409. The rules are core's (`statusesBefore`). The change is one
+conditional `UPDATE`, checked against the status the order has when it runs: two changes at once
+apply one after the other, and the second gets the 409 only if the first made it invalid (two
+`processed`, or `processed` after `cancelled`; `cancelled` after `processed` succeeds).
 
 **Adjustments** are not stored: `adjustments` is `order_menus.price` minus its items' `unit_price`,
 read back by core's `adjustmentsOf` in the shape `priceMenu` returns (`no_soup_discount` negative,
