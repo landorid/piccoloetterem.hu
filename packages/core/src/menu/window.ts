@@ -20,8 +20,12 @@ export type WindowConfig = Pick<
 export type IsPublished = (isoYear: number, isoWeek: number) => boolean;
 
 export type OrderWindow =
-  /** Guests may order for `dates`, all in one ISO week, in order. */
-  | { kind: 'open'; isoYear: number; isoWeek: number; dates: TZDate[] }
+  /**
+   * Guests may order for `dates`, all in one ISO week, in order. `closed` are the operating days
+   * from the first orderable day on that staff closed, in order: the ones guests would otherwise
+   * still order for.
+   */
+  | { kind: 'open'; isoYear: number; isoWeek: number; dates: TZDate[]; closed: TZDate[] }
   /** Ordering has rolled over to next week, whose menu is not published yet. */
   | { kind: 'next_week_not_published' }
   /** The current week is not published, or none of its remaining days can be ordered. */
@@ -55,7 +59,7 @@ export function firstOrderableDay(now: Date, config: WindowConfig): TZDate {
 /**
  * The days a guest may order for at `now`: from the first orderable day to the end of that ISO
  * week, keeping only operating days that are not in `closedDates` (`YYYY-MM-DD`). The week must be
- * published.
+ * published. The operating days left out for being in `closedDates` come back as `closed`.
  */
 export function orderWindow(
   now: Date,
@@ -72,13 +76,15 @@ export function orderWindow(
     return rolledOver ? { kind: 'next_week_not_published' } : { kind: 'closed_week' };
   }
 
-  const dates = datesOfIsoWeek(isoYear, isoWeek, config.timezone)
+  const ahead = datesOfIsoWeek(isoYear, isoWeek, config.timezone)
     .slice(weekday(first) - 1)
-    .filter(
-      (date) => isOperatingDay(date, config) && !isClosedDate(date, config.timezone, closedDates),
-    );
+    .filter((date) => isOperatingDay(date, config));
+  const isClosed = (date: TZDate) => isClosedDate(date, config.timezone, closedDates);
+  const dates = ahead.filter((date) => !isClosed(date));
 
-  return dates.length > 0 ? { kind: 'open', isoYear, isoWeek, dates } : { kind: 'closed_week' };
+  return dates.length > 0
+    ? { kind: 'open', isoYear, isoWeek, dates, closed: ahead.filter(isClosed) }
+    : { kind: 'closed_week' };
 }
 
 /**
