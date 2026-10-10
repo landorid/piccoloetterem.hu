@@ -114,7 +114,9 @@ export function OrderConfirmation({ view }: { view: ConfirmationView }) {
   const { contact } = view;
   return (
     <Html lang="hu">
-      <Head />
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
       <Preview>{view.preview}</Preview>
       <Body style={styles.body}>
         <Container style={styles.container}>
