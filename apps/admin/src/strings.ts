@@ -261,6 +261,65 @@ export const strings = {
     placeholder: 'Új variáció, majd Enter',
     remove: (variation: string) => `${variation} törlése`,
   },
+  /** The kitchen summary and delivery list at /osszesito (S3). */
+  summary: {
+    print: 'Nyomtatás',
+    tabs: {
+      kitchen: 'Konyhai összesítő',
+      delivery: 'Kiszállítási lista',
+    },
+    cards: {
+      orders: 'Rendelések',
+      menus: 'Menük',
+      fulfilment: 'Kiszállítás / elvitel',
+      revenue: 'Bevétel',
+    },
+    /** By core's `Slot`. */
+    slots: {
+      main: 'Főételek',
+      soup: 'Levesek',
+      side: 'Köretek',
+      pickle: 'Savanyúságok',
+      dessert: 'Desszertek',
+    },
+    extras: 'Extrák',
+    noneInSlot: 'Nincs rendelés.',
+    columns: {
+      name: 'Név',
+      variation: 'Variáció',
+      count: 'Darab',
+      phone: 'Telefon',
+      address: 'Cím',
+      menus: 'Menük',
+      total: 'Összeg',
+      note: 'Megjegyzés',
+      status: 'Státusz',
+      handedOver: 'Átadva',
+    },
+    /** A pickup order's address is empty. */
+    pickup: 'Személyes átvétel',
+    /** By core's `OrderStatus`. */
+    statuses: {
+      received: 'Beérkezett',
+      processed: 'Feldolgozva',
+      cancelled: 'Lemondva',
+    },
+    deliveryTotal: (count: number) => `Összesen: ${count} rendelés`,
+    money: (amount: number) => `${new Intl.NumberFormat('hu-HU').format(amount)} Ft`,
+    noOrders: {
+      title: 'Erre a napra nincs rendelés',
+      description: 'Válassz másik napot a fenti naptárban.',
+    },
+    noDeliveries: {
+      title: 'Erre a napra nincs kiszállítás',
+      description: 'Válassz másik napot a fenti naptárban.',
+    },
+    loadFailed: {
+      title: 'Nem sikerült betölteni',
+      description: 'Ellenőrizd az internetkapcsolatot, majd próbáld újra.',
+      retry: 'Újra',
+    },
+  },
   /** The permanent items editor at /etlap (M6). */
   items: {
     /** Section headings, by the sections of `PUT /api/admin/menu/items`. */

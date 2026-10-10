@@ -102,3 +102,83 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*
+ * Printing (S3, #38): the kitchen and the courier work from paper. A4 portrait, 11pt, only the
+ * page's content: the sidebar, the top bar and anything marked `print:hidden` stay off paper.
+ * Tables marked `data-print="table"` get borders, repeat their header on every page and never
+ * split a row. These rules are unlayered, so they win over Tailwind's layered utilities. Page numbers use the page-margin boxes Chromium supports since version 131;
+ * browsers without them print none.
+ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 12mm 14mm;
+
+    @bottom-right {
+      content: counter(page) ' / ' counter(pages);
+      font-size: 9pt;
+    }
+  }
+
+  html {
+    font-size: 11pt;
+  }
+
+  body {
+    background: none;
+    color: black;
+  }
+
+  [data-slot='sidebar'],
+  [data-slot='sidebar-inset'] > header,
+  button {
+    display: none;
+  }
+
+  [data-slot='sidebar-wrapper'],
+  [data-slot='sidebar-inset'] {
+    display: block;
+    min-height: 0;
+  }
+
+  [data-slot='sidebar-inset'] > div {
+    padding: 0;
+  }
+
+  [data-slot='table-container'] {
+    overflow: visible;
+  }
+
+  table[data-print='table'] {
+    border-collapse: collapse;
+    font-size: 1rem;
+  }
+
+  table[data-print='table'] thead {
+    display: table-header-group;
+  }
+
+  table[data-print='table'] tr {
+    break-inside: avoid;
+  }
+
+  table[data-print='table'] :is(th, td) {
+    height: auto;
+    border: 1px solid black;
+    padding: 0.15rem 0.35rem;
+    color: black;
+  }
+
+  table[data-print='table'] tfoot {
+    background: none;
+    font-weight: 600;
+  }
+
+  [data-slot='badge'] {
+    border: 0;
+    padding: 0;
+    background: none;
+    color: black;
+  }
+}
