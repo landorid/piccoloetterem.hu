@@ -58,6 +58,8 @@ name = "piccolo-api-staging"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 RESTAURANT = "piccolo"
+# Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
+EMAIL_DRY_RUN = "0"
 # Placeholder. Replace with the staging web and admin Workers' URLs (manual issue #40).
 CORS_ORIGINS = "https://piccolo-web-staging.<account>.workers.dev,https://piccolo-admin-staging.<account>.workers.dev"
 # Placeholder. The admin origin only. Replace together with CORS_ORIGINS (manual issue #40).
@@ -81,6 +83,8 @@ name = "piccolo-api-production"
 [env.production.vars]
 ENVIRONMENT = "production"
 RESTAURANT = "piccolo"
+# Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
+EMAIL_DRY_RUN = "0"
 # Placeholder. Replace with the production web and admin URLs (manual issue #40); once the
 # customer's domains are attached: https://<domain>,https://admin.<domain>.
 CORS_ORIGINS = "https://piccolo-web-production.<account>.workers.dev,https://piccolo-admin-production.<account>.workers.dev"

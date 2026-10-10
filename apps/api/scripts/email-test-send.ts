@@ -23,7 +23,7 @@ if (existsSync(rootEnv)) process.loadEnvFile(rootEnv);
 const args = process.argv.slice(2);
 const dryRun = args.includes('--dry-run');
 const [to] = args.filter((arg) => arg !== '--dry-run');
-if (!to || !to.includes('@')) {
+if (!to?.includes('@')) {
   console.error('Usage: pnpm email:test-send <address> [--dry-run]');
   process.exit(1);
 }
