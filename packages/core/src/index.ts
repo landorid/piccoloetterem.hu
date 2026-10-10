@@ -128,4 +128,10 @@ export {
   type PricedSubmission,
   type SubmissionDraft,
 } from './order/types';
-export { validateDay, validateMenu, validateSubmission } from './order/validate';
+export {
+  type ContactDraft,
+  validateContact,
+  validateDay,
+  validateMenu,
+  validateSubmission,
+} from './order/validate';

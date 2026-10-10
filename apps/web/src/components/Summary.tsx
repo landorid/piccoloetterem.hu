@@ -78,7 +78,7 @@ export function Summary({ variant, menu, pricing, deliveryFee, onContinue }: Sum
  * Per day the food and the delivery fee, then what is paid in total. `live` announces the grand
  * total; the mobile bar announces its own, so its expanded detail must not repeat it.
  */
-function Totals({
+export function Totals({
   priced,
   deliveryFee,
   live,

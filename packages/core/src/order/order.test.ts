@@ -13,7 +13,7 @@ import {
   orderErrorCodes,
   type SubmissionDraft,
 } from './types';
-import { validateDay, validateMenu, validateSubmission } from './validate';
+import { validateContact, validateDay, validateMenu, validateSubmission } from './validate';
 
 const config = loadConfig({ RESTAURANT: 'piccolo' });
 const pickupOn = { ...config, pickupEnabled: true };
@@ -617,6 +617,25 @@ describe('validateSubmission — rule: checkout fields, 1..7 unique days', () =>
   it('keeps an optional note without validating it', () => {
     expect(errorsOf(submission({ note: undefined }))).toEqual({});
     expect(errorsOf(submission({ note: 'x'.repeat(500) }))).toEqual({});
+  });
+});
+
+describe('validateContact — rule: the checkout fields alone, as the browser checks them', () => {
+  const contact = { name: 'Anna', phone: '06 30 123 4567', email: 'anna@example.hu' };
+
+  it('gives the codes validateSubmission gives for the same fields', () => {
+    expect(validateContact({ ...contact, address: 'Fő tér 1.' }, true)).toEqual({});
+    expect(validateContact({ name: '', phone: '123', email: 'a@b', address: 'Ab' }, true)).toEqual({
+      name: 'required',
+      phone: 'invalid_phone',
+      email: 'invalid_email',
+      address: 'too_short',
+    });
+  });
+
+  it('requires the address only for delivery', () => {
+    expect(validateContact(contact, true)).toEqual({ address: 'required' });
+    expect(validateContact(contact, false)).toEqual({});
   });
 });
 

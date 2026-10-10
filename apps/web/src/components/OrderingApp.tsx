@@ -8,9 +8,13 @@ import {
   type MenuResponse,
   type PublicConfig,
 } from '../lib/api';
+import type { UnavailableItem } from '../order/checkout';
+import { pricingConfig } from '../order/pricing';
 import { createOrderStore, OrderStoreProvider } from '../order/store';
 import { strings } from '../strings';
+import { Checkout, type Receipt } from './Checkout';
 import { OrderScreen } from './OrderScreen';
+import { Success } from './Success';
 
 export type OrderingAppProps = {
   /** Baked into the page when it is built. `config` is null only in a build without the API. */
@@ -43,6 +47,12 @@ type Load =
   | { status: 'loaded'; menu: MenuResponse }
   | { status: 'failed'; error: unknown };
 
+/** The screens of an open week. `reveal` is a dish the API refused, to show in the cart. */
+type View =
+  | { screen: 'menu'; reveal?: UnavailableItem }
+  | { screen: 'checkout' }
+  | { screen: 'success'; receipt: Receipt };
+
 function WeekMenu({
   baseUrl,
   config,
@@ -56,6 +66,10 @@ function WeekMenu({
   // Created on the first render; the server renders only the skeleton and never touches it.
   const [store] = useState(createOrderStore);
   const [load, setLoad] = useState<Load>({ status: 'loading' });
+  const [view, setView] = useState<View>({ screen: 'menu' });
+  // Dishes the API refused at the last submission, marked in the cart until an order succeeds.
+  const [unavailable, setUnavailable] = useState<UnavailableItem[]>([]);
+  const pricing = useMemo(() => pricingConfig(config), [config]);
   const loaded = useRef(false);
   const latest = useRef(0);
 
@@ -120,12 +134,55 @@ function WeekMenu({
     );
   }
 
+  // The order is stored and the cart empty: whatever a refetch says now, the receipt stays.
+  if (view.screen === 'success') {
+    return (
+      <Success
+        receipt={view.receipt}
+        config={config}
+        onNewOrder={() => setView({ screen: 'menu' })}
+      />
+    );
+  }
+
+  const refetch = () => {
+    fetchMenu().catch(() => {});
+  };
   const { menu } = load;
   switch (menu.state) {
     case 'open':
       return (
         <OrderStoreProvider value={store}>
-          <OrderScreen open={menu} config={config} now={now} />
+          {view.screen === 'checkout' ? (
+            <Checkout
+              api={api}
+              menu={menu.menu}
+              config={config}
+              pricing={pricing}
+              onBack={() => setView({ screen: 'menu' })}
+              onSubmitted={(receipt) => {
+                store.getState().clear();
+                setUnavailable([]);
+                setView({ screen: 'success', receipt });
+              }}
+              onMenuStale={refetch}
+              onShowItems={(items) => {
+                setUnavailable(items);
+                const [first] = items;
+                if (first) store.getState().selectDate(first.date);
+                setView({ screen: 'menu', reveal: first });
+              }}
+            />
+          ) : (
+            <OrderScreen
+              open={menu}
+              config={config}
+              now={now}
+              unavailable={unavailable}
+              reveal={view.reveal}
+              onContinue={() => setView({ screen: 'checkout' })}
+            />
+          )}
         </OrderStoreProvider>
       );
     case 'next_week_not_published':

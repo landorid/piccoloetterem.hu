@@ -66,3 +66,11 @@ export type MenuResponse = Awaited<ReturnType<typeof loadMenu>>;
 export type OpenMenu = Extract<MenuResponse, { state: 'open' }>;
 export type PublicMenu = OpenMenu['menu'];
 export type PublicMenuItem = PublicMenu['featured'][number];
+
+/** `POST /api/orders`: one order per delivery day. Throws `ApiError` or `NetworkError`. */
+export async function submitOrder(api: WebApi, body: SubmissionBody) {
+  return unwrap(await api.api.orders.$post({ json: body }));
+}
+
+export type SubmissionBody = Parameters<WebApi['api']['orders']['$post']>[0]['json'];
+export type SubmittedOrder = Awaited<ReturnType<typeof submitOrder>>;
