@@ -90,6 +90,7 @@ export {
   isOrderable,
   type OrderWindow,
   orderWindow,
+  staffOrdersDay,
   type WindowConfig,
 } from './menu/window';
 

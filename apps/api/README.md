@@ -277,6 +277,7 @@ for a refused status change), and every count and sum is computed in Postgres.
 | `POST /:id/status` | `{ status: 'processed' \| 'cancelled' }` → `{ order }`, the list's row. 409 `{ error: 'invalid_transition', status, message }` with the current status when the change is not allowed; 404 `order_not_found` |
 | `GET /summary?date=` | `{ date, orderCount, menuCount, revenue, deliveryCount, pickupCount, dishes: { soup, main, side, pickle, dessert }, extras }` over the orders not cancelled. Each slot lists `{ name, variation, count }`, most first; `extras` are `{ key, name, quantity }`. `revenue` is the sum of `total`, delivery fees included |
 | `GET /delivery-list?date=` | `{ date, orders }`: the delivery orders not cancelled, by address, each `{ id, name, phone, address, menuCount, total, note, status }` |
+| `GET /default-date` | `{ date }`: the day the admin's order list opens on, core's `staffOrdersDay`: today until the cutoff, then the next operating day. Reads the config, never the database |
 
 **Search.** `q` (trimmed, at most 200 characters) matches the name or the e-mail with `ILIKE`, and
 `%` and `_` in it are literal. When `q` looks like a phone number, its partial number also matches

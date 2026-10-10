@@ -25,6 +25,7 @@ describe('/api/admin/orders without a Clerk session', () => {
     ['GET', `?date=2026-10-12&status=received&q=06%2030&cursor=${id}`],
     ['GET', '/summary?date=2026-10-12'],
     ['GET', '/delivery-list?date=2026-10-12'],
+    ['GET', '/default-date'],
     ['GET', `/${id}`],
     ['POST', `/${id}/status`],
     ['GET', '/summary'],
@@ -90,4 +91,28 @@ describe('/api/admin/orders request validation', () => {
       expect(res.status).toBe(404);
     },
   );
+});
+
+/** The day the order list opens on. Budapest is UTC+2 until 25 October 2026. */
+describe('GET /api/admin/orders/default-date', () => {
+  const env = { DATABASE_URL: 'postgres://nobody@127.0.0.1:1/none', RESTAURANT: 'piccolo' };
+  const ctx = {
+    waitUntil: () => {},
+    passThroughOnException: () => {},
+  } as unknown as ExecutionContext;
+
+  it.each([
+    ['Monday before the cutoff', '2026-10-12T09:29:00+02:00', '2026-10-12'],
+    ['Monday at the cutoff', '2026-10-12T09:30:00+02:00', '2026-10-13'],
+    ['Friday after the cutoff', '2026-10-16T12:00:00+02:00', '2026-10-17'],
+    ['Sunday', '2026-10-18T08:00:00+02:00', '2026-10-19'],
+  ])('%s → %s', async (_name, at, expected) => {
+    const api = new Hono<AppEnv>().route('/', adminOrderRoutes(() => new Date(at)));
+    api.onError(handleError);
+
+    // The database URL points nowhere: a query would fail with a 500.
+    const res = await api.request('/default-date', {}, env, ctx);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ date: expected });
+  });
 });
