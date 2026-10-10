@@ -2,6 +2,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Tailwind's reset gives buttons the default arrow; an enabled one is clickable. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  [role='combobox']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

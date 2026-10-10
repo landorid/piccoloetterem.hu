@@ -1,3 +1,4 @@
+import { UserButton } from '@clerk/react';
 import { useQuery } from '@tanstack/react-query';
 import {
   BookOpen,
@@ -20,8 +21,9 @@ import {
   SidebarRail,
   useSidebar,
 } from '@/components/ui/sidebar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { paths } from '@/paths';
-import { healthQuery } from '@/queries';
+import { configQuery, healthQuery } from '@/queries';
 import { strings } from '@/strings';
 
 const navItems: readonly { to: string; label: string; icon: LucideIcon }[] = [
@@ -45,6 +47,16 @@ function NavItem({ to, label, icon: Icon }: (typeof navItems)[number]) {
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
+}
+
+/** The restaurant's name from the API, under the app name. */
+function RestaurantName() {
+  const config = useQuery(configQuery);
+
+  if (config.isPending) {
+    return <Skeleton className="h-3 w-24" />;
+  }
+  return <span className="truncate text-sidebar-foreground/70 text-xs">{config.data?.name}</span>;
 }
 
 function ApiVersion() {
@@ -75,7 +87,10 @@ export function AppSidebar() {
                 <span className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <UtensilsCrossed className="size-4" />
                 </span>
-                <span className="truncate font-semibold">{strings.appName}</span>
+                <span className="flex min-w-0 flex-col leading-tight">
+                  <span className="truncate font-semibold">{strings.appName}</span>
+                  <RestaurantName />
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -93,9 +108,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <p className="truncate px-2 text-muted-foreground text-xs group-data-[collapsible=icon]:hidden">
-          <ApiVersion />
-        </p>
+        <div className="flex items-center gap-3 px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <UserButton />
+          <p className="min-w-0 truncate text-muted-foreground text-xs group-data-[collapsible=icon]:hidden">
+            <ApiVersion />
+          </p>
+        </div>
       </SidebarFooter>
       <SidebarRail aria-label={strings.sidebar.toggle} title={strings.sidebar.toggle} />
     </Sidebar>

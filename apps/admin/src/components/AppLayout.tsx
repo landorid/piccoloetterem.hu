@@ -1,30 +1,17 @@
-import { UserButton } from '@clerk/react';
-import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Outlet } from 'react-router';
 import { AppSidebar } from '@/components/AppSidebar';
-import { Separator } from '@/components/ui/separator';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useMediaQuery } from '@/hooks/use-media-query';
-import { configQuery } from '@/queries';
 import { strings } from '@/strings';
 
 /** Below this width the sidebar starts collapsed to its icons. */
 const WIDE = '(min-width: 1024px)';
 
-function RestaurantName() {
-  const config = useQuery(configQuery);
-
-  if (config.isPending) {
-    return <Skeleton className="h-5 w-48" />;
-  }
-  return <span className="truncate font-semibold">{config.data?.name ?? strings.appName}</span>;
-}
-
 /**
- * Every signed-in staff screen: the sidebar, a top bar with the restaurant name and Clerk's
- * `UserButton`, and the page. Under 768px shadcn swaps the sidebar for a sheet.
+ * Every signed-in staff screen: the sidebar (with the restaurant name and Clerk's `UserButton`) and
+ * the page. Under 768px shadcn swaps the sidebar for a sheet, and a slim bar holds its trigger; from
+ * there up the sidebar is toggled from its edge (the rail) or with Ctrl/Cmd+B.
  */
 export function AppLayout() {
   const wide = useMediaQuery(WIDE);
@@ -38,17 +25,12 @@ export function AppLayout() {
       <AppSidebar />
       {/* min-w-0: a wide table scrolls inside the page instead of widening it. */}
       <SidebarInset className="min-w-0">
-        <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+        <header className="flex h-12 shrink-0 items-center border-b px-4 md:hidden">
           <SidebarTrigger
             className="-ml-1"
             aria-label={strings.sidebar.toggle}
             title={strings.sidebar.toggle}
           />
-          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
-          <RestaurantName />
-          <div className="ml-auto flex items-center">
-            <UserButton />
-          </div>
         </header>
         <div className="flex flex-1 flex-col gap-6 p-4 lg:p-6">
           <Outlet />
