@@ -123,8 +123,8 @@ export function WeekGrid({
             aria-labelledby={headingId}
             data-closed={closed || undefined}
             className={cn(
-              '@container -mx-3 min-w-0 rounded-lg border-b px-3 py-4 last:border-b-0',
-              closed && 'bg-muted/60',
+              '@container min-w-0 rounded-lg border px-3 py-3 shadow-xs',
+              closed ? 'bg-muted/60' : 'bg-card',
             )}
           >
             <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -194,14 +194,17 @@ type FeaturedProps = GridHandlers & {
 export function FeaturedSection({ grid, errors, soldOut, ...handlers }: FeaturedProps) {
   const id = useId();
   return (
-    <section aria-labelledby={`${id}-heading`} className="flex min-w-0 flex-col gap-3">
+    <section
+      aria-labelledby={`${id}-heading`}
+      className="@container flex min-w-0 flex-col gap-2 rounded-lg border bg-card px-3 py-3 shadow-xs"
+    >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 id={`${id}-heading`} className="font-semibold text-lg">
+        <h2 id={`${id}-heading`} className="font-semibold text-xl">
           {t.groups.featured}
         </h2>
         <p className="text-muted-foreground text-sm">{t.featuredHint}</p>
       </div>
-      <div className="@container flex flex-col">
+      <div className="flex flex-col">
         <ListEditor
           grid={grid}
           kind="featured"
