@@ -98,7 +98,12 @@ Preconditions:
   not help after the Friday cutoff. Do not run it without asking.
 - The cart is `sessionStorage` key `piccolo:order` (version 1). Clear it between scenarios
   (`sessionStorage.clear()` in the page, then reload), or the previous run's cart reappears.
-- A selected closed day jumps back to the first orderable day after a refetch or a reload.
+- A day is `closed` (staff closed it, #60) only when it falls after the first orderable day. The
+  API sends no closed dates, so a staff-closed day *before* it looks like a past day (disabled,
+  "intake already closed"). A selected closed day stays selected across a refetch and a reload.
+- The dev database's 2026/40 daily soups carry an item price of 650 Ft (the seed and core say 0),
+  so beside a daily main the soup row says 0 Ft but the price box adds 650 Ft. Plain sides are
+  priced there too (600/500 Ft). The page shows what core prices; it is data, not the page.
 - The main-course dialog is a native modal `<dialog>`; Escape or "Bezár" closes it and focus
   returns to the main row. The allergen bubble is a popover, so it shows above the dialog too.
 - The minimum (2200 Ft per day) is never warned about on this page; that notice is checkout's
