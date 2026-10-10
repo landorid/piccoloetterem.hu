@@ -23,3 +23,6 @@ coverage/
 
 # Verification runs (.claude/skills/verify): server state, logs and evidence.
 .verify/
+
+# `pnpm email:preview` output (apps/api/scripts/email-preview.ts).
+apps/api/.preview/

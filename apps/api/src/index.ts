@@ -1,8 +1,14 @@
 import { withSentry } from '@sentry/cloudflare';
 import { app } from './app';
+import { confirmationEvents } from './email/confirmation';
 import type { Bindings } from './env';
+import { setOrderEvents } from './orders/events';
 
 export type { AppType } from './app';
+
+// A stored submission sends its confirmation e-mail. Installed here rather than in `app.ts`, which
+// the frontends typecheck: see `setOrderEvents`.
+setOrderEvents(confirmationEvents);
 
 /**
  * The API Worker: `/api/*` only. The public site and the admin are separate assets-only Workers

@@ -66,9 +66,9 @@ Preconditions:
   same two statements `down.sh` uses, and give that run's id.
 - `sold_out` and `date_closed` are read inside the transaction. To prove them, change the item or
   the date through the admin first (snapshot and restore). Do not use SQL for that.
-- The confirmation e-mail (#32) will hang off `OrderEvents.orderSubmitted`. Once it exists,
-  confirm `EMAIL_DRY_RUN` is on before submitting, because `example.com` must still never be
-  mailed for real.
+- Every stored submission also logs its confirmation e-mail (`EMAIL_DRY_RUN`, set in
+  `wrangler.toml`). Confirm it is on before submitting, because `example.com` must never be mailed
+  for real. See [order-confirmation-email.md](./order-confirmation-email.md).
 - Loopback is exempt from the rate limit. `order-limits` 429 cannot be produced locally. Prove it
   with the unit tests, and say so.
 - `website` is optional: leaving it out is the same as empty (checked 2026-10-09). Only a

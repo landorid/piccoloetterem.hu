@@ -5,6 +5,13 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
+# The confirmation e-mail's renderer (@react-email/render) imports prettier only for its `pretty`
+# option, which the API never uses. Aliased to a stub, it costs nothing; bundled, it was 325 KiB of
+# the upload. See src/email/prettier-stub.ts.
+[alias]
+"prettier/standalone" = "./src/email/prettier-stub.ts"
+"prettier/plugins/html" = "./src/email/prettier-stub.ts"
+
 # The top level is local development (`wrangler dev`, http://localhost:8787) and the development
 # Worker that CI deploys from `develop` as `piccolo-api`.
 [vars]
@@ -17,6 +24,10 @@ CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.
 # Exact origin, including scheme and port. The public site is not an authorized party.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
 CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev"
+# The confirmation e-mail is logged, not sent (src/email/ses.ts): the development database is shared
+# and its orders carry made-up addresses, and SES is not set up for this Worker. Staging and
+# production leave it unset and send through SES.
+EMAIL_DRY_RUN = "1"
 
 # The deployed development Worker's database. Locally `pnpm dev` (scripts/dev.mjs) hands wrangler
 # DATABASE_URL from .dev.vars as CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
@@ -36,6 +47,9 @@ id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
 #   wrangler secret put CLERK_PUBLISHABLE_KEY --env <staging|production>
 #   wrangler secret put CLERK_JWT_KEY --env <staging|production>
 #   wrangler secret put CLERK_ORG_ID --env <staging|production>
+#   wrangler secret put SES_REGION --env <staging|production>
+#   wrangler secret put SES_ACCESS_KEY_ID --env <staging|production>
+#   wrangler secret put SES_SECRET_ACCESS_KEY --env <staging|production>
 # Locally they live in .dev.vars. See README.md.
 
 [env.staging]
@@ -44,6 +58,8 @@ name = "piccolo-api-staging"
 [env.staging.vars]
 ENVIRONMENT = "staging"
 RESTAURANT = "piccolo"
+# Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
+EMAIL_DRY_RUN = "0"
 # Placeholder. Replace with the staging web and admin Workers' URLs (manual issue #40).
 CORS_ORIGINS = "https://piccolo-web-staging.<account>.workers.dev,https://piccolo-admin-staging.<account>.workers.dev"
 # Placeholder. The admin origin only. Replace together with CORS_ORIGINS (manual issue #40).
@@ -67,6 +83,8 @@ name = "piccolo-api-production"
 [env.production.vars]
 ENVIRONMENT = "production"
 RESTAURANT = "piccolo"
+# Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
+EMAIL_DRY_RUN = "0"
 # Placeholder. Replace with the production web and admin URLs (manual issue #40); once the
 # customer's domains are attached: https://<domain>,https://admin.<domain>.
 CORS_ORIGINS = "https://piccolo-web-production.<account>.workers.dev,https://piccolo-admin-production.<account>.workers.dev"

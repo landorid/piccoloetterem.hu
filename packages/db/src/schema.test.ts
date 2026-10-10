@@ -34,7 +34,12 @@ describe('nullability', () => {
     expect(nullableColumns(menuItems)).toEqual(['description', 'price_weekend']);
     expect(nullableColumns(menuWeeks)).toEqual(['published_at']);
     expect(nullableColumns(menuSchedule)).toEqual(['day']);
-    expect(nullableColumns(orders)).toEqual(['note', 'processed_at', 'cancelled_at']);
+    expect(nullableColumns(orders)).toEqual([
+      'note',
+      'processed_at',
+      'cancelled_at',
+      'confirmation_sent_at',
+    ]);
     expect(nullableColumns(orderMenus)).toEqual([]);
     expect(nullableColumns(orderItems)).toEqual(['menu_item_id', 'variation']);
     expect(nullableColumns(orderExtras)).toEqual([]);

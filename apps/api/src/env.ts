@@ -44,6 +44,17 @@ export interface Bindings {
    * Not a secret. Set in `wrangler.toml`, like `CORS_ORIGINS`.
    */
   CLERK_AUTHORIZED_PARTIES?: string;
+  /**
+   * `1` logs the confirmation e-mail instead of sending it, and still marks it sent. Set in
+   * `wrangler.toml` for local development and the development Worker; unset in production.
+   */
+  EMAIL_DRY_RUN?: string;
+  /** SES region of the sending identity, e.g. `eu-central-1`. Not needed in dry run. */
+  SES_REGION?: string;
+  /** Access key id of the IAM user allowed to `ses:SendEmail`. A secret. */
+  SES_ACCESS_KEY_ID?: string;
+  /** That access key's secret. A secret. */
+  SES_SECRET_ACCESS_KEY?: string;
 }
 
 /** A member of `CLERK_ORG_ID`, set by the `/api/admin/*` middleware. */

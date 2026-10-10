@@ -18,3 +18,10 @@ CLERK_PUBLISHABLE_KEY=
 CLERK_JWT_KEY=
 # Organization id (org_…) of this restaurant's staff. Membership is the only role.
 CLERK_ORG_ID=
+
+# Amazon SES, for the confirmation e-mail. Only needed with EMAIL_DRY_RUN=0 below: wrangler.toml
+# sets EMAIL_DRY_RUN=1, which logs the e-mail instead. See README.md, "E-mail".
+# EMAIL_DRY_RUN=0
+SES_REGION=
+SES_ACCESS_KEY_ID=
+SES_SECRET_ACCESS_KEY=

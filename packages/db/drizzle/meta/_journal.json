@@ -15,6 +15,13 @@
       "when": 1791580131066,
       "tag": "0001_natural_sort_collation",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791637852128,
+      "tag": "0002_order_confirmation_sent_at",
+      "breakpoints": true
     }
   ]
 }
