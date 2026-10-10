@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./menu-card": "./src/menu/card/index.ts"
   },
   "types": "./src/index.ts",
   "scripts": {

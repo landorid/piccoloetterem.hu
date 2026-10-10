@@ -38,6 +38,10 @@ export function readPrices(text: string): number[] {
   return [...text.matchAll(amount)].map((match) => Number(match[1]?.replace(/[ .]/g, '')));
 }
 
+export function withoutPrices(text: string): string {
+  return text.replace(amount, '');
+}
+
 /**
  * A day cell's lines as a dish, or `null` when the cell is not one. A dish ends in an allergen
  * line (or allergen numbers ending its last line), a price line, or both; `Zárva`, `Pünkösd`,
