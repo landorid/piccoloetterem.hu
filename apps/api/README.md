@@ -35,6 +35,9 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/orders/schemas.ts` | The zod schema of the submission and its size caps |
 | `src/orders/rateLimit.ts` | The per-IP submission limit on Workers KV |
 | `src/orders/events.ts` | `OrderEvents`, told after a submission commits; `orderEventsFor(env)` |
+| `src/orders/admin.routes.ts` | `/api/admin/orders/*`: the staff's order list, detail, status changes, kitchen summary, delivery list (see below) |
+| `src/orders/admin.repo.ts` | Their queries, one statement each |
+| `src/orders/admin.schemas.ts` | Their zod schemas and the page size |
 
 ## Run it locally
 
@@ -79,6 +82,7 @@ API uses `pnpm dev`, where the admin is <http://localhost:5173>.
 | `GET /api/admin/config` | `{ name }`: the restaurant name from `RestaurantConfig`, for the admin's top bar. No database. Same 401 / 403 as `/api/admin/ping`. |
 | `GET /api/admin/ping` | `{ userId }` for a signed-in member of `CLERK_ORG_ID`. 401 `{ error: 'unauthenticated' }` with no session, 403 `{ error: 'forbidden' }` for anyone else. |
 | `/api/admin/menu/*` | Staff menu management, below. Same 401 / 403 as `/api/admin/ping`. |
+| `/api/admin/orders/*` | Staff order work, below. Same 401 / 403 as `/api/admin/ping`. |
 | anything else | 404 `{ error: 'not_found', message }` |
 
 ## Admin menu
@@ -258,6 +262,51 @@ expires 10 minutes after the last one. Only requests that pass validation are co
 Integration tests: `src/orders/public.integration.test.ts`, with `DATABASE_URL` set as above. They
 work in a random unused week of the 2090s with e-mail addresses of their own, and delete every row
 they create.
+
+## Admin orders
+
+Under `/api/admin/orders`, for staff working a delivery date. Orders are never edited or deleted:
+the only write is a status change, and it sends no e-mail. Names, variations and prices are the
+snapshots stored at submission; nothing joins `menu_items`. Each request is one statement (two
+for a refused status change), and every count and sum is computed in Postgres.
+
+| Route | Response |
+|---|---|
+| `GET /?date=&status=&q=&cursor=` | `{ orders, nextCursor }`: the date's orders, newest first, 200 a page. `status` is `received`, `processed`, `cancelled` or `all` (the default). A row is `{ id, name, phone, address, fulfilment, status, total, menuCount, notePreview, createdAt, processedAt, cancelledAt }`; `address` is `''` for pickup, `notePreview` the note, its first 99 characters and `…` when it is longer than 100, or `null` |
+| `GET /:id` | The order's columns (with `submissionId` and `customerId`), `menus: [{ position, price, items: [{ slot, name, variation, unitPrice }], adjustments }]` by position and slot, `extras: [{ key, name, quantity, unitPrice }]`, and `siblings: [{ id, deliveryDate, status }]`, the other days of the same submission. 404 `order_not_found` |
+| `POST /:id/status` | `{ status: 'processed' \| 'cancelled' }` → `{ order }`, the list's row. 409 `{ error: 'invalid_transition', status, message }` with the current status when the change is not allowed; 404 `order_not_found` |
+| `GET /summary?date=` | `{ date, orderCount, menuCount, revenue, deliveryCount, pickupCount, dishes: { soup, main, side, pickle, dessert }, extras }` over the orders not cancelled. Each slot lists `{ name, variation, count }`, most first; `extras` are `{ key, name, quantity }`. `revenue` is the sum of `total`, delivery fees included |
+| `GET /delivery-list?date=` | `{ date, orders }`: the delivery orders not cancelled, by address, each `{ id, name, phone, address, menuCount, total, note, status }` |
+
+**Search.** `q` (trimmed, at most 200 characters) matches the name or the e-mail with `ILIKE`, and
+`%` and `_` in it are literal. When `q` looks like a phone number, its partial number also matches
+the phone, which O3 stores as `+36…`: core's `phoneSearchFragment` drops the separators and turns a
+leading `06` or `0036` into `+36`, so `06 30 123`, `30/123` and `+36 30 123` all find
+`+36301234567`.
+
+**Pages.** `nextCursor` is the id of the page's last order, `null` on the last page. The next page
+starts below that order by `(created_at, id)`, so orders that arrive meanwhile do not shift it;
+they appear on the first page. A cursor that names no order gives an empty page.
+
+**Status changes.** `received → processed` sets `processed_at`; `received → cancelled` and
+`processed → cancelled` set `cancelled_at` and keep `processed_at`. Anything else, including setting
+the status an order already has, is 409. The rules are core's (`statusesBefore`). The change is one
+conditional `UPDATE`, checked against the status the order has when it runs: two changes at once
+apply one after the other, and the second gets the 409 only if the first made it invalid (two
+`processed`, or `processed` after `cancelled`; `cancelled` after `processed` succeeds).
+
+**Adjustments** are not stored: `adjustments` is `order_menus.price` minus its items' `unit_price`,
+read back by core's `adjustmentsOf` in the shape `priceMenu` returns (`no_soup_discount` negative,
+`soup_charge` positive). Neither the detail nor the delivery list shows a difference to the minimum
+order: that is a checkout notice only (Dávid, 2026-10-09, #57).
+
+**Address order.** The delivery list sorts by `address` under the `natural_sort` collation
+(packages/db migration 0001): an ICU root-locale collation with numbers by value and case and
+accents ignored, so `fo ter 2.` comes before `Fő tér 10.`. The summary sorts names the same way.
+
+Integration tests: `src/orders/admin.integration.test.ts`, with `DATABASE_URL` set as above, after
+`pnpm db:migrate` (they need `natural_sort`). They write their own orders into an empty week of
+the 2070s under a customer of their own, and delete all of it afterwards.
 
 ## CORS
 

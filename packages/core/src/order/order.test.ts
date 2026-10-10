@@ -3,10 +3,16 @@ import { describe, expect, it } from 'vitest';
 import { loadConfig } from '../config/load';
 import type { MenuDay, MenuItem, PublicMenu, PublicMenuDay } from '../menu/types';
 import type { IsPublished } from '../menu/window';
-import { isEmail, normaliseEmailKey, normalisePhone } from './normalise';
+import { isEmail, normaliseEmailKey, normalisePhone, phoneSearchFragment } from './normalise';
 import { orderMessagesHu } from './orderMessages.hu';
 import { priceDay, priceMenu, priceSubmission } from './price';
-import { type DayDraft, orderErrorCodes, type SubmissionDraft } from './types';
+import { adjustmentsOf } from './stored';
+import {
+  type ComposedMenuDraft,
+  type DayDraft,
+  orderErrorCodes,
+  type SubmissionDraft,
+} from './types';
 import { validateDay, validateMenu, validateSubmission } from './validate';
 
 const config = loadConfig({ RESTAURANT: 'piccolo' });
@@ -227,6 +233,39 @@ describe('normalisePhone — rule: accepted formats become the same E.164', () =
   ])('rejects %j', (raw) => {
     expect(normalisePhone(raw)).toBeNull();
   });
+});
+
+describe('phoneSearchFragment — rule: a partial number as typed finds the stored E.164', () => {
+  const stored = normalisePhone('06 30 123 4567');
+
+  it.each([
+    '06 30 123 4567',
+    '+36 30 123 4567',
+    '0036 30 123 4567',
+    '06 30 123',
+    '06-30',
+    '+3630',
+    '0036 30',
+    '30/123',
+    '123 45',
+    '4567',
+    '(30) 123-4567',
+  ])('%j is part of %s', (query) => {
+    const fragment = phoneSearchFragment(query);
+    expect(fragment).not.toBeNull();
+    expect(stored).toContain(fragment);
+  });
+
+  it.each(['06 30 124', '+36 31', '0036 20'])('%j is not part of +36301234567', (query) => {
+    expect(stored).not.toContain(phoneSearchFragment(query));
+  });
+
+  it.each(['', '  ', 'Kiss Anna', 'anna@example.com', '+', '30a', '+36 30 12x'])(
+    '%j is no phone number',
+    (query) => {
+      expect(phoneSearchFragment(query)).toBeNull();
+    },
+  );
 });
 
 describe('normaliseEmailKey', () => {
@@ -665,6 +704,30 @@ describe('priceMenu — rule: soup adjustment and weekday/weekend price by deliv
     const rejected = priceMenu({ mainId: 'main-choice', variation: 'marha' }, menu, WED, config);
     expect(rejected.items[0]).not.toHaveProperty('variation');
     expect(priceMenu({ pickleId: 'pickle' }, menu, WED, config).price).toBe(200);
+  });
+});
+
+describe('adjustmentsOf — rule: a stored menu gives back the adjustments it was priced with', () => {
+  it.each<[string, ComposedMenuDraft, string]>([
+    ['soup only', { soupId: 'soup' }, WED],
+    ['a soup-included main without soup', { mainId: 'main-included' }, WED],
+    ['a soup-included main with soup', { soupId: 'soup', mainId: 'main-included' }, WED],
+    [
+      'soup with a main that excludes it',
+      { soupId: 'soup', mainId: 'main-side', sideId: 'side' },
+      WED,
+    ],
+    ['a main that excludes soup, no soup', { mainId: 'main-side', sideId: 'side' }, WED],
+    [
+      'a full menu on Saturday',
+      { mainId: 'main-included', pickleId: 'pickle', dessertId: 'dessert' },
+      SAT,
+    ],
+    ['dessert only', { dessertId: 'dessert' }, WED],
+  ])('%s', (_, draft, date) => {
+    const priced = priceMenu(draft, menu, date, config);
+    const unitPrices = priced.items.map((line) => line.unitPrice);
+    expect(adjustmentsOf(priced.price, unitPrices)).toEqual(priced.adjustments);
   });
 });
 

@@ -22,4 +22,5 @@ export function createDb(connectionString: string, options: { logger?: Logger } 
 export type Db = ReturnType<typeof createDb>;
 
 export * from 'drizzle-orm';
+export * from './collations';
 export * from './schema';

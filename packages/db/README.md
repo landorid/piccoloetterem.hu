@@ -64,6 +64,10 @@ Never edit an applied migration and never change the schema without a migration:
 issue imports its tables from here. Running `pnpm db:generate` on a clean tree must report no
 changes.
 
+Objects Drizzle's schema cannot describe, such as the `natural_sort` collation of migration 0001,
+go in a custom migration: `pnpm --filter @piccolo/db exec drizzle-kit generate --custom
+--name=<what>`, then write its SQL. Queries name them through a constant (`src/collations.ts`).
+
 ## Resetting a branch
 
 - **Neon console:** the branch → **Reset from parent**. Or with the CLI:

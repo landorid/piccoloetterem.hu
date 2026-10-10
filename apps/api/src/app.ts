@@ -12,6 +12,7 @@ import { adminMenuRoutes } from './menu/admin.routes';
 import { menuCacheFor } from './menu/cache';
 import { publicMenuRoutes } from './menu/public.routes';
 import { withConfig, withDb } from './middleware';
+import { adminOrderRoutes } from './orders/admin.routes';
 import { publicOrderRoutes } from './orders/public.routes';
 
 /** Parses `CORS_ORIGINS`: comma-separated exact origins, e.g. `https://admin.example.hu`. */
@@ -66,7 +67,9 @@ export const app = new Hono<AppEnv>()
   // The admin shell's top bar shows the restaurant name. Reads the config, never the database.
   .get('/admin/config', withConfig, (c) => c.json({ name: c.get('config').name }))
   .get('/admin/ping', (c) => c.json({ userId: c.get('staff').userId }))
-  .route('/admin/menu', adminMenuRoutes(menuCacheFor));
+  .route('/admin/menu', adminMenuRoutes(menuCacheFor))
+  // Working the orders of a delivery date: list, detail, status changes, kitchen summary, delivery list.
+  .route('/admin/orders', adminOrderRoutes());
 
 app.notFound((c) => c.json({ error: 'not_found', message: `No route for ${c.req.path}` }, 404));
 
