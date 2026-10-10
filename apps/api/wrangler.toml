@@ -17,6 +17,10 @@ CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.
 # Exact origin, including scheme and port. The public site is not an authorized party.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
 CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev"
+# The confirmation e-mail is logged, not sent (src/email/ses.ts): the development database is shared
+# and its orders carry made-up addresses, and SES is not set up for this Worker. Staging and
+# production leave it unset and send through SES.
+EMAIL_DRY_RUN = "1"
 
 # The deployed development Worker's database. Locally `pnpm dev` (scripts/dev.mjs) hands wrangler
 # DATABASE_URL from .dev.vars as CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
@@ -36,6 +40,9 @@ id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
 #   wrangler secret put CLERK_PUBLISHABLE_KEY --env <staging|production>
 #   wrangler secret put CLERK_JWT_KEY --env <staging|production>
 #   wrangler secret put CLERK_ORG_ID --env <staging|production>
+#   wrangler secret put SES_REGION --env <staging|production>
+#   wrangler secret put SES_ACCESS_KEY_ID --env <staging|production>
+#   wrangler secret put SES_SECRET_ACCESS_KEY --env <staging|production>
 # Locally they live in .dev.vars. See README.md.
 
 [env.staging]

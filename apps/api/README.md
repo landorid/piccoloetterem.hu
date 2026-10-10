@@ -243,8 +243,9 @@ waits for `RETURNING` except the customer's id inside the statement. A rejection
 **After the commit** the route calls `OrderEvents.orderSubmitted(submissionId, orderIds)` inside
 `executionCtx.waitUntil` (`src/orders/events.ts`). The response does not wait for it, and a
 listener that throws is reported to Sentry, never to the guest. The request's database client is
-released by then, so a listener that reads opens its own. The default listens to nothing; the
-confirmation e-mail (#32) plugs in at `orderEventsFor`.
+released by then, so a listener that reads opens its own. The Worker entry (`src/index.ts`)
+installs the only listener, the confirmation e-mail (see "E-mail"); `app.ts` alone listens to
+nothing.
 
 **The per-IP limit** (`src/orders/rateLimit.ts`) keeps the times of a client's recent submissions
 in `MENU_CACHE` under `order-rate:<ip>` (an IPv6 address by its /64), a sliding window that
@@ -307,6 +308,55 @@ accents ignored, so `fo ter 2.` comes before `Fő tér 10.`. The summary sorts n
 Integration tests: `src/orders/admin.integration.test.ts`, with `DATABASE_URL` set as above, after
 `pnpm db:migrate` (they need `natural_sort`). They write their own orders into an empty week of
 the 2070s under a customer of their own, and delete all of it afterwards.
+
+## E-mail
+
+Exactly one e-mail exists: the confirmation a guest gets right after a submission is stored
+(`src/email/`). It lists every day of the submission with its menus (`1. menü`), each item and
+its unit price, the soup adjustment, the extras, the food subtotal, the delivery fee and the day's
+total, then the address (or `Személyes átvétel`), the note, the grand total, the restaurant's
+contact details and a line saying that replies go to `info@`. It does not mention the shortfall to
+the daily minimum (#57). The sender is `config.email.from`, the reply-to `config.email.replyTo`.
+Every Hungarian word is in `src/strings.ts`.
+
+- **When.** `OrderEvents.orderSubmitted`, after the commit and after the response
+  (`src/email/confirmation.ts`). The listener opens its own database client, reads the
+  submission's snapshots (`loadSubmissionForEmail`; never `menu_items`), renders the React Email
+  template (`src/email/templates/OrderConfirmation.tsx`) to HTML and plain text, and sends it. A
+  failure rejects, and the route reports it to Sentry with the `submissionId`; the guest's response
+  is never affected.
+- **Once.** `orders.confirmation_sent_at` is set on the submission's orders after SES accepts the
+  e-mail. A submission with it already set is skipped; a failed send leaves it empty.
+- **Off the frontends' type path.** `src/index.ts` installs the listener with `setOrderEvents`
+  instead of `app.ts` importing it. The frontends typecheck everything `app.ts` imports
+  (`@piccolo/api/types`), and they have no JSX setting for the template.
+- **SES** (`src/email/ses.ts`): SES v2 `SendEmail` over HTTPS, signed with SigV4 by `aws4fetch`.
+  No AWS SDK, and SendOps is not in the path (docs/STACK.md rule 7). A 5xx or 429 is retried twice.
+- **Dry run.** With `EMAIL_DRY_RUN=1` the e-mail is logged (headers and the plain-text part) and
+  nothing is sent; it still counts as sent. The top level of `wrangler.toml` sets it, so
+  `wrangler dev` and the development Worker never mail anyone. Staging and production leave it
+  unset.
+
+```bash
+pnpm email:preview                         # the fixture e-mail → apps/api/.preview/order-confirmation.{html,txt}
+pnpm email:test-send you@example.com       # sends the fixture e-mail through SES, with the root .env's SES_*
+pnpm email:test-send you@example.com --dry-run
+```
+
+The fixture (`src/email/fixture.ts`) is two days and three menus with both soup adjustments and
+extras, priced by core and snapshotted by `snapshotOf`, so its totals are core's.
+`email:test-send` always sends for real, whatever `EMAIL_DRY_RUN` says. While SES is in the
+sandbox, the recipient must be a verified identity too.
+
+**Before the first real send (P1, #39):** a verified SES domain identity for the sender's domain
+with DKIM, SPF and DMARC records, production access (out of the sandbox), and an IAM access key
+allowed `ses:SendEmail` on that identity. Then `pnpm email:test-send` with the key in the root
+`.env`, and `wrangler secret put SES_REGION` / `SES_ACCESS_KEY_ID` / `SES_SECRET_ACCESS_KEY` for
+each deployed environment that sends.
+
+Integration tests: `src/email/confirmation.integration.test.ts`, with `DATABASE_URL` set. They
+store the fixture on dates of a random week in the 2090s, under their own e-mail addresses, and
+delete every row afterwards.
 
 ## CORS
 
@@ -467,3 +517,6 @@ wrangler secret put SENTRY_DSN --env staging
 | `CORS_ORIGINS` | var | `wrangler.toml`: the web and admin origins for that environment |
 | `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
 | `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment, also holding the per-IP order limit (`order-rate:`). Locally Miniflare's |
+| `EMAIL_DRY_RUN` | var | `wrangler.toml`: `1` at the top level (local and development), unset in staging and production. `1` logs the confirmation e-mail instead of sending it |
+| `SES_REGION` | secret | `wrangler secret put` per environment that sends (P1, #39); `.dev.vars` locally only to send for real. The region of the SES identity |
+| `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | secret | same. An IAM access key allowed `ses:SendEmail` |

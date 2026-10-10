@@ -82,7 +82,8 @@ const menu = buildPublicMenu(
   config,
 );
 
-const draft: SubmissionDraft = {
+/** The guest's submission, as the order form would send it. */
+export const fixtureDraft: SubmissionDraft = {
   name: 'Kovács Anna',
   phone: '06 30 123 4567',
   email: 'kovacs.anna@example.com',
@@ -119,10 +120,10 @@ const draft: SubmissionDraft = {
 };
 
 /** Core's prices for the fixture: what every total of the e-mail must equal. */
-export const fixturePriced: PricedSubmission = priceSubmission(draft, menu, config);
+export const fixturePriced: PricedSubmission = priceSubmission(fixtureDraft, menu, config);
 
 let next = 100;
-const { submissionId, rows } = snapshotOf(draft, fixturePriced, () => uuid(next++));
+const { submissionId, rows } = snapshotOf(fixtureDraft, fixturePriced, () => uuid(next++));
 
 /** The fixture as `loadSubmissionForEmail` would read it back, not yet confirmed. */
 export const fixtureSubmission: StoredSubmission = groupSubmission(submissionId, {

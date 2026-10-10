@@ -9,7 +9,7 @@ import type { Bindings } from '../env';
  * A listener runs after the request's database client is released, so one that reads the orders
  * opens its own client from the same bindings (`HYPERDRIVE`, or `DATABASE_URL` in tests).
  *
- * The confirmation e-mail (O4, #32) is the first listener.
+ * The confirmation e-mail (O4, #32) is the only listener: `src/email/confirmation.ts`.
  */
 export interface OrderEvents {
   /**
@@ -24,7 +24,18 @@ export const noopOrderEvents: OrderEvents = {
   async orderSubmitted() {},
 };
 
-/** The listeners of this deployment. None yet: O4 adds the confirmation e-mail here. */
-export function orderEventsFor(_env: Bindings): OrderEvents {
-  return noopOrderEvents;
+let listenersFor: (env: Bindings) => OrderEvents = () => noopOrderEvents;
+
+/**
+ * Installs the deployment's listeners. The Worker entry (`src/index.ts`) calls it, not `app.ts`:
+ * the frontends typecheck everything `app.ts` imports (`@piccolo/api/types`), and the e-mail's
+ * React template must stay out of that. Tests mount `publicOrderRoutes` with their own listeners.
+ */
+export function setOrderEvents(factory: (env: Bindings) => OrderEvents): void {
+  listenersFor = factory;
+}
+
+/** The listeners of this deployment: the installed ones, or none (`noopOrderEvents`). */
+export function orderEventsFor(env: Bindings): OrderEvents {
+  return listenersFor(env);
 }
