@@ -18,13 +18,20 @@
     "@hono/zod-validator": "0.9.1",
     "@piccolo/core": "workspace:^",
     "@piccolo/db": "workspace:^",
+    "@react-email/components": "1.0.12",
     "@sentry/cloudflare": "10.74.0",
+    "aws4fetch": "1.0.20",
     "hono": "4.13.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "zod": "4.6.5"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "5.20260906.1",
     "@types/node": "22.20.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "tsx": "4.23.13",
     "typescript": "5.9.3",
     "wrangler": "4.129.0"
   }
