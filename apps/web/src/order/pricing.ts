@@ -1,4 +1,5 @@
 import {
+  type ComposedMenuDraft,
   type DayDraft,
   type ExtraDef,
   type MenuItem,
@@ -127,7 +128,7 @@ export interface PricedCart {
 }
 
 export function priceCart(
-  state: CartState,
+  state: Pick<CartState, 'menusByDate' | 'extrasByDate'>,
   publicMenu: PublicMenu,
   config: PricingConfig,
 ): PricedCart {
@@ -146,4 +147,15 @@ export function priceCart(
     deliveryFee: submission.deliveryFee,
     total: submission.total,
   };
+}
+
+/** One cart day, priced as the submission will price it. */
+export function priceCartDay(
+  date: IsoDate,
+  menus: readonly ComposedMenuDraft[],
+  extras: ExtraQuantities,
+  publicMenu: PublicMenu,
+  config: PricingConfig,
+): PricedDay {
+  return priceDay(dayDraft(date, [...menus], extras, config), publicMenu, config);
 }

@@ -1,6 +1,7 @@
 /*
  * The public site's tokens and shell, from the O2 mockup (docs/design/megrendeles/README.md):
- * one brand brown, warm neutrals, a 4 px spacing scale. O6 adds the order form's components.
+ * one brand brown, warm neutrals, a 4 px spacing scale. The order page's components are in
+ * order.css.
  */
 :root {
   color-scheme: light;
@@ -25,6 +26,10 @@
   --paper: #ffffff;
   --ground: #faf6f0;
 
+  --ok-700: #2c6e4a;
+  --ok-100: #e3f1e8;
+  --warn-700: #8a5300;
+  --warn-100: #fdf0dc;
   --danger-700: #a3251d;
   --danger-100: #fbe8e5;
 
@@ -47,20 +52,25 @@
   --t-lg: 1.125rem;
   --t-xl: 1.25rem;
   --t-2xl: 1.5rem;
+  --t-3xl: 1.875rem;
 
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
+  --s-5: 20px;
   --s-6: 24px;
   --s-8: 32px;
   --s-10: 40px;
 
   --radius-sm: 8px;
   --radius: 12px;
+  --radius-lg: 18px;
   --tap: 44px;
 
   --shadow-1: 0 1px 2px rgba(33, 28, 22, 0.05), 0 1px 3px rgba(33, 28, 22, 0.08);
+  --shadow-2: 0 10px 30px rgba(33, 28, 22, 0.16);
+  --shadow-bar: 0 -6px 18px rgba(33, 28, 22, 0.1);
 }
 
 *,
@@ -82,7 +92,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-:is(h1, h2, h3, p, ul) {
+:is(h1, h2, h3, p, ul, ol) {
   margin: 0;
 }
 
@@ -91,10 +101,19 @@ ul {
   list-style: none;
 }
 
+button {
+  font: inherit;
+  cursor: pointer;
+}
+
 :focus-visible {
   outline: 3px solid var(--brand-500);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
 }
 
 .visually-hidden {
@@ -158,181 +177,11 @@ ul {
   color: #fff;
 }
 
-/* --- the island ---------------------------------------------------------------------------- */
-.screen {
+/* The island renders full-width bands (week bar, day rail) and its own screens. */
+.page {
   flex: 1;
-  width: 100%;
-  max-width: 760px;
-  margin: 0 auto;
-  padding: var(--s-4) var(--s-4) var(--s-10);
-}
-
-.week {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
-}
-.week h1,
-.message h1 {
-  font-family: var(--font-display);
-  font-size: var(--t-xl);
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-.week-pill {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: var(--brand-100);
-  color: var(--brand-700);
-  font-size: var(--t-xs);
-  font-weight: 600;
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-2);
-  padding: var(--s-4);
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.card h2 {
-  font-family: var(--font-display);
-  font-size: var(--t-lg);
-  font-weight: 500;
-}
-.card h3 {
-  margin-top: var(--s-2);
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--brand-700);
-}
-.card-note {
-  font-size: var(--t-sm);
-  color: var(--ink-500);
-}
-
-.dishes > li + li {
-  border-top: 1px solid var(--line);
-}
-.dish {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding-block: var(--s-2);
-}
-.dish-head {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-3);
-}
-.dish-name {
-  font-weight: 600;
-}
-.dish-price {
-  flex: none;
-  font-variant-numeric: tabular-nums;
-  color: var(--ink-700);
-}
-.dish-meta {
-  font-size: var(--t-sm);
-  color: var(--ink-700);
-}
-.dish.sold-out .dish-name {
-  text-decoration: line-through;
-  color: var(--ink-500);
-}
-.tag {
-  align-self: flex-start;
-  padding: 0 6px;
-  border-radius: 4px;
-  background: var(--danger-100);
-  color: var(--danger-700);
-  font-size: var(--t-xs);
-  font-weight: 700;
-}
-
-/* Tall enough that the footer starts below the fold, so the loaded menu shifts nothing in view. */
-.skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-4);
-  min-height: 80vh;
-}
-.skeleton-card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  padding: var(--s-4);
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-}
-.skeleton-line {
-  display: block;
-  height: 14px;
-  border-radius: 4px;
-  background: var(--brand-50);
-}
-.skeleton-pill {
-  width: 12rem;
-  height: 20px;
-  border-radius: 999px;
-  background: var(--brand-100);
-}
-.skeleton-title {
-  width: 40%;
-  height: 20px;
-  background: var(--brand-100);
-}
-.skeleton-short {
-  width: 60%;
-}
-
-.message {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--s-3);
-  padding: var(--s-6) var(--s-4);
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-1);
-}
-.message p {
-  max-width: 56ch;
-  color: var(--ink-700);
-}
-.message .contact {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s-2) var(--s-4);
-  font-size: var(--t-md);
-}
-.message .contact a {
-  font-weight: 700;
-  color: var(--brand-700);
-}
-
-.btn {
-  min-height: var(--tap);
-  padding: 0 var(--s-4);
-  border: 0;
-  border-radius: var(--radius-sm);
-  background: var(--brand-600);
-  color: #fff;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn:active {
-  background: var(--brand-700);
 }
 
 /* The mockup's breakpoint. */
@@ -343,13 +192,6 @@ ul {
   }
   .masthead svg {
     height: 54px;
-  }
-  .screen {
-    padding: var(--s-6) var(--s-8) var(--s-10);
-  }
-  .week h1,
-  .message h1 {
-    font-size: var(--t-2xl);
   }
   .footer {
     padding: var(--s-8);

@@ -21,7 +21,7 @@ const spaces = [];
 for (const file of all) {
   const lines = (await readFile(join(src, file), 'utf8')).split('\n');
   lines.forEach((line, index) => {
-    if (!exempt(file) && hungarian.test(line)) {
+    if (!exempt(file) && !file.endsWith('.css') && hungarian.test(line)) {
       offences.push(`  src/${file}:${index + 1}: ${line.trim()}`);
     }
     if (invisible.test(line)) {

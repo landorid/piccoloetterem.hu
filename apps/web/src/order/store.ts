@@ -41,7 +41,7 @@ export const storageKey = 'piccolo:order';
  * The order of one browser tab, kept in `sessionStorage` so a reload keeps the cart. A stored
  * order of another version is discarded, not migrated.
  */
-export function createOrderStore(storage: StateStorage = globalThis.sessionStorage): OrderStoreApi {
+export function createOrderStore(storage?: StateStorage): OrderStoreApi {
   return createStore<OrderStore>()(
     persist(
       (set) => ({
@@ -70,7 +70,8 @@ export function createOrderStore(storage: StateStorage = globalThis.sessionStora
       {
         name: storageKey,
         version: 1,
-        storage: createJSONStorage(() => storage),
+        // Without a `sessionStorage` (the server render) the store simply does not persist.
+        storage: createJSONStorage(() => storage ?? sessionStorage),
         partialize: ({ activeDate, menusByDate, extrasByDate, formsByDate }): CartState => ({
           activeDate,
           menusByDate,

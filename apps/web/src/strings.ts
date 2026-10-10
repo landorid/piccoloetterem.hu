@@ -159,26 +159,4 @@ export const strings = {
     plus: (amount: string) => `+${amount}`,
     minus: (amount: string) => `−${amount}`,
   },
-  /**
-   * The read-only menu listing that proves the menu loads (O5). O6 replaces it with the order
-   * form (#34), and the browsable weekly menu gets a page of its own (#58).
-   */
-  scaffold: {
-    // TODO(O2): the handover has no listing; these headings follow the admin's sections.
-    soups: 'Levesek',
-    mains: 'Főételek',
-    featured: 'Kiemelt ajánlat',
-    allWeek: 'Egész héten rendelhető',
-    sides: 'Köretek',
-    sideExtras: 'Feláras köretek',
-    pickles: 'Savanyúságok',
-    desserts: 'Desszertek',
-    soupHint: 'A napi főételek ára tartalmazza a levest.',
-    // TODO(O2): not in the handover.
-    notOrderable: 'Erre a napra most nem lehet rendelni.',
-    weekendPrice: (price: string) => `hétvégén ${price}`,
-    variations: (list: string) => `Változatok: ${list}`,
-    allergens: (list: string) => `Allergének: ${list}`,
-    allergen: (number: number, name: string) => `${number} · ${name}`,
-  },
 } as const;
