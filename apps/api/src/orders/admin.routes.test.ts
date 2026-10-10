@@ -107,7 +107,10 @@ describe('GET /api/admin/orders/default-date', () => {
     ['Friday after the cutoff', '2026-10-16T12:00:00+02:00', '2026-10-17'],
     ['Sunday', '2026-10-18T08:00:00+02:00', '2026-10-19'],
   ])('%s → %s', async (_name, at, expected) => {
-    const api = new Hono<AppEnv>().route('/', adminOrderRoutes(() => new Date(at)));
+    const api = new Hono<AppEnv>().route(
+      '/',
+      adminOrderRoutes(() => new Date(at)),
+    );
     api.onError(handleError);
 
     // The database URL points nowhere: a query would fail with a 500.
