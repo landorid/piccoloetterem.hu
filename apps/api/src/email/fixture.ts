@@ -64,7 +64,7 @@ const salmon = item(5, 'featured', {
   variations: ['citromos vajjal', 'fokhagymás tejföllel'],
   requiresSide: true,
 });
-const rice = item(6, 'side', { name: 'Párolt jázminrizs', priceWeekday: 490 });
+const rice = item(6, 'side', { name: 'Párolt jázminrizs' });
 const pickle = item(7, 'pickle', { name: 'Csemege uborka', priceWeekday: 350 });
 const pancake = item(8, 'dessert', { name: 'Túrós palacsinta', priceWeekday: 690 });
 

@@ -26,7 +26,7 @@ describe('confirmationEmail', () => {
 
   it('lists every day, menu, item, adjustment and extra the submission stored', () => {
     expect(email.view).toEqual({
-      preview: 'Köszönjük a rendelését! Fizetendő összesen: 11 150 Ft.',
+      preview: 'Köszönjük a rendelését! Fizetendő összesen: 10 660 Ft.',
       greeting: 'Kedves Kovács Anna!',
       intro: 'Köszönjük a rendelését. Az alábbiakat rögzítettük:',
       days: [
@@ -47,10 +47,10 @@ describe('confirmationEmail', () => {
               lines: [
                 { label: 'Leves: Újházi tyúkhúsleves', amount: 0 },
                 { label: 'Főétel: Grillezett lazacfilé – citromos vajjal', amount: 3490 },
-                { label: 'Köret: Párolt jázminrizs', amount: 490 },
+                { label: 'Köret: Párolt jázminrizs', amount: 0 },
                 { label: 'Leves felár', amount: 650 },
               ],
-              total: { label: 'Menü ára', amount: 4630 },
+              total: { label: 'Menü ára', amount: 4140 },
             },
           ],
           // The config's order (Doboz before Kenyér), not the order they were added in.
@@ -62,9 +62,9 @@ describe('confirmationEmail', () => {
             ],
           },
           totals: [
-            { label: 'Ételek összesen', amount: 7120 },
+            { label: 'Ételek összesen', amount: 6630 },
             { label: 'Kiszállítás', amount: 150 },
-            { label: 'Nap összesen', amount: 7270 },
+            { label: 'Nap összesen', amount: 6780 },
           ],
         },
         {
@@ -97,7 +97,7 @@ describe('confirmationEmail', () => {
         },
       ],
       note: { label: 'Megjegyzés', text: 'Kérem, a kapucsengőn a 25-öt nyomják.' },
-      grandTotal: { label: 'Fizetendő összesen', amount: 11150 },
+      grandTotal: { label: 'Fizetendő összesen', amount: 10660 },
       contact: {
         title: 'Elérhetőség',
         name: 'Piccolo Club Étterem',
@@ -141,10 +141,10 @@ describe('confirmationEmail', () => {
 
     expect(day?.fulfilment).toEqual({ label: 'Személyes átvétel', value: null });
     expect(day?.totals).toEqual([
-      { label: 'Ételek összesen', amount: 7120 },
-      { label: 'Nap összesen', amount: 7120 },
+      { label: 'Ételek összesen', amount: 6630 },
+      { label: 'Nap összesen', amount: 6630 },
     ]);
-    expect(pickup.view.grandTotal.amount).toBe(7120 + 3730);
+    expect(pickup.view.grandTotal.amount).toBe(6630 + 3730);
   });
 
   it('leaves out the note and the extras when there are none', () => {
