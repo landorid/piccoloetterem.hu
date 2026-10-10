@@ -155,13 +155,13 @@ orderable day (this week, or next week after the Friday cutoff):
 
 | Body | When |
 |---|---|
-| `{ state: 'open', menu, orderableDates, weekLabel }` | That week is published and has a day left to order. `menu` is core's `PublicMenu` (sold-out items included, flagged); `orderableDates` are `YYYY-MM-DD`, ascending, without closed dates |
+| `{ state: 'open', menu, orderableDates, closedDates, weekLabel }` | That week is published and has a day left to order. `menu` is core's `PublicMenu` (sold-out items included, flagged); `orderableDates` are `YYYY-MM-DD`, ascending, without closed dates; `closedDates` are the days staff closed (#60) that could otherwise still be ordered (core's `orderWindow`), `YYYY-MM-DD`, ascending, so the page can tell a closed day from a past one |
 | `{ state: 'next_week_not_published' }` | Ordering has rolled over to next week, which is not published. No `message`: the text is the web app's (`apps/web/src/strings.ts`, #60) |
 | `{ state: 'closed' }` | This week is not published, or every remaining day of it is closed |
 
 `?week=2026-W42` returns that week as `state: 'open'` if it is published, with the dates of it a
-guest can order for now (none, for a week other than the order window's). Otherwise 404
-`{ error: 'week_not_published' }`; a malformed week is 400 `validation`.
+guest can order for now and the closed ones among them (none, for a week other than the order
+window's). Otherwise 404 `{ error: 'week_not_published' }`; a malformed week is 400 `validation`.
 
 **Headers.** `Cache-Control: no-cache` and an `ETag` (SHA-1 of the body, so of the menu and the
 orderable dates): the browser may keep the response but asks every time, because

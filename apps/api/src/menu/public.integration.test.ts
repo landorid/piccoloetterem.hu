@@ -204,6 +204,7 @@ describe.skipIf(!url)('GET /api/menu against DATABASE_URL', () => {
       body: {
         state: 'open',
         orderableDates: datesA.slice(1),
+        closedDates: [],
         menu: {
           isoYear,
           isoWeek: weekA,
@@ -246,12 +247,15 @@ describe.skipIf(!url)('GET /api/menu against DATABASE_URL', () => {
     expect(after.etag).not.toBe(before.etag);
   });
 
-  it('leaves out a date closed after the week was cached', async () => {
+  it('moves a date closed after the week was cached from orderable to closed', async () => {
     const [status] = await send('POST', '/admin/menu/closed-dates', { date: datesA[2] });
     expect(status).toBe(200);
     expect(await getMenu()).toMatchObject({
       queries: '4',
-      body: { orderableDates: [datesA[1], datesA[3], datesA[4], datesA[5]] },
+      body: {
+        orderableDates: [datesA[1], datesA[3], datesA[4], datesA[5]],
+        closedDates: [datesA[2]],
+      },
     });
   });
 
