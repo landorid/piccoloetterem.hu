@@ -5,6 +5,11 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
+# The development Worker (deployed from `develop`). Cloudflare creates the DNS record and the
+# certificate on deploy. The workers.dev URL stays on as well.
+workers_dev = true
+routes = [{ pattern = "api-dev.piccoloetterem.hu", custom_domain = true }]
+
 # The confirmation e-mail's renderer (@react-email/render) imports prettier only for its `pretty`
 # option, which the API never uses. Aliased to a stub, it costs nothing; bundled, it was 325 KiB of
 # the upload. See src/email/prettier-stub.ts.
@@ -19,11 +24,11 @@ ENVIRONMENT = "development"
 RESTAURANT = "piccolo"
 # Browser origins allowed to call the API (CORS), comma-separated: the Astro and Vite dev servers
 # that `pnpm dev` starts.
-CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.honlapvarazslo.workers.dev,https://piccolo-admin.honlapvarazslo.workers.dev"
+CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.honlapvarazslo.workers.dev,https://piccolo-admin.honlapvarazslo.workers.dev,https://dev.piccoloetterem.hu,https://admin-dev.piccoloetterem.hu"
 # Admin browser origins allowed to mint the Clerk session token (the azp claim).
 # Exact origin, including scheme and port. The public site is not an authorized party.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
-CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev"
+CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev,https://admin-dev.piccoloetterem.hu"
 # The confirmation e-mail is logged, not sent (src/email/ses.ts): the development database is shared
 # and its orders carry made-up addresses, and SES is not set up for this Worker. Staging and
 # production leave it unset and send through SES.
@@ -54,6 +59,8 @@ id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
 
 [env.staging]
 name = "piccolo-api-staging"
+# `routes` is inherited: without this, staging would claim the development domain.
+routes = []
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
@@ -79,17 +86,17 @@ id = "22222222222222222222222222222222"
 
 [env.production]
 name = "piccolo-api-production"
+routes = [{ pattern = "api-prod.piccoloetterem.hu", custom_domain = true }]
 
 [env.production.vars]
 ENVIRONMENT = "production"
 RESTAURANT = "piccolo"
 # Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
 EMAIL_DRY_RUN = "0"
-# Placeholder. Replace with the production web and admin URLs (manual issue #40); once the
-# customer's domains are attached: https://<domain>,https://admin.<domain>.
-CORS_ORIGINS = "https://piccolo-web-production.<account>.workers.dev,https://piccolo-admin-production.<account>.workers.dev"
-# Placeholder. Once the customer's domain is attached: https://admin.<domain>.
-CLERK_AUTHORIZED_PARTIES = "https://piccolo-admin-production.<account>.workers.dev"
+# The public site is tested on prod.piccoloetterem.hu before it moves to piccoloetterem.hu; both
+# are allowed so the move needs no API change.
+CORS_ORIGINS = "https://prod.piccoloetterem.hu,https://piccoloetterem.hu,https://admin.piccoloetterem.hu"
+CLERK_AUTHORIZED_PARTIES = "https://admin.piccoloetterem.hu"
 
 [[env.production.hyperdrive]]
 binding = "HYPERDRIVE"
