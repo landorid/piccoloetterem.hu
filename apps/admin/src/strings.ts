@@ -109,9 +109,11 @@ export const strings = {
       soldOutUnsaved: 'Mentés után állítható',
     },
     add: {
+      soups: 'Leves hozzáadása',
       mains: 'Főétel hozzáadása',
       featured: 'Ajánlat hozzáadása',
     },
+    removeRow: 'Sor törlése',
     closed: 'Nincs rendelés',
     actions: {
       save: 'Mentés',

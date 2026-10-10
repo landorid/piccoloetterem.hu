@@ -1,5 +1,5 @@
 import { cn } from 'cn';
-import { ChevronDownIcon } from 'lucide-react';
+import { ChevronDownIcon, Trash2Icon } from 'lucide-react';
 import { useId } from 'react';
 import { AllergenSelect } from '@/components/AllergenSelect';
 import { Button } from '@/components/ui/button';
@@ -43,6 +43,7 @@ type ItemRowProps = {
   soldOut: boolean | undefined;
   onChange: (patch: Partial<Row>, field: RowField) => void;
   onSoldOutChange: (soldOut: boolean) => void;
+  onRemove: () => void;
 };
 
 export function errorMessage(code: string): string {
@@ -53,8 +54,8 @@ export function errorMessage(code: string): string {
 /**
  * One dish as one row, so a day reads down the page: name, description and price, then the
  * variations, allergens, soup and sold-out. The two groups share a line when there is room and
- * otherwise the second drops below the first, the same way in every row. There is no delete: a
- * row emptied of its text is left out of the save.
+ * otherwise the second drops below the first, the same way in every row. The trash at the end
+ * removes the row; a row emptied of its text is left out of the save as well.
  */
 export function ItemRow({
   row,
@@ -65,6 +66,7 @@ export function ItemRow({
   soldOut,
   onChange,
   onSoldOutChange,
+  onRemove,
 }: ItemRowProps) {
   const id = useId();
   const soup = kind === 'soups';
@@ -211,6 +213,17 @@ export function ItemRow({
             {t.fields.soldOut}
           </Label>
         </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8 shrink-0 text-muted-foreground hover:text-destructive"
+          aria-label={t.removeRow}
+          title={t.removeRow}
+          onClick={onRemove}
+        >
+          <Trash2Icon />
+        </Button>
       </div>
 
       {other.length > 0 && (
@@ -302,6 +315,7 @@ export function ItemRowHeader({ kind, weekendPrice }: { kind: ListKind; weekendP
       {title(strings.allergenSelect.label, cell.allergens)}
       {!soup && toggle(t.fields.soupIncluded)}
       {toggle(t.fields.soldOut)}
+      <span className="size-8 shrink-0" />
     </div>
   );
 }

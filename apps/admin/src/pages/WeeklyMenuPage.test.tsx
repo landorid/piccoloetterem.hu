@@ -522,7 +522,7 @@ describe('acceptance 3: validation errors at their field', () => {
 });
 
 describe('a stored week', () => {
-  it('opens with its items only, adds rows, and leaves out a row emptied of its text', async () => {
+  it('opens with its items only, adds and removes rows, and leaves out a row emptied of its text', async () => {
     api.seedWeek(2026, 42, oneDayWeek);
     await openWeek();
 
@@ -536,14 +536,23 @@ describe('a stored week', () => {
     const addMain = screen.getAllByRole('button', { name: t.add.mains });
     fireEvent.click(addMain[2] as HTMLElement);
     expect(field(mainName(3, 1), t.fields.price).value).toBe('1020');
-    // Rows cannot be deleted: emptying the text takes a stored item out of the save.
+    // A day opens with its three soups, so there is nothing to add; remove one and it can come back.
+    expect(screen.queryByRole('button', { name: t.add.soups })).toBeNull();
+    fireEvent.click(within(card(soupName(1, 3))).getByRole('button', { name: t.removeRow }));
+    expect(screen.queryByRole('group', { name: soupName(1, 3) })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: t.add.soups }));
+    expect(field(soupName(1, 3), t.fields.name).value).toBe('');
+    expect(screen.queryByRole('button', { name: t.add.soups })).toBeNull();
+    // Emptying the text takes a stored item out of the save, and so does the trash.
     type(field(mainName(2, 1), t.fields.name), '');
+    fireEvent.click(within(card(mainName(1, 1))).getByRole('button', { name: t.removeRow }));
     expect(saveButton().hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(saveButton());
     await screen.findByText(t.toasts.saved);
     const sent = api.requests.find((r) => r.method === 'PUT')?.body as WeekDraft;
-    // The blank new row is left out, and so is the emptied one.
+    // The blank new row is left out, and so are the emptied and the removed ones.
+    expect(sent.days[1].mains).toEqual([]);
     expect(sent.days[2].mains).toEqual([]);
     expect(sent.days[3].mains).toEqual([]);
   });

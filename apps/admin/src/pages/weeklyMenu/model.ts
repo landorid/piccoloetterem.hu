@@ -20,8 +20,8 @@ import { addDays } from 'date-fns';
  * The grid holds rows, not items: prices are the inputs' text, and a blank row (nothing typed in
  * it yet) is an empty slot that is left out of the save. A new week starts as the old system's
  * template, 3 soups and 5 mains per day and 4 featured, so staff fill in slots instead of adding
- * rows. A day always shows 3 soup slots (soups cannot be added) and the week 4 featured ones: a
- * stored week with fewer is padded with blanks.
+ * rows. A day opens with 3 soup slots and the week with 4 featured ones: a stored week with fewer
+ * is padded with blanks. Rows can be removed (a day takes back soups up to 3) and added.
  */
 
 export const menuDays = [1, 2, 3, 4, 5, 6] as const satisfies readonly MenuDay[];
@@ -66,7 +66,9 @@ export type RowErrors = Record<string, Partial<Record<RowField, string>>>;
 
 export const maxFeatured = 5;
 
-const templateSoups = 3;
+/** A day has at most three soups; a new week opens with that many blank slots. */
+export const maxSoups = 3;
+const templateSoups = maxSoups;
 const templateFeatured = 4;
 
 /** The old system's default prices of the five daily mains; Saturday's weekend price is +100. */

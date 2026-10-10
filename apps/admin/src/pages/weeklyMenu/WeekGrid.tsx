@@ -17,6 +17,7 @@ import {
   listAt,
   listPath,
   maxFeatured,
+  maxSoups,
   menuDays,
   type Row,
   type RowErrors,
@@ -27,6 +28,7 @@ const t = strings.weeklyMenu;
 
 export type GridHandlers = {
   onChange: (path: ListPath, key: string, patch: Partial<Row>, field: RowField) => void;
+  onRemove: (path: ListPath, key: string) => void;
   onAdd: (path: ListPath) => void;
   onSoldOutChange: (id: string, soldOut: boolean) => void;
 };
@@ -44,7 +46,9 @@ type ListProps = GridHandlers & {
 function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps) {
   const path = listPath(kind, day);
   const rows = listAt(grid, path);
-  const full = kind === 'featured' && rows.length >= maxFeatured;
+  const full =
+    (kind === 'featured' && rows.length >= maxFeatured) ||
+    (kind === 'soups' && rows.length >= maxSoups);
   const dayName = day === null ? t.groups.featured : t.days[day];
 
   return (
@@ -63,14 +67,16 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
           soldOut={row.id === undefined ? undefined : (soldOut.get(row.id) ?? false)}
           onChange={(patch, field) => handlers.onChange(path, row.key, patch, field)}
           onSoldOutChange={(next) => row.id && handlers.onSoldOutChange(row.id, next)}
+          onRemove={() => handlers.onRemove(path, row.key)}
         />
       ))}
-      {kind !== 'soups' && (
+      {/* A day's soups come back up to three: a full list has nothing to add. */}
+      {!(kind === 'soups' && full) && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="justify-start text-muted-foreground"
+          className="self-start text-muted-foreground"
           disabled={full}
           onClick={() => handlers.onAdd(path)}
         >
