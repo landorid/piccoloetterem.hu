@@ -37,6 +37,7 @@ export {
 export {
   groupPermanentItems,
   type MenuItemContent,
+  matchStoredItems,
   type PermanentItemDraft,
   type PermanentItemsDraft,
   type PermanentItemsErrorCode,
