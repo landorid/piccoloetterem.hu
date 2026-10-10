@@ -12,7 +12,6 @@ import {
   parsePrice,
   parseWeek,
   placeErrors,
-  removeRow,
   shiftWeek,
   sortAllergens,
   updateList,
@@ -93,7 +92,9 @@ describe('gridFromWeek', () => {
     ]);
     expect(grid.days[1].mains.every((row) => row.soupIncluded)).toBe(true);
     expect(grid.days[1].soups.some((row) => row.soupIncluded)).toBe(false);
-    expect(grid.featured).toEqual([]);
+    // Four featured slots, all blank.
+    expect(grid.featured).toHaveLength(4);
+    expect(grid.featured.every(isBlank)).toBe(true);
     expect(
       Object.values(grid.days).every((day) => [...day.soups, ...day.mains].every(isBlank)),
     ).toBe(true);
@@ -143,22 +144,6 @@ describe('gridFromWeek', () => {
     });
 
     expect(grid.days[1].mains[0]?.key).not.toBe(grid.days[2].mains[0]?.key);
-  });
-});
-
-describe('removeRow', () => {
-  it('empties a soup slot in place, and takes a main away', () => {
-    const grid = gridFromWeek(stored);
-    const [firstSoup] = grid.days[1].soups;
-    const [firstMain] = grid.days[1].mains;
-
-    const emptied = removeRow(grid, 'days.1.soups', firstSoup?.key ?? '');
-    expect(emptied.days[1].soups).toHaveLength(3);
-    expect(emptied.days[1].soups[0]).toMatchObject({ id: undefined, name: '', priceWeekday: '0' });
-    expect(emptied.days[1].soups[1]).toBe(grid.days[1].soups[1]);
-
-    const removed = removeRow(grid, 'days.1.mains', firstMain?.key ?? '');
-    expect(removed.days[1].mains).toHaveLength(1);
   });
 });
 

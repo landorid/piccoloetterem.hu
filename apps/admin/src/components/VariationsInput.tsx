@@ -12,6 +12,8 @@ type VariationsInputProps = {
   disabled?: boolean;
   invalid?: boolean;
   'aria-label'?: string;
+  /** Shown while there are no chips; the field's own hint by default. */
+  placeholder?: string;
   'aria-describedby'?: string;
   className?: string;
 };
@@ -28,6 +30,7 @@ export function VariationsInput({
   disabled = false,
   invalid = false,
   'aria-label': ariaLabel = strings.variationsInput.label,
+  placeholder = strings.variationsInput.placeholder,
   'aria-describedby': ariaDescribedBy,
   className,
 }: VariationsInputProps) {
@@ -81,7 +84,7 @@ export function VariationsInput({
         aria-label={ariaLabel}
         aria-invalid={invalid || undefined}
         aria-describedby={ariaDescribedBy}
-        placeholder={value.length === 0 ? strings.variationsInput.placeholder : undefined}
+        placeholder={value.length === 0 ? placeholder : undefined}
         className="h-7 min-w-24 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
         onChange={(event) => setText(event.target.value)}
         onKeyDown={onKeyDown}

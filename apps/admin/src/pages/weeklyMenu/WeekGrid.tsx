@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { fromIsoDate } from '@/dates';
 import { strings } from '@/strings';
-import { ItemCard } from './ItemCard';
+import { ItemRow, ItemRowHeader } from './ItemRow';
 import {
   type Grid,
   type ListKind,
@@ -17,6 +17,7 @@ import {
   listAt,
   listPath,
   maxFeatured,
+  maxSoups,
   menuDays,
   type Row,
   type RowErrors,
@@ -41,17 +42,22 @@ type ListProps = GridHandlers & {
   soldOut: ReadonlyMap<string, boolean>;
 };
 
-/** The cards of one list, and the button that adds a row to it. */
+/** The rows of one list, and the button that adds a row to it. */
 function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps) {
   const path = listPath(kind, day);
   const rows = listAt(grid, path);
-  const full = kind === 'featured' && rows.length >= maxFeatured;
+  const full =
+    (kind === 'featured' && rows.length >= maxFeatured) ||
+    (kind === 'soups' && rows.length >= maxSoups);
   const dayName = day === null ? t.groups.featured : t.days[day];
 
   return (
     <>
+      {rows.length > 0 && (
+        <ItemRowHeader kind={kind} weekendPrice={kind === 'featured' || day === 6} />
+      )}
       {rows.map((row, index) => (
-        <ItemCard
+        <ItemRow
           key={row.key}
           row={row}
           kind={kind}
@@ -60,16 +66,17 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
           errors={errors[row.key]}
           soldOut={row.id === undefined ? undefined : (soldOut.get(row.id) ?? false)}
           onChange={(patch, field) => handlers.onChange(path, row.key, patch, field)}
-          onRemove={() => handlers.onRemove(path, row.key)}
           onSoldOutChange={(next) => row.id && handlers.onSoldOutChange(row.id, next)}
+          onRemove={() => handlers.onRemove(path, row.key)}
         />
       ))}
-      {kind !== 'soups' && (
+      {/* A day's soups come back up to three: a full list has nothing to add. */}
+      {!(kind === 'soups' && full) && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="justify-start text-muted-foreground"
+          className="self-start text-muted-foreground"
           disabled={full}
           onClick={() => handlers.onAdd(path)}
         >
@@ -97,8 +104,8 @@ function dayDate(date: string): string {
 }
 
 /**
- * Monday to Saturday one below the other, each day's soups above its mains. A day closed for
- * ordering stays editable, shaded.
+ * Monday to Saturday one below the other, each day's soups above its mains, a dish to a line. A day
+ * closed for ordering stays editable, shaded.
  */
 export function WeekGrid({
   grid,
@@ -121,11 +128,14 @@ export function WeekGrid({
             key={day}
             aria-labelledby={headingId}
             data-closed={closed || undefined}
-            className={cn('min-w-0 rounded-lg border', closed && 'bg-muted')}
+            className={cn(
+              '@container min-w-0 rounded-lg border px-3 py-3 shadow-xs',
+              closed ? 'bg-muted/60' : 'bg-card',
+            )}
           >
-            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b px-3 py-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
               <h2 id={headingId} className="flex items-baseline gap-2">
-                <span className="font-semibold text-lg">{t.days[day]}</span>
+                <span className="font-semibold text-xl">{t.days[day]}</span>
                 <span className="text-muted-foreground text-sm tabular-nums">
                   {dayDate(dates[day])}
                 </span>
@@ -149,11 +159,18 @@ export function WeekGrid({
                 </Label>
               </div>
             </div>
-            <div className="flex flex-col gap-4 p-3">
+            {/* A closed day keeps its rows (and so its draft) but shows only its header. */}
+            <fieldset
+              disabled={closed}
+              className={cn(
+                'm-0 mt-2 flex min-w-0 flex-col gap-3 border-0 p-0',
+                closed && 'hidden',
+              )}
+            >
               {(['soups', 'mains'] as const).map((kind) => (
-                <div key={kind} className="flex flex-col gap-2">
+                <div key={kind} className="flex flex-col">
                   <h3 className="font-semibold text-muted-foreground text-sm">{t.groups[kind]}</h3>
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-2">
+                  <div className="flex flex-col">
                     <ListEditor
                       grid={grid}
                       kind={kind}
@@ -165,7 +182,7 @@ export function WeekGrid({
                   </div>
                 </div>
               ))}
-            </div>
+            </fieldset>
           </section>
         );
       })}
@@ -183,14 +200,17 @@ type FeaturedProps = GridHandlers & {
 export function FeaturedSection({ grid, errors, soldOut, ...handlers }: FeaturedProps) {
   const id = useId();
   return (
-    <section aria-labelledby={`${id}-heading`} className="flex min-w-0 flex-col gap-3">
+    <section
+      aria-labelledby={`${id}-heading`}
+      className="@container flex min-w-0 flex-col gap-2 rounded-lg border bg-card px-3 py-3 shadow-xs"
+    >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h2 id={`${id}-heading`} className="font-semibold text-lg">
+        <h2 id={`${id}-heading`} className="font-semibold text-xl">
           {t.groups.featured}
         </h2>
         <p className="text-muted-foreground text-sm">{t.featuredHint}</p>
       </div>
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(15rem,1fr))] items-start gap-2">
+      <div className="flex flex-col">
         <ListEditor
           grid={grid}
           kind="featured"

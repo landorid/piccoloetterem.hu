@@ -241,11 +241,22 @@ async function openWeek(week = '2026-W42') {
   return view;
 }
 
-const variationsField = (cardName: string) => field(cardName, strings.variationsInput.label);
-
 function addVariation(input: HTMLElement, variation: string) {
   type(input, variation);
   fireEvent.keyDown(input, { key: 'Enter' });
+}
+
+/** Opens a row's variations popover, adds each one with Enter, and closes it again. */
+async function addVariations(cardName: string, variations: string[]) {
+  fireEvent.click(within(card(cardName)).getByRole('button', { name: /^Variációk/ }));
+  const input = await screen.findByRole('textbox', { name: strings.variationsInput.label });
+  for (const variation of variations) {
+    addVariation(input, variation);
+  }
+  fireEvent.keyDown(document.activeElement ?? document.body, { key: 'Escape' });
+  await waitFor(() =>
+    expect(screen.queryByRole('textbox', { name: strings.variationsInput.label })).toBeNull(),
+  );
 }
 
 async function pickAllergens(cardName: string, names: RegExp[]) {
@@ -270,10 +281,14 @@ function gridContents() {
       fields: within(group)
         .getAllByRole('textbox')
         .map((input) => (input as HTMLInputElement).value),
-      // Variation chips; the allergen chips sit inside the allergen button.
-      variations: [...group.querySelectorAll('[data-slot="badge"]')]
-        .filter((chip) => !chip.closest('button'))
-        .map((chip) => chip.textContent),
+      // The variations button's tooltip lists them; it has none when there are no variations.
+      variations: (
+        within(group)
+          .getByRole('button', { name: /^Variációk/ })
+          .getAttribute('title') ?? ''
+      )
+        .split(', ')
+        .filter((variation) => variation !== ''),
       allergens: within(group).getByRole('button', { name: /Allergének/ }).textContent,
       soupIncluded: within(group).queryByRole('checkbox')?.getAttribute('aria-checked') ?? null,
     }));
@@ -344,7 +359,7 @@ describe('opening the page', () => {
     expect(field(mainName(1, 3), t.fields.price).value).toBe('1120');
     expect(field(mainName(6, 5), t.fields.priceWeekday).value).toBe('1170');
     expect(field(mainName(6, 5), t.fields.priceWeekend).value).toBe('1270');
-    expect(within(card(soupName(1, 1))).getByText(t.fields.soupPrice)).toBeTruthy();
+    expect(within(card(soupName(1, 1))).queryByLabelText(t.fields.price)).toBeNull();
     expect(
       within(card(mainName(1, 1)))
         .getByRole('checkbox', { name: t.fields.soupIncluded })
@@ -382,13 +397,12 @@ describe('acceptance 1: a full week survives save and reload', () => {
       soups: [1, 2, 3].map((n) => field(soupName(day, n), t.fields.name)),
       mains: [1, 2, 3, 4, 5].map((n) => field(mainName(day, n), t.fields.name)),
       description: field(mainName(day, 1), t.fields.description),
-      variations: variationsField(mainName(day, 2)),
       soupIncluded: within(card(mainName(day, 4))).getByRole('checkbox', {
         name: t.fields.soupIncluded,
       }),
     }));
     const wednesdayPrice = field(mainName(3, 5), t.fields.price);
-    for (const { day, soups, mains, description, variations, soupIncluded } of week) {
+    for (const { day, soups, mains, description, soupIncluded } of week) {
       for (const [i, input] of soups.entries()) {
         type(input, `Leves ${day}/${i + 1}`);
       }
@@ -396,37 +410,32 @@ describe('acceptance 1: a full week survives save and reload', () => {
         type(input, `Főétel ${day}/${i + 1}`);
       }
       type(description, 'rizzsel, salátával');
-      addVariation(variations, 'Kicsi');
-      addVariation(variations, 'Nagy');
       fireEvent.click(soupIncluded);
     }
     type(wednesdayPrice, '1290');
     await pickAllergens(soupName(1, 1), [/Zeller/]);
     await pickAllergens(mainName(2, 3), [/Tej/, /Glutén/]);
     await pickAllergens(mainName(6, 1), [/Tojás/]);
+    await addVariations(mainName(2, 2), ['Kicsi', 'Nagy']);
 
-    const addFeatured = screen.getByRole('button', { name: t.add.featured });
-    for (const _ of [1, 2, 3]) {
-      fireEvent.click(addFeatured);
-    }
     const featured = [1, 2, 3].map((n) => ({
       n,
       name: field(featuredName(n), t.fields.name),
       priceWeekday: field(featuredName(n), t.fields.priceWeekday),
     }));
     const secondWeekendPrice = field(featuredName(2), t.fields.priceWeekend);
-    const firstVariations = variationsField(featuredName(1));
     for (const { n, name, priceWeekday } of featured) {
       type(name, `Ajánlat ${n}`);
       type(priceWeekday, String(2190 + n * 100));
     }
     type(secondWeekendPrice, '2590');
     await pickAllergens(featuredName(3), [/Halak/, /Mustár/]);
-    addVariation(firstVariations, 'Közepes');
+    await addVariations(featuredName(1), ['Közepes']);
 
     const entered = gridContents();
-    expect(entered).toHaveLength(6 * 8 + 3);
-    // The comparison below sees the chips, not only the text fields.
+    // Eight rows a day, and the week's four featured slots.
+    expect(entered).toHaveLength(6 * 8 + 4);
+    // The comparison below sees the variations, not only the text fields.
     const entry = (name: string) => entered.find((contents) => contents.card === name);
     expect(entry(mainName(2, 2))?.variations).toEqual(['Kicsi', 'Nagy']);
     expect(entry(mainName(2, 3))?.allergens).toContain('Tej');
@@ -492,7 +501,6 @@ describe('acceptance 3: validation errors at their field', () => {
   it('does not send a price that is not a number, and says so at the field', async () => {
     await openWeek();
 
-    fireEvent.click(screen.getByRole('button', { name: t.add.featured }));
     type(field(featuredName(1), t.fields.name), 'Steak');
     type(field(featuredName(1), t.fields.priceWeekend), 'sok');
     fireEvent.click(saveButton());
@@ -514,7 +522,7 @@ describe('acceptance 3: validation errors at their field', () => {
 });
 
 describe('a stored week', () => {
-  it('opens with its items only, and adds and removes rows', async () => {
+  it('opens with its items only, adds and removes rows, and leaves out a row emptied of its text', async () => {
     api.seedWeek(2026, 42, oneDayWeek);
     await openWeek();
 
@@ -528,18 +536,23 @@ describe('a stored week', () => {
     const addMain = screen.getAllByRole('button', { name: t.add.mains });
     fireEvent.click(addMain[2] as HTMLElement);
     expect(field(mainName(3, 1), t.fields.price).value).toBe('1020');
-    fireEvent.click(within(card(mainName(2, 1))).getByRole('button', { name: t.removeRow }));
-    expect(screen.queryByRole('group', { name: mainName(2, 1) })).toBeNull();
-    // A soup slot is emptied, not taken away.
-    fireEvent.click(within(card(soupName(1, 1))).getByRole('button', { name: t.removeRow }));
-    expect(field(soupName(1, 1), t.fields.name).value).toBe('');
-    expect(screen.queryByRole('group', { name: soupName(1, 3) })).toBeTruthy();
+    // A day opens with its three soups, so there is nothing to add; remove one and it can come back.
+    expect(screen.queryByRole('button', { name: t.add.soups })).toBeNull();
+    fireEvent.click(within(card(soupName(1, 3))).getByRole('button', { name: t.removeRow }));
+    expect(screen.queryByRole('group', { name: soupName(1, 3) })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: t.add.soups }));
+    expect(field(soupName(1, 3), t.fields.name).value).toBe('');
+    expect(screen.queryByRole('button', { name: t.add.soups })).toBeNull();
+    // Emptying the text takes a stored item out of the save, and so does the trash.
+    type(field(mainName(2, 1), t.fields.name), '');
+    fireEvent.click(within(card(mainName(1, 1))).getByRole('button', { name: t.removeRow }));
     expect(saveButton().hasAttribute('disabled')).toBe(false);
 
     fireEvent.click(saveButton());
     await screen.findByText(t.toasts.saved);
     const sent = api.requests.find((r) => r.method === 'PUT')?.body as WeekDraft;
-    // The blank new row is left out; the removed one is missing from the payload.
+    // The blank new row is left out, and so are the emptied and the removed ones.
+    expect(sent.days[1].mains).toEqual([]);
     expect(sent.days[2].mains).toEqual([]);
     expect(sent.days[3].mains).toEqual([]);
   });
@@ -609,6 +622,9 @@ describe('closed dates', () => {
     await waitFor(() => expect(wednesday.getAttribute('aria-checked')).toBe('true'));
     expect(card(mainName(3, 1)).closest('section')?.hasAttribute('data-closed')).toBe(true);
     expect(card(mainName(2, 1)).closest('section')?.hasAttribute('data-closed')).toBe(false);
+    // A closed day's inputs are disabled (and its rows hidden by CSS); the other days stay editable.
+    expect(field(mainName(3, 1), t.fields.name).matches(':disabled')).toBe(true);
+    expect(field(mainName(2, 1), t.fields.name).matches(':disabled')).toBe(false);
     await act(async () => release());
     expect(await screen.findByText(t.toasts.closed)).toBeTruthy();
     expect(api.closed.has('2026-10-14')).toBe(true);

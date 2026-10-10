@@ -226,7 +226,7 @@ export function ItemsSection({
                       value={row.allergens}
                       invalid={invalid('allergens')}
                       aria-describedby={describedBy('allergens')}
-                      className="min-w-44"
+                      className="w-56 min-w-44"
                       onChange={(allergens) => onEdit(row.key, { allergens })}
                     />
                     <FieldError id={errorId('allergens')} code={rowErrors.allergens} />

@@ -30,7 +30,6 @@ import {
   type Row,
   type RowErrors,
   type RowField,
-  removeRow,
   shiftWeek,
   updateList,
   weekDates,
@@ -181,7 +180,8 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
         return current[key]?.[field] ? { ...current, [key]: rest } : current;
       });
     },
-    onRemove: (path: ListPath, key: string) => edit((grid) => removeRow(grid, path, key)),
+    onRemove: (path: ListPath, key: string) =>
+      edit((grid) => updateList(grid, path, (rows) => rows.filter((row) => row.key !== key))),
     onAdd: (path: ListPath) =>
       edit((grid) => updateList(grid, path, (rows) => [...rows, newRow(path, rows.length)])),
     onSoldOutChange: (id: string, soldOut: boolean) => soldOutMutation.mutate({ id, soldOut }),
@@ -295,15 +295,80 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
 
   return (
     <>
-      <PageHeader
-        title={strings.pages.weeklyMenu.title}
-        description={strings.pages.weeklyMenu.description}
-        actions={
-          <>
-            {dirty && <span className="text-muted-foreground text-sm">{t.actions.unsaved}</span>}
-            <Button onClick={onSave} disabled={!dirty || save.isPending}>
-              {t.actions.save}
-            </Button>
+      <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
+        <PageHeader
+          title={strings.pages.weeklyMenu.title}
+          description={strings.pages.weeklyMenu.description}
+        />
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t.week.previous}
+            title={t.week.previous}
+            onClick={() => onWeekChange(shiftWeek(week, -1))}
+          >
+            <ChevronLeftIcon />
+          </Button>
+          <DatePicker value={dates[1]} onChange={(date) => onWeekChange(weekOfDate(date))} />
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={t.week.next}
+            title={t.week.next}
+            onClick={() => onWeekChange(shiftWeek(week, 1))}
+          >
+            <ChevronRightIcon />
+          </Button>
+          <h2 className="ml-1 font-semibold">
+            {weekLabel(week.isoYear, week.isoWeek, { operatingDays: menuDays })}
+          </h2>
+          {stored.data &&
+            (publishedAt ? (
+              <Badge>
+                {t.week.published} {formatPublishedAt(publishedAt)}
+              </Badge>
+            ) : (
+              <Badge variant="secondary">{t.week.draft}</Badge>
+            ))}
+        </div>
+
+        {content}
+
+        <ConfirmDialog
+          open={publishing}
+          onOpenChange={setPublishing}
+          title={t.publishDialog.title}
+          description={publishDescription}
+          confirmLabel={t.actions.publish}
+          onConfirm={() => publish.mutateAsync()}
+        />
+        <ConfirmDialog
+          open={blocker.state === 'blocked'}
+          onOpenChange={(open) => {
+            if (!open && !leaving.current) {
+              blocker.reset?.();
+            }
+          }}
+          title={t.leaveDialog.title}
+          description={t.leaveDialog.description}
+          confirmLabel={t.leaveDialog.confirm}
+          cancelLabel={t.leaveDialog.cancel}
+          destructive
+          onConfirm={() => {
+            leaving.current = true;
+            blocker.proceed?.();
+          }}
+        />
+      </div>
+      {/* The page's actions stay in reach while a long week scrolls. */}
+      <div className="sticky bottom-0 z-10 -mx-4 -mb-4 border-t bg-background px-4 py-3 lg:-mx-6 lg:-mb-6 lg:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3">
+          <p role="status" className="text-muted-foreground text-sm">
+            {dirty ? t.actions.unsaved : t.actions.upToDate}
+          </p>
+          <div className="ml-auto flex gap-2">
             {stored.data && !publishedAt && (
               <Button
                 variant="outline"
@@ -314,70 +379,12 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
                 {t.actions.publish}
               </Button>
             )}
-          </>
-        }
-      />
-
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={t.week.previous}
-          title={t.week.previous}
-          onClick={() => onWeekChange(shiftWeek(week, -1))}
-        >
-          <ChevronLeftIcon />
-        </Button>
-        <DatePicker value={dates[1]} onChange={(date) => onWeekChange(weekOfDate(date))} />
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label={t.week.next}
-          title={t.week.next}
-          onClick={() => onWeekChange(shiftWeek(week, 1))}
-        >
-          <ChevronRightIcon />
-        </Button>
-        <h2 className="ml-1 font-semibold">
-          {weekLabel(week.isoYear, week.isoWeek, { operatingDays: menuDays })}
-        </h2>
-        {stored.data &&
-          (publishedAt ? (
-            <Badge>
-              {t.week.published} {formatPublishedAt(publishedAt)}
-            </Badge>
-          ) : (
-            <Badge variant="secondary">{t.week.draft}</Badge>
-          ))}
+            <Button onClick={onSave} disabled={!dirty || save.isPending}>
+              {t.actions.save}
+            </Button>
+          </div>
+        </div>
       </div>
-
-      {content}
-
-      <ConfirmDialog
-        open={publishing}
-        onOpenChange={setPublishing}
-        title={t.publishDialog.title}
-        description={publishDescription}
-        confirmLabel={t.actions.publish}
-        onConfirm={() => publish.mutateAsync()}
-      />
-      <ConfirmDialog
-        open={blocker.state === 'blocked'}
-        onOpenChange={(open) => {
-          if (!open && !leaving.current) {
-            blocker.reset?.();
-          }
-        }}
-        title={t.leaveDialog.title}
-        description={t.leaveDialog.description}
-        confirmLabel={t.leaveDialog.confirm}
-        cancelLabel={t.leaveDialog.cancel}
-        destructive
-        onConfirm={() => {
-          leaving.current = true;
-          blocker.proceed?.();
-        }}
-      />
     </>
   );
 }
