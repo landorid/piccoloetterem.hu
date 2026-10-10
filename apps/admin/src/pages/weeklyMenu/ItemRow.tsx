@@ -140,22 +140,23 @@ export function ItemRow({
       </div>
 
       <div className="flex min-w-0 flex-[2_1_34rem] flex-wrap items-start gap-2 @4xl:contents">
-        <div className="grid min-w-30 flex-[1_1_9rem] gap-1">
+        <div className="grid w-36 grid-cols-[minmax(0,1fr)] min-w-30 shrink gap-1">
           <VariationsInput
             value={row.variations}
             onChange={(variations) => onChange({ variations }, 'variations')}
             invalid={Boolean(errors.variations)}
+            placeholder={t.fields.variationShort}
             className="min-h-8 py-0.5"
             {...(errors.variations ? { 'aria-describedby': `${id}-variations-error` } : {})}
           />
           {error('variations')}
         </div>
-        <div className="grid w-36 min-w-24 shrink gap-1">
+        <div className="grid w-44 grid-cols-[minmax(0,1fr)] min-w-24 shrink gap-1">
           <AllergenSelect
             value={row.allergens}
             onChange={(allergens) => onChange({ allergens }, 'allergens')}
             invalid={Boolean(errors.allergens)}
-            className="min-h-8"
+            className="h-8"
             {...(errors.allergens ? { 'aria-describedby': `${id}-allergens-error` } : {})}
           />
           {error('allergens')}

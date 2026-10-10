@@ -2,7 +2,6 @@ import { type AllergenCode, allergenCodes, allergenLabelsHu } from '@piccolo/cor
 import { cn } from 'cn';
 import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,7 +20,8 @@ type AllergenSelectProps = {
 
 /**
  * The allergens of a dish: the EU-14 list with its Hungarian labels, both from `packages/core`,
- * as checkboxes in a `Popover`. The button shows the chosen ones as chips.
+ * as checkboxes in a `Popover`. The button shows the chosen ones as one line of text, cut off with an ellipsis when it does not fit;
+ * the full list is its tooltip.
  */
 export function AllergenSelect({
   value,
@@ -54,20 +54,18 @@ export function AllergenSelect({
           aria-label={`${strings.allergenSelect.label}: ${summary}`}
           aria-invalid={invalid || undefined}
           aria-describedby={ariaDescribedBy}
-          className={cn('h-auto min-h-9 w-full justify-between py-1 font-normal', className)}
+          title={chosen.length > 0 ? summary : undefined}
+          className={cn('w-full justify-between gap-1 px-3 font-normal', className)}
         >
-          <span className="flex flex-wrap gap-1">
-            {chosen.length > 0 ? (
-              chosen.map((code) => (
-                <Badge key={code} variant="secondary">
-                  {allergenLabelsHu[code]}
-                </Badge>
-              ))
-            ) : (
-              <span className="text-muted-foreground">{strings.allergenSelect.none}</span>
+          <span
+            className={cn(
+              'min-w-0 truncate text-left',
+              chosen.length === 0 && 'text-muted-foreground',
             )}
+          >
+            {summary}
           </span>
-          <ChevronDownIcon className="text-muted-foreground" />
+          <ChevronDownIcon className="shrink-0 text-muted-foreground" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-72 p-2" align="start">

@@ -102,6 +102,7 @@ export const strings = {
       price: 'Ár',
       currency: 'Ft',
       weekendShort: 'Hétvége',
+      variationShort: 'Variáció',
       weekendEmpty: 'Üresen hagyva a hétköznapi ár érvényes.',
       soupIncluded: 'Leves az árban',
       soldOut: 'Elfogyott',

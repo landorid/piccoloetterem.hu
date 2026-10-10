@@ -1,5 +1,5 @@
 import { type AllergenCode, allergenCodes, allergenLabelsHu } from '@piccolo/core';
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { AllergenSelect } from '@/components/AllergenSelect';
@@ -51,6 +51,16 @@ describe('AllergenSelect', () => {
 
     fireEvent.click(screen.getByRole('checkbox', { name: allergenLabelsHu.milk }));
     expect(onChange).toHaveBeenLastCalledWith(['eggs']);
+  });
+
+  it('is one line of text that truncates, with the full list as its tooltip', () => {
+    const many: AllergenCode[] = ['gluten', 'crustaceans', 'eggs', 'fish', 'milk'];
+    render(<Harness initial={many} onChange={() => {}} />);
+
+    const trigger = screen.getByRole('button', { name: /^Allergének/ });
+    const full = many.map((code) => allergenLabelsHu[code]).join(', ');
+    expect(within(trigger).getByText(full).className).toContain('truncate');
+    expect(trigger.getAttribute('title')).toBe(full);
   });
 
   it('says when there are none', () => {
