@@ -98,7 +98,10 @@ export function validateMenuItem(item: MenuItemInput): FieldErrors | null {
   return Object.keys(errors).length > 0 ? errors : null;
 }
 
-/** Prices are whole, non-negative forints; a daily soup is always free (its price is set per menu). */
+/**
+ * Prices are whole, non-negative forints. A daily soup is always free (its price is set per
+ * menu), and so is a plain side: only a `side_extra` costs extra.
+ */
 function priceError(price: number, category: Category | null): MenuItemErrorCode | null {
   if (!Number.isInteger(price)) {
     return 'not_integer';
@@ -106,7 +109,7 @@ function priceError(price: number, category: Category | null): MenuItemErrorCode
   if (price < 0) {
     return 'negative';
   }
-  if (category === 'daily_soup' && price !== 0) {
+  if ((category === 'daily_soup' || category === 'side') && price !== 0) {
     return 'must_be_zero';
   }
   return null;

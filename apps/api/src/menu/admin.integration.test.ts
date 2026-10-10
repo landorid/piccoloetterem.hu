@@ -498,7 +498,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
         allWeek: [...third.allWeek, stew],
         desserts: [...third.desserts, sideContent('M2 teszt nem mentett')],
         pickles: [...third.pickles, { ...sideContent('M2 teszt ismeretlen'), id: randomUUID() }],
-        sides: [...third.sides, steak],
+        sides: [...third.sides, { ...steak, priceWeekday: 0 }],
         sideExtras: [
           ...third.sideExtras.slice(0, n),
           { ...third.sideExtras[n], priceWeekday: -1 },

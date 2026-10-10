@@ -92,13 +92,24 @@ describe('validateMenuItem', () => {
     requiresSide: false,
   };
 
+  const side: MenuItemInput = { ...soup, category: 'side', name: 'Hasábburgonya' };
+  const free = [
+    ['daily soup', soup],
+    ['side', side],
+  ] as const;
+
   it('accepts a valid main', () => {
     expect(validateMenuItem(main)).toBeNull();
   });
 
-  it('accepts a daily soup priced 0 (rule: daily soups have price 0)', () => {
-    expect(validateMenuItem(soup)).toBeNull();
-    expect(validateMenuItem({ ...soup, priceWeekend: 0 })).toBeNull();
+  it.each(free)('accepts a %s priced 0 (rule: daily soups and sides have price 0)', (_, item) => {
+    expect(validateMenuItem(item)).toBeNull();
+    expect(validateMenuItem({ ...item, priceWeekend: 0 })).toBeNull();
+  });
+
+  it('accepts a priced side extra (rule: only a side extra costs extra)', () => {
+    const sideExtra = { ...side, category: 'side_extra', priceWeekday: 750, priceWeekend: 850 };
+    expect(validateMenuItem(sideExtra)).toBeNull();
   });
 
   it.each<[string, Partial<MenuItemInput>, ReturnType<typeof validateMenuItem>]>([
@@ -134,12 +145,14 @@ describe('validateMenuItem', () => {
     expect(validateMenuItem({ ...main, category: '' })).toEqual({ category: 'invalid' });
   });
 
-  it.each<[string, Partial<MenuItemInput>, ReturnType<typeof validateMenuItem>]>([
-    ['a weekday price', { priceWeekday: 650 }, { priceWeekday: 'must_be_zero' }],
-    ['a weekend price', { priceWeekend: 650 }, { priceWeekend: 'must_be_zero' }],
-    ['a negative price', { priceWeekday: -5 }, { priceWeekday: 'negative' }],
-  ])('rejects a daily soup with %s', (_name, patch, expected) => {
-    expect(validateMenuItem({ ...soup, ...patch })).toEqual(expected);
+  describe.each(free)('a %s', (_, item) => {
+    it.each<[string, Partial<MenuItemInput>, ReturnType<typeof validateMenuItem>]>([
+      ['a weekday price', { priceWeekday: 650 }, { priceWeekday: 'must_be_zero' }],
+      ['a weekend price', { priceWeekend: 650 }, { priceWeekend: 'must_be_zero' }],
+      ['a negative price', { priceWeekday: -5 }, { priceWeekday: 'negative' }],
+    ])('is rejected with %s', (_name, patch, expected) => {
+      expect(validateMenuItem({ ...item, ...patch })).toEqual(expected);
+    });
   });
 
   it('reports every invalid field at once', () => {

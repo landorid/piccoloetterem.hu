@@ -307,7 +307,7 @@ describe('weekDraftIds', () => {
 });
 
 const side = (fields: Partial<PermanentItemDraft> = {}): PermanentItemDraft => ({
-  ...content({ name: 'Hasábburgonya', priceWeekday: 600, priceWeekend: null, soupIncluded: false }),
+  ...content({ name: 'Hasábburgonya', priceWeekday: 0, priceWeekend: null, soupIncluded: false }),
   ...fields,
 });
 const fries = side();
@@ -405,7 +405,7 @@ describe('planPermanentItems — rule: stored items are updated, and only when s
     [
       'its content',
       permanentDraft({
-        sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a', priceWeekday: 650 })],
+        sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a', description: 'Ropogós.' })],
       }),
     ],
     [
@@ -492,7 +492,11 @@ describe('planPermanentItems — rule: every item passes validateMenuItem in its
         permanentDraft({
           allWeek: [side({ name: '' })],
           desserts: [side({ name: 'Palacsinta', requiresSide: true })],
-          sides: [side(), side(), side({ priceWeekday: -1, allergens: ['nope'] })],
+          sides: [
+            side(),
+            side({ priceWeekday: 600 }),
+            side({ priceWeekday: -1, allergens: ['nope'] }),
+          ],
         }),
         stored(),
       ),
@@ -501,6 +505,7 @@ describe('planPermanentItems — rule: every item passes validateMenuItem in its
       fields: {
         'allWeek.0.name': 'required',
         'desserts.0.requiresSide': 'not_allowed',
+        'sides.1.priceWeekday': 'must_be_zero',
         'sides.2.priceWeekday': 'negative',
         'sides.2.allergens': 'invalid',
       },

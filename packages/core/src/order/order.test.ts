@@ -82,12 +82,16 @@ const featured = item('featured', 'featured', {
   soupIncluded: true,
 });
 const allWeek = item('all-week', 'all_week', { name: 'Egész héten', priceWeekday: 1700 });
-const side = item('side', 'side', { name: 'Rizs', priceWeekday: 300, priceWeekend: 350 });
-const sideExtra = item('side-extra', 'side_extra', { name: 'Sült krumpli', priceWeekday: 450 });
+const side = item('side', 'side', { name: 'Rizs', priceWeekday: 0 });
+const sideExtra = item('side-extra', 'side_extra', {
+  name: 'Sült krumpli',
+  priceWeekday: 450,
+  priceWeekend: 500,
+});
 const sideSold = item('side-sold', 'side', {
   name: 'Elfogyott köret',
   soldOut: true,
-  priceWeekday: 250,
+  priceWeekday: 0,
 });
 const pickle = item('pickle', 'pickle', { name: 'Uborka', priceWeekday: 200 });
 const dessert = item('dessert', 'dessert', {
@@ -629,14 +633,14 @@ describe('priceMenu — rule: soup adjustment and weekday/weekend price by deliv
     expect(priced.items[1]?.unitPrice).toBe(1800);
     expect(priced.price).toBe(1800);
     const sideLine = priceMenu(
-      { mainId: 'main-side', sideId: 'side', dessertId: 'dessert' },
+      { mainId: 'main-side', sideId: 'side-extra', dessertId: 'dessert' },
       menu,
       SAT,
       config,
     );
     expect(sideLine.items.map((line) => [line.slot, line.unitPrice])).toEqual([
       ['main', 1600],
-      ['side', 350],
+      ['side', 500],
       ['dessert', 600],
     ]);
   });
