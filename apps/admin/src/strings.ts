@@ -119,6 +119,7 @@ export const strings = {
       save: 'Mentés',
       publish: 'Publikálás',
       unsaved: 'Nem mentett módosítások',
+      upToDate: 'Minden változás elmentve.',
       saveFirst: 'Publikálás előtt mentsd a módosításokat.',
       emptyWeek: 'Üres hetet nem lehet publikálni.',
     },
