@@ -292,7 +292,7 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
   }
 
   return (
-    <>
+    <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6">
       <PageHeader
         title={strings.pages.weeklyMenu.title}
         description={strings.pages.weeklyMenu.description}
@@ -376,6 +376,6 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
           blocker.proceed?.();
         }}
       />
-    </>
+    </div>
   );
 }

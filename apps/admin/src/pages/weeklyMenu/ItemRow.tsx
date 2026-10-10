@@ -111,7 +111,7 @@ export function ItemRow({
       )}
     >
       <div className="flex min-w-0 flex-[3_1_26rem] items-start gap-2 @4xl:contents">
-        <div className="grid min-w-0 flex-[3_1_12rem] gap-1">
+        <div className="grid w-44 min-w-0 shrink gap-1">
           <Input
             aria-label={t.fields.name}
             placeholder={t.fields.name}
@@ -123,7 +123,7 @@ export function ItemRow({
           />
           {error('name')}
         </div>
-        <div className="grid min-w-0 flex-[2_1_9rem] gap-1">
+        <div className="grid w-36 min-w-0 shrink gap-1">
           <Input
             aria-label={t.fields.description}
             placeholder={t.fields.description}
@@ -140,7 +140,7 @@ export function ItemRow({
       </div>
 
       <div className="flex min-w-0 flex-[2_1_34rem] flex-wrap items-start gap-2 @4xl:contents">
-        <div className="grid min-w-30 flex-[2_1_9rem] gap-1">
+        <div className="grid min-w-30 flex-[1_1_9rem] gap-1">
           <VariationsInput
             value={row.variations}
             onChange={(variations) => onChange({ variations }, 'variations')}
@@ -150,7 +150,7 @@ export function ItemRow({
           />
           {error('variations')}
         </div>
-        <div className="grid min-w-24 flex-[1_1_6.5rem] gap-1">
+        <div className="grid w-36 min-w-24 shrink gap-1">
           <AllergenSelect
             value={row.allergens}
             onChange={(allergens) => onChange({ allergens }, 'allergens')}
