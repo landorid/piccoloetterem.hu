@@ -60,6 +60,11 @@ export const strings = {
   datePicker: {
     placeholder: 'Válassz dátumot',
   },
+  /** The day header of the orders screen and the summary (`DayNavigator`). */
+  dayNavigator: {
+    previous: 'Előző nap',
+    next: 'Következő nap',
+  },
   /** The weekly menu grid (`/heti-menu`, M5). */
   weeklyMenu: {
     week: {
