@@ -5,6 +5,13 @@ main = "src/index.ts"
 compatibility_date = "2026-09-01"
 compatibility_flags = ["nodejs_compat"]
 
+# The confirmation e-mail's renderer (@react-email/render) imports prettier only for its `pretty`
+# option, which the API never uses. Aliased to a stub, it costs nothing; bundled, it was 325 KiB of
+# the upload. See src/email/prettier-stub.ts.
+[alias]
+"prettier/standalone" = "./src/email/prettier-stub.ts"
+"prettier/plugins/html" = "./src/email/prettier-stub.ts"
+
 # The top level is local development (`wrangler dev`, http://localhost:8787) and the development
 # Worker that CI deploys from `develop` as `piccolo-api`.
 [vars]
