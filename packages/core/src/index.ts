@@ -95,13 +95,14 @@ export {
 
 export { isEmail, normaliseEmailKey, normalisePhone } from './order/normalise';
 export { orderMessagesHu } from './order/orderMessages.hu';
-export { priceDay, priceMenu, priceSubmission } from './order/price';
+export { type PricingConfig, priceDay, priceMenu, priceSubmission } from './order/price';
 export {
   type ComposedMenuDraft,
   type DayDraft,
   type ExtraDraft,
   type FieldErrors,
   type Fulfilment,
+  maxExtraQuantity,
   type OrderErrorCode,
   orderErrorCodes,
   type PriceAdjustment,

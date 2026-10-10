@@ -10,16 +10,66 @@ export function forint(amount: number): string {
   return strings.common.forint(number.format(amount));
 }
 
-const dayFormat = new Intl.DateTimeFormat('hu-HU', {
+/** A price adjustment: `+650 Ft`, `−100 Ft`, and `0 Ft` for none. */
+export function signedForint(amount: number): string {
+  if (amount > 0) return strings.common.plus(forint(amount));
+  if (amount < 0) return strings.common.minus(forint(-amount));
+  return forint(0);
+}
+
+// Only the calendar date of an ISO date is ever read, never a clock, so every format is in UTC.
+const formats = {
+  weekday: new Intl.DateTimeFormat('hu-HU', { weekday: 'long', timeZone: 'UTC' }),
+  short: new Intl.DateTimeFormat('hu-HU', { month: 'short', day: 'numeric', timeZone: 'UTC' }),
+  long: new Intl.DateTimeFormat('hu-HU', { month: 'long', day: 'numeric', timeZone: 'UTC' }),
+  day: new Intl.DateTimeFormat('hu-HU', { day: 'numeric', timeZone: 'UTC' }),
+};
+
+const asDate = (isoDate: string) => new Date(`${isoDate}T00:00:00Z`);
+
+function capitalise(text: string): string {
+  return text.charAt(0).toLocaleUpperCase('hu-HU') + text.slice(1);
+}
+
+/** The weekday of `YYYY-MM-DD`, capitalised as it starts a line. */
+export function weekdayName(isoDate: string): string {
+  return capitalise(formats.weekday.format(asDate(isoDate)));
+}
+
+/** The weekday and the short date, as a day is named in the cart and the summary. */
+export function dayFull(isoDate: string): string {
+  return strings.days.full(weekdayName(isoDate), formats.short.format(asDate(isoDate)));
+}
+
+const longDayFormat = new Intl.DateTimeFormat('hu-HU', {
   month: 'long',
   day: 'numeric',
   weekday: 'long',
   timeZone: 'UTC',
 });
 
-/** `YYYY-MM-DD` → `október 5., hétfő`. Only the calendar date is read, never a clock. */
+/** The month, the day and the weekday of `YYYY-MM-DD`. */
 export function longDay(isoDate: string): string {
-  return dayFormat.format(new Date(`${isoDate}T00:00:00Z`));
+  return longDayFormat.format(asDate(isoDate));
+}
+
+/** The day of the month without its ordinal dot, as a calendar grid writes it. */
+export function dayNumber(isoDate: string): string {
+  return formats.day.format(asDate(isoDate));
+}
+
+/** The week's first to last day; the month is written once when both share it. */
+export function weekRange(first: string, last: string): string {
+  const from = formats.long.format(asDate(first));
+  const sameMonth = first.slice(0, 7) === last.slice(0, 7);
+  const to = sameMonth
+    ? formats.long
+        .formatToParts(asDate(last))
+        .filter((part) => part.type === 'day' || (part.type === 'literal' && part.value.trim()))
+        .map((part) => part.value)
+        .join('')
+    : formats.long.format(asDate(last));
+  return strings.week.range(from, to);
 }
 
 /** `07:30` → `7:30`, as the masthead writes a time of day. */

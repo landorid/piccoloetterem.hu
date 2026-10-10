@@ -46,6 +46,9 @@ export interface ComposedMenuDraft {
   dessertId?: string;
 }
 
+/** The most of one extra a delivery day can carry. */
+export const maxExtraQuantity = 20;
+
 export interface ExtraDraft {
   key: string;
   quantity: number;

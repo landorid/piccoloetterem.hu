@@ -5,6 +5,7 @@ import { OrderingApp } from '../components/OrderingApp';
 import Layout from '../layouts/Layout.astro';
 import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
 import { strings } from '../strings';
+import '../styles/order.css';
 
 // Runs at build time (`output: 'static'`) and per request under `astro dev`. The public config
 // changes only when the API is deployed, and CI builds the web right after that, so it is baked
@@ -26,7 +27,7 @@ if (baseUrl) {
 
 <Layout title={strings.meta.title} description={strings.meta.description} apiOrigin={baseUrl}>
   <Masthead config={config} />
-  <main class="screen">
+  <main class="page">
     <OrderingApp client:load initial={{ config }} />
   </main>
   <Footer config={config} />

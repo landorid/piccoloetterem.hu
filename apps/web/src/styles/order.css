@@ -1,0 +1,1210 @@
+/*
+ * The order page, ported from the O2 mockup (docs/design/megrendeles/mockup.html). Class names
+ * are the mockup's. Its container queries are media queries at the same 900 px breakpoint, and
+ * where the mockup keyed a style on a row's ARIA state, the row carries a class instead
+ * (`is-picked`, `is-disabled`), because the control is now an input or a button inside the row.
+ * The mockup's `.app :is(h1, h2, h3, p, ul, ol) { margin: 0 }` outranked the margins it gave
+ * `.field-label`, `.block-hint` and `.week-terms`, and its `.app button { font: inherit }` outranked
+ * the font sizes and weights of `.btn`, `.btn-sm`, `.btn-quiet`, `.btn-danger`, `.stepper-add` and
+ * `.sheet-close`. The approved look has neither, so those declarations are left out.
+ */
+
+/* --- week header and day rail ---------------------------------------------------------------- */
+.weekbar {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+  padding: var(--s-4) var(--s-4) 0;
+}
+.weekbar h1 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--t-xl);
+  letter-spacing: -0.01em;
+}
+.weekbar .week-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s-2) var(--s-3);
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.week-pill {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-weight: 600;
+  font-size: var(--t-xs);
+}
+.week-terms {
+  padding: var(--s-2) 0 var(--s-3);
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--brand-700);
+}
+
+/* Six days divide the width evenly: nothing scrolls, nothing is cut off. Not sticky. */
+.daybar {
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.daylist {
+  display: grid;
+  grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
+  padding: var(--s-2);
+}
+.day {
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: var(--tap);
+  padding: 2px 0 4px;
+  border: 0;
+  background: none;
+  color: var(--ink-700);
+  border-radius: var(--radius-sm);
+}
+.day .dow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+.day .dnum {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: var(--t-md);
+  font-weight: 600;
+  line-height: 1;
+}
+/* Always present, badge or not, so the circles stay on one baseline. */
+.day .dmark {
+  display: grid;
+  place-items: center;
+  min-height: 16px;
+}
+.day[disabled] {
+  cursor: not-allowed;
+}
+.day:is([disabled], [aria-disabled='true']) .dow,
+.day:is([disabled], [aria-disabled='true']) .dnum {
+  color: var(--ink-400);
+}
+.day[aria-selected='true'] .dnum {
+  background: var(--brand-600);
+  color: #fff;
+}
+.day[aria-selected='true'] .dow {
+  color: var(--brand-700);
+}
+/* A closed day you look at keeps its circle, in ink: it does not promise you can order. */
+.day[aria-disabled='true'][aria-selected='true'] .dnum {
+  background: var(--ink-400);
+}
+.day:not([aria-selected='true']):not([disabled]):not([aria-disabled='true']):hover .dnum {
+  background: var(--brand-50);
+}
+.day .dbadge {
+  display: grid;
+  place-items: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--brand-600);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.day .dclosed {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-400);
+}
+
+/* --- layout ------------------------------------------------------------------------------------ */
+.screen {
+  flex: 1;
+  padding: var(--s-4) var(--s-4) 132px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.rail {
+  display: contents;
+}
+.banners {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+}
+.banners:empty {
+  display: none;
+}
+.sumbar {
+  position: sticky;
+  bottom: 0;
+  z-index: 8;
+  margin-top: auto;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  box-shadow: var(--shadow-bar);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.sumbar .line {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.sumbar .what {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.sumbar .total {
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-weight: 600;
+}
+.sumbar .toggle {
+  margin-left: auto;
+  border: 0;
+  background: none;
+  color: var(--brand-700);
+  font-weight: 700;
+  font-size: var(--t-md);
+  text-decoration: underline;
+  min-height: 36px;
+}
+.sumbar .detail {
+  border-top: 1px dashed var(--line-strong);
+  padding-top: var(--s-3);
+}
+/* The summary has a bar and a card; each width shows one. */
+.only-desktop {
+  display: none;
+}
+
+/* --- cards ------------------------------------------------------------------------------------- */
+.card {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.card > .card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+}
+.card-head h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+.card-head .count {
+  margin-left: auto;
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.card-body {
+  padding: var(--s-3) var(--s-4);
+}
+
+/* --- small parts ------------------------------------------------------------------------------- */
+.tile {
+  flex: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: var(--brand-50);
+  border: 1px solid var(--brand-200);
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--brand-500);
+  overflow: hidden;
+}
+/* Declining is not a dish: an empty square holds the column without inventing an initial. */
+.tile-none {
+  background: var(--ground);
+  border-style: dashed;
+  border-color: var(--line-strong);
+}
+.tag {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border: 1px solid transparent;
+}
+.tag-soldout {
+  background: var(--danger-100);
+  color: var(--danger-700);
+}
+
+/* --- allergens --------------------------------------------------------------------------------- */
+/* Above the row's stretched control, so a chip names its allergen instead of picking the row. */
+.achips {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+/* The button is the 32 × 44 target (the negative margin keeps the row from growing); the disc
+   inside is what is painted and what the focus ring follows. */
+.achip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: var(--tap);
+  margin: -8px -2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+}
+.achip .adisc {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--brand-100);
+  color: var(--brand-700);
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.achip .adisc svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+.achip:hover .adisc,
+.achip[data-tipopen] .adisc {
+  background: var(--brand-200);
+  color: var(--brand-800);
+}
+.achip:focus-visible {
+  outline: none;
+}
+.achip:focus-visible .adisc {
+  outline: 3px solid var(--brand-500);
+  outline-offset: 2px;
+}
+.is-disabled .achip .adisc {
+  opacity: 0.55;
+}
+
+/* The one bubble of the page: a manual popover in the top layer, placed by script. */
+.atip {
+  position: fixed;
+  inset: auto;
+  z-index: 30;
+  margin: 0;
+  max-width: 236px;
+  padding: 6px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--brand-800);
+  color: #fff;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  line-height: 1.35;
+  box-shadow: var(--shadow-2);
+  overflow: visible;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 90ms ease-out;
+}
+.atip[hidden] {
+  display: none;
+}
+.atip.is-open {
+  opacity: 1;
+}
+.atip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: var(--ax, 50%);
+  margin-left: -5px;
+  border: 5px solid transparent;
+  border-top-color: var(--brand-800);
+}
+.atip.is-below::after {
+  top: auto;
+  bottom: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--brand-800);
+}
+
+/* --- buttons ----------------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+.btn-primary {
+  background: var(--brand-600);
+  color: #fff;
+}
+.btn-primary:hover {
+  background: var(--brand-700);
+}
+.btn-secondary {
+  background: var(--paper);
+  color: var(--brand-700);
+  border-color: var(--brand-200);
+}
+.btn-ghost {
+  background: none;
+  color: var(--ink-700);
+  border-color: var(--line-strong);
+}
+.btn-quiet {
+  background: none;
+  border: 0;
+  color: var(--brand-700);
+  min-height: 36px;
+  padding: 0 var(--s-1);
+  text-decoration: underline;
+}
+.btn-danger {
+  background: none;
+  border: 0;
+  color: var(--danger-700);
+  min-height: 36px;
+  padding: 0 var(--s-1);
+}
+.btn-sm {
+  min-height: 36px;
+  padding: 0 var(--s-3);
+}
+.btn-block {
+  width: 100%;
+}
+.btn[disabled] {
+  background: var(--line);
+  color: var(--ink-400);
+  border-color: transparent;
+  cursor: not-allowed;
+}
+
+/* --- banners ----------------------------------------------------------------------------------- */
+.banner {
+  display: flex;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--radius);
+  border: 1px solid;
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+.banner h3 {
+  font-size: var(--t-base);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.banner .icon {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 1px;
+}
+.banner-warn {
+  background: var(--warn-100);
+  border-color: #eccb96;
+  color: #6b4200;
+}
+.banner-warn .icon {
+  background: var(--warn-700);
+}
+.banner .banner-action {
+  margin-top: var(--s-3);
+}
+
+/* --- the day's order --------------------------------------------------------------------------- */
+.extras {
+  border-top: 1px solid var(--line);
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.extra {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.extra .name {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--t-md);
+}
+.extra .amt {
+  flex: none;
+  width: 68px;
+  text-align: right;
+  font-weight: 600;
+  font-size: var(--t-md);
+}
+.cart-menu {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--s-1) var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--line);
+}
+.cart-menu:first-of-type {
+  border-top: 0;
+}
+.cart-who {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+.cart-lines {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-md);
+  color: var(--ink-700);
+}
+.cart-line {
+  display: flex;
+  gap: var(--s-3);
+}
+.cart-line .slot {
+  flex: none;
+  width: 84px;
+  color: var(--ink-500);
+  font-size: var(--t-sm);
+  padding-top: 1px;
+}
+.cart-line .what {
+  flex: 1;
+  min-width: 0;
+}
+.cart-line .amt {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.cart-menu-total .amt {
+  flex: none;
+  margin-left: auto;
+}
+.cart-line.adj .what {
+  color: var(--brand-700);
+  font-weight: 600;
+}
+.cart-line.adj .amt {
+  color: var(--brand-700);
+  font-weight: 700;
+}
+.cart-menu-total {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px dashed var(--line-strong);
+  font-weight: 700;
+}
+.cart-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--s-4);
+  margin-top: var(--s-1);
+}
+.cart-empty {
+  padding: var(--s-4);
+  color: var(--ink-500);
+  font-size: var(--t-md);
+}
+.cart-subtotal {
+  display: flex;
+  gap: var(--s-3);
+  border-top: 1px solid var(--line);
+  font-weight: 700;
+}
+.cart-subtotal .num {
+  margin-left: auto;
+}
+.card-foot {
+  border-top: 1px solid var(--line);
+}
+.closed-day .card-body {
+  color: var(--ink-700);
+}
+
+/* --- the Extra steppers ------------------------------------------------------------------------ */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--paper);
+}
+.stepper button,
+.stepper-add {
+  position: relative;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  background: none;
+  color: var(--brand-700);
+  border-radius: 999px;
+}
+.stepper button {
+  font-size: 18px;
+  font-weight: 700;
+}
+/* The visible button is 36 px; the tap area stays 44 px tall. */
+.stepper button::before,
+.stepper-add::before {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+.stepper-add {
+  border: 1px solid var(--line-strong);
+  background: var(--paper);
+}
+.stepper button[disabled],
+.stepper button[aria-disabled='true'] {
+  color: var(--ink-400);
+  cursor: not-allowed;
+}
+.stepper .qty {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+/* --- the main-course sheet --------------------------------------------------------------------- */
+/* A modal <dialog>: a bottom sheet on a phone, a centred card from 900 px. */
+.sheet {
+  position: fixed;
+  inset: auto 0 0;
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: inherit;
+  background: var(--ground);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-2);
+  overflow: hidden;
+}
+.sheet[open] {
+  display: flex;
+  flex-direction: column;
+}
+.sheet::backdrop {
+  background: rgba(33, 28, 22, 0.5);
+}
+.sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.sheet-head .titles {
+  min-width: 0;
+}
+.sheet-head h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+.sheet-head .sub {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.sheet-close {
+  margin-left: auto;
+  width: var(--tap);
+  height: var(--tap);
+  border: 0;
+  border-radius: 50%;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  flex: none;
+}
+.sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.sheet-body > * {
+  flex: none;
+}
+
+/* --- the form ---------------------------------------------------------------------------------- */
+/* Edge to edge on a phone: only the top and bottom rules stay. */
+.composer-form {
+  display: flex;
+  flex-direction: column;
+  margin-inline: calc(var(--s-4) * -1);
+  background: var(--ground);
+  border-block: 1px solid var(--line-strong);
+  overflow: hidden;
+  scroll-margin-top: 150px;
+}
+.cf-head {
+  padding: var(--s-3) var(--s-4);
+  background: var(--paper);
+  border-bottom: 1px solid var(--line);
+}
+.cf-head h2 {
+  font-family: var(--font-display);
+  font-size: var(--t-lg);
+  font-weight: 500;
+}
+.cf-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-4);
+}
+.cf-foot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-4) var(--s-4);
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+.cf-foot .error {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--danger-700);
+}
+.choice-block {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.choice-block > legend {
+  padding: 0;
+}
+.block-hint {
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink-500);
+}
+.extra-note {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.field-label {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-500);
+}
+.field-label.is-required {
+  color: var(--danger-700);
+}
+
+/* Once a main is chosen the row shows the plate, drawn like any chosen course; only the prompt
+   carries a chevron, because this is the one row that opens a picker. */
+.mainrow .placeholder {
+  font-family: var(--font-display);
+  font-size: var(--t-base);
+  color: var(--ink-500);
+}
+.mainrow .chev {
+  flex: none;
+  color: var(--ink-400);
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* --- pick rows --------------------------------------------------------------------------------
+   One anatomy for choosing a dish: tile, the name with its price effect under it, and a mark that
+   fills with the accent and a ✓ when chosen. `.choicerow` is a separate card in the form,
+   `.option` a joined row in the picker. The control is stretched over the whole row. */
+.pickrow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  width: 100%;
+  min-height: var(--tap);
+  text-align: left;
+}
+.stretch {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.stretch::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.stretch:focus-visible {
+  outline: none;
+}
+.pickrow:has(.stretch:focus-visible, input:focus-visible) {
+  outline: 3px solid var(--brand-500);
+  outline-offset: 2px;
+}
+.pickrow .pbody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pickrow .pname {
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  font-family: var(--font-display);
+  font-size: var(--t-base);
+  font-weight: 500;
+  line-height: 1.25;
+}
+.pickrow .pamt {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-500);
+}
+.pickrow.is-picked .pamt {
+  color: var(--brand-700);
+}
+.pickrow .psub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.pickrow.is-disabled,
+.pickrow.is-disabled .stretch {
+  cursor: not-allowed;
+}
+/* The name's control is an inline-block button in the picker, so the strike is set on it too. */
+.pickrow.is-disabled :is(.pname, .pname .stretch, .pamt) {
+  color: var(--ink-500);
+  text-decoration: line-through;
+  text-decoration-color: var(--line-strong);
+}
+.pickrow.is-disabled .tile {
+  opacity: 0.55;
+}
+.pickrow .pmark {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  background: var(--paper);
+  color: transparent;
+}
+.pickrow.is-picked .pmark {
+  display: grid;
+  place-items: center;
+  border-color: var(--brand-600);
+  background: var(--brand-600);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.options {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.option {
+  padding: var(--s-2) var(--s-4);
+  border-top: 1px solid var(--line);
+}
+.option:first-child {
+  border-top: 0;
+}
+.option.is-picked {
+  background: var(--brand-50);
+}
+.option:not(.is-picked):not(.is-disabled):hover {
+  background: var(--brand-50);
+}
+.opt-group {
+  padding: var(--s-2) var(--s-4);
+  background: var(--brand-50);
+  border-top: 1px solid var(--line);
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--brand-700);
+}
+
+/* Every option is listed; the block never scrolls on its own. */
+.choicerows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.choicerow {
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--paper);
+}
+.choicerow.is-picked {
+  border-color: var(--brand-600);
+  background: var(--brand-50);
+}
+.choicerow:has(.stretch):not(.is-picked):not(.is-disabled):hover {
+  background: var(--brand-50);
+}
+.mainrow.is-picked:hover {
+  border-color: var(--brand-700);
+}
+
+/* --- the form's foot and price box ------------------------------------------------------------- */
+.foot-top {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+}
+.foot-price {
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  line-height: 1.1;
+}
+.foot-actions {
+  display: flex;
+  gap: var(--s-2);
+}
+.foot-actions .btn {
+  flex: 1;
+}
+.foot-actions .btn-ghost {
+  flex: 0 0 36%;
+}
+.pricebox {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--s-3) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-md);
+}
+.pricebox .row {
+  display: flex;
+  gap: var(--s-3);
+}
+.pricebox .row .amt {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.pricebox .row.adj {
+  color: var(--brand-700);
+  font-weight: 600;
+}
+.pricebox .row.total {
+  margin-top: var(--s-2);
+  padding-top: var(--s-2);
+  border-top: 1px dashed var(--line-strong);
+  font-size: var(--t-base);
+  font-weight: 700;
+}
+.pricebox .row.extras-row {
+  margin-top: var(--s-2);
+}
+.pricebox .why {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+
+/* --- totals and the summary -------------------------------------------------------------------- */
+.totals {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.totals .day-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: var(--t-md);
+}
+.totals .day-block .dh {
+  font-weight: 700;
+  font-size: var(--t-base);
+}
+.totals .row {
+  display: flex;
+  gap: var(--s-3);
+  color: var(--ink-700);
+}
+.totals .row .amt {
+  flex: none;
+  margin-left: auto;
+  white-space: nowrap;
+}
+.totals .row.fee .what {
+  color: var(--ink-500);
+}
+.totals .grand {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3);
+  margin-top: var(--s-2);
+  padding-top: var(--s-3);
+  border-top: 2px solid var(--brand-200);
+  font-size: var(--t-lg);
+  font-weight: 700;
+}
+.totals .grand .amt {
+  margin-left: auto;
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+}
+.totals .sep {
+  height: 1px;
+  background: var(--line);
+  margin: var(--s-2) 0;
+}
+.totals-hint {
+  color: var(--ink-500);
+  font-size: var(--t-md);
+}
+.totals-note {
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+/* --- the skeleton and the message screens ------------------------------------------------------ */
+.week {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+}
+.week h1,
+.message h1 {
+  font-family: var(--font-display);
+  font-size: var(--t-xl);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+/* Tall enough that the footer starts below the fold, so the loaded page shifts nothing in view. */
+.skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-height: 80vh;
+}
+.skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.skeleton-line {
+  display: block;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--brand-50);
+}
+.skeleton-pill {
+  width: 12rem;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--brand-100);
+}
+.skeleton-title {
+  width: 40%;
+  height: 20px;
+  background: var(--brand-100);
+}
+.skeleton-short {
+  width: 60%;
+}
+.message {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-6) var(--s-4);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+.message p {
+  max-width: 56ch;
+  color: var(--ink-700);
+}
+.message .contact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  font-size: var(--t-md);
+}
+.message .contact a {
+  font-weight: 700;
+  color: var(--brand-700);
+}
+
+/* --- desktop: the same components in two columns ----------------------------------------------- */
+@media (min-width: 900px) {
+  .composer-form {
+    margin-inline: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
+  }
+  .weekbar {
+    padding: var(--s-6) var(--s-8) 0;
+  }
+  .weekbar h1 {
+    font-size: var(--t-2xl);
+  }
+  .daybar {
+    padding: 0 var(--s-8);
+  }
+  .daylist {
+    grid-template-columns: repeat(var(--daycols, 6), 84px);
+    justify-content: start;
+    padding-inline: 0;
+  }
+  .day .dnum {
+    width: 40px;
+    height: 40px;
+    font-size: var(--t-lg);
+  }
+  .screen {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 372px;
+    gap: var(--s-6);
+    align-items: start;
+    padding: var(--s-6) var(--s-8) var(--s-10);
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  .screen.single {
+    grid-template-columns: minmax(0, 760px);
+    justify-content: center;
+  }
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-4);
+    position: sticky;
+    top: 165px;
+  }
+  .sumbar {
+    position: static;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
+  }
+  .sheet {
+    inset: 0;
+    width: calc(100% - 2 * var(--s-8));
+    max-width: 760px;
+    max-height: calc((100% - 2 * var(--s-8)) * 0.86);
+    margin: auto;
+    border-radius: var(--radius-lg);
+  }
+  .choicerows {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+    gap: var(--s-2);
+  }
+  .week h1,
+  .message h1 {
+    font-size: var(--t-2xl);
+  }
+  /* Row placement belongs to the menu screen only. */
+  .screen-menu > .banners {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .screen-menu > :is(.composer-form, .closed-day) {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .screen-menu > .rail {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+  }
+  .only-desktop {
+    display: flex;
+  }
+  .only-mobile {
+    display: none;
+  }
+}

@@ -1,4 +1,5 @@
 ---
+import { Font } from 'astro:assets';
 import '../styles/global.css';
 
 interface Props {
@@ -23,6 +24,8 @@ const { title, description, apiOrigin } = Astro.props;
     <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {apiOrigin && <link rel="preconnect" href={apiOrigin} crossorigin="anonymous" />}
+    <Font cssVariable="--font-manrope" preload={[{ subset: 'latin' }]} />
+    <Font cssVariable="--font-fraunces" />
   </head>
   <body>
     <slot />
