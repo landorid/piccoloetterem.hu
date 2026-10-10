@@ -138,13 +138,13 @@ describe('reconcile', () => {
     return answer(state, wed, { slot: 'soup', id: 'sze-husleves' });
   };
 
-  it('drops every day that is no longer orderable and moves the active day', () => {
+  it('drops every day that is no longer orderable and leaves the active day to the screen', () => {
     const { state, dropped } = reconcile(cart(), [thu, '2026-09-11']);
     expect(dropped).toEqual([wed]);
     expect(Object.keys(state.menusByDate)).toEqual([thu]);
     expect(state.extrasByDate).toEqual({});
     expect(state.formsByDate).toEqual({});
-    expect(state.activeDate).toBe(thu);
+    expect(state.activeDate).toBe(wed);
     expectInvariants(state);
   });
 
@@ -160,10 +160,12 @@ describe('reconcile', () => {
     expect(reconcile(before, [wed, thu]).state).toBe(before);
   });
 
-  it('picks the first orderable day when none is active, and none when nothing is orderable', () => {
-    expect(reconcile(emptyCart, [thu]).state.activeDate).toBe(thu);
+  it('leaves the active day to the screen, a selected closed day and an empty week included', () => {
+    const closedDay: CartState = { ...emptyCart, activeDate: thu };
+    expect(reconcile(closedDay, [wed, '2026-09-11']).state).toBe(closedDay);
+    expect(reconcile(emptyCart, [thu]).state.activeDate).toBeNull();
     const { state, dropped } = reconcile(cart(), []);
     expect(dropped).toEqual([wed, thu]);
-    expect(state).toEqual(emptyCart);
+    expect(state).toEqual({ ...emptyCart, activeDate: wed });
   });
 });

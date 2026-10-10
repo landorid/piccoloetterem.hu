@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { maxExtraQuantity } from '@piccolo/core';
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forint } from '../format';
 import { strings } from '../strings';
@@ -33,6 +33,11 @@ const wednesdayMorning = () => new Date(2026, 8, 9, 8, 0);
 async function renderOrderPage() {
   const view = render(<OrderingApp initial={{ config: publicConfig }} now={wednesdayMorning} />);
   await screen.findByRole('region', { name: /menü összeállítása$/ });
+  // The page mounts after an async fetch, outside act. React subscribes its components to the
+  // store in passive effects, so a click in the very tick of the commit would change the store
+  // before they listen and the DOM would catch up too late for the assertion. A guest cannot
+  // click that fast; the tests wait for the effects.
+  await settle();
   return view;
 }
 
@@ -43,6 +48,17 @@ const addButton = () => within(composer()).getByRole('button', { name: strings.c
 const cart = () => screen.getByRole('heading', { name: strings.cart.title }).closest('.card');
 const grandTotal = () => document.querySelector('.only-desktop .grand .amt')?.textContent;
 const tab = (name: RegExp) => screen.getByRole('tab', { name });
+
+/** The tab comes back into view, which refetches the menu. */
+function comeBack() {
+  Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'visible' });
+  fireEvent(document, new Event('visibilitychange'));
+}
+
+/** Lets a pending refetch finish when the screen shows nothing to wait for. */
+const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
+const menuFetches = () =>
+  vi.mocked(fetch).mock.calls.filter(([url]) => String(url).includes('/api/menu')).length;
 
 function pickSoup(name: string) {
   fireEvent.click(within(block(/^Leves/)).getByRole('radio', { name }));
@@ -64,6 +80,9 @@ describe('the order form', () => {
     expect(footerPrice()).toBe(forint(650));
     fireEvent.click(addButton());
     expect(grandTotal()).toBe(forint(650 + 150));
+    expect(document.querySelector('.only-desktop .grand .amt')?.getAttribute('aria-live')).toBe(
+      'polite',
+    );
 
     pickSoup(strings.composer.none);
     pickMain('Paprikás csirke');
@@ -102,6 +121,11 @@ describe('the order form', () => {
     fireEvent.click(within(composer()).getByRole('button', { name: strings.composer.mainPrompt }));
     const dialog = screen.getByRole('dialog');
     const soldOut = within(dialog).getByRole('button', { name: 'Gombás csirkemell' });
+    expect(
+      within(dialog)
+        .getByRole('button', { name: strings.composer.none })
+        .getAttribute('aria-pressed'),
+    ).toBe('false');
     expect(soldOut).toHaveProperty('disabled', true);
     expect(within(dialog).getByText(strings.dish.soldOut)).toBeTruthy();
 
@@ -152,11 +176,7 @@ describe('the day cart', () => {
     fireEvent.click(addButton());
 
     answer = { ...openMenu, orderableDates: ['2026-09-10', '2026-09-11', '2026-09-12'] };
-    Object.defineProperty(document, 'visibilityState', {
-      configurable: true,
-      get: () => 'visible',
-    });
-    fireEvent(document, new Event('visibilitychange'));
+    comeBack();
 
     expect(await screen.findByText(strings.errors.cutoffTitle)).toBeTruthy();
     expect(screen.getByText(strings.errors.cutoffBody('Szerda', '9:30'))).toBeTruthy();
@@ -166,6 +186,60 @@ describe('the day cart', () => {
 
     fireEvent.click(screen.getByRole('button', { name: strings.errors.cutoffAction }));
     expect(screen.queryByText(strings.errors.cutoffTitle)).toBeNull();
+  });
+
+  it('ignores an older refetch that answers after a newer one', async () => {
+    await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    fireEvent.click(addButton());
+    const replies: ((menu: unknown) => void)[] = [];
+    vi.mocked(fetch).mockImplementation(
+      () => new Promise((resolve) => replies.push((menu) => resolve(Response.json(menu)))),
+    );
+
+    comeBack();
+    comeBack();
+    replies[1]?.({ ...openMenu, orderableDates: ['2026-09-10', '2026-09-11', '2026-09-12'] });
+    expect(await screen.findByText(strings.errors.cutoffTitle)).toBeTruthy();
+    replies[0]?.(openMenu);
+    await settle();
+
+    expect(tab(/^Szerda/)).toHaveProperty('disabled', true);
+    expect(tab(/^Csütörtök/).getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('keeps the screen and the cart when a refetch fails', async () => {
+    await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    fireEvent.click(addButton());
+    vi.mocked(fetch).mockResolvedValue(Response.json({ error: 'internal' }, { status: 500 }));
+
+    comeBack();
+    await settle();
+
+    expect(menuFetches()).toBe(2);
+    expect(screen.queryByText(strings.errors.loadFailedTitle)).toBeNull();
+    expect(tab(/^Szerda, szept\. 9\., 1 menü a kosárban/)).toBeTruthy();
+    expect(grandTotal()).toBe(forint(650 + 150));
+  });
+
+  it('empties the cart and shows the message when a refetch finds nothing to order', async () => {
+    const first = await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    fireEvent.click(addButton());
+
+    answer = { state: 'closed' };
+    comeBack();
+    expect(
+      await screen.findByRole('heading', { name: strings.errors.emptyWeekTitle }),
+    ).toBeTruthy();
+    expect(screen.queryByRole('tablist')).toBeNull();
+    first.unmount();
+
+    answer = openMenu;
+    await renderOrderPage();
+    expect(screen.queryByRole('tab', { name: /menü a kosárban/ })).toBeNull();
+    expect(grandTotal()).toBeUndefined();
   });
 
   it('moves the extras with − and + only, adds them to the day and brings them back on edit', async () => {
@@ -185,7 +259,12 @@ describe('the day cart', () => {
 
     for (let i = 0; i < maxExtraQuantity + 2; i++) fireEvent.click(more());
     expect(extras().getByText(String(maxExtraQuantity))).toBeTruthy();
-    expect(more()).toHaveProperty('disabled', true);
+    expect(more().getAttribute('aria-disabled')).toBe('true');
+    extras().getByRole('button', { name: 'Kevesebb: Doboz' }).focus();
+    more().focus();
+    fireEvent.click(more());
+    expect(document.activeElement).toBe(more());
+    expect(extras().getByText(String(maxExtraQuantity))).toBeTruthy();
 
     pickSoup('Brokkolikrémleves');
     fireEvent.click(addButton());
@@ -223,6 +302,19 @@ describe('the day rail', () => {
     expect(document.activeElement).toBe(
       screen.getByRole('heading', { name: 'Csütörtök, szept. 10.' }),
     );
+  });
+
+  it('keeps a selected closed day when the tab comes back to the same menu', async () => {
+    answer = { ...openMenu, orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'] };
+    await renderOrderPage();
+    fireEvent.click(tab(/^Csütörtök/));
+
+    comeBack();
+    await settle();
+
+    expect(menuFetches()).toBe(2);
+    expect(screen.getByText(strings.errors.closedDay)).toBeTruthy();
+    expect(screen.queryByRole('region', { name: /menü összeállítása$/ })).toBeNull();
   });
 
   it('moves focus with the arrow keys and to the form when a day is selected', async () => {

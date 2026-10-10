@@ -63,8 +63,9 @@ export function OrderScreen({ open, config, now }: OrderScreenProps) {
   const activeDate = activeDay?.date ?? orderableDates[0] ?? '';
   const menuCount = useOrder((s) => s.menusByDate[activeDate]?.length ?? 0);
 
-  const time = timeOfDay(config.contact.intakeWindow.until);
-  const note = cutoffNote(orderableDates, now());
+  const until = config.contact.intakeWindow.until;
+  const time = timeOfDay(until);
+  const note = cutoffNote(orderableDates, now(), until);
   const cutoff =
     note === 'today'
       ? strings.week.cutoffToday(time)

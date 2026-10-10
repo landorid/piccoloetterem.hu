@@ -130,7 +130,8 @@ function only<V>(record: Record<IsoDate, V>, keep: ReadonlySet<IsoDate>): Record
 
 /**
  * Fits the cart to a fresh menu answer: every day that is no longer orderable leaves, menus,
- * extras and form alike. `dropped` lists the days that held menus, for the explanation.
+ * extras and form alike. `dropped` lists the days that held menus, for the explanation. The
+ * active day stays as it is: the screen resolves it, and a selected closed day must survive.
  */
 export function reconcile(
   state: CartState,
@@ -140,23 +141,14 @@ export function reconcile(
   const dropped = Object.keys(state.menusByDate)
     .filter((date) => !keep.has(date))
     .sort();
-  const activeDate =
-    state.activeDate !== null && keep.has(state.activeDate)
-      ? state.activeDate
-      : (orderableDates[0] ?? null);
   const stale = (record: Record<IsoDate, unknown>) =>
     Object.keys(record).some((date) => !keep.has(date));
-  if (
-    activeDate === state.activeDate &&
-    !stale(state.menusByDate) &&
-    !stale(state.extrasByDate) &&
-    !stale(state.formsByDate)
-  ) {
+  if (!stale(state.menusByDate) && !stale(state.extrasByDate) && !stale(state.formsByDate)) {
     return { state, dropped };
   }
   return {
     state: {
-      activeDate,
+      activeDate: state.activeDate,
       menusByDate: only(state.menusByDate, keep),
       extrasByDate: only(state.extrasByDate, keep),
       formsByDate: only(state.formsByDate, keep),

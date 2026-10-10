@@ -39,15 +39,19 @@ function localDate(now: Date): IsoDate {
 
 /**
  * Which cutoff sentence the week bar shows: `today` when today can still be ordered, `tomorrow`
- * when today's intake closed and tomorrow is next, nothing otherwise.
+ * when today's intake closed at `cutoff` (`HH:mm`) and tomorrow is next, nothing otherwise. Before
+ * the cutoff a tomorrow-first week means staff closed today, and Sunday has no intake to close.
  */
 export function cutoffNote(
   orderableDates: readonly IsoDate[],
   now: Date,
+  cutoff: string,
 ): 'today' | 'tomorrow' | null {
   const first = orderableDates[0];
   if (first === localDate(now)) return 'today';
   const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  if (first === localDate(tomorrow)) return 'tomorrow';
+  const [hours = 0, minutes = 0] = cutoff.split(':').map(Number);
+  const pastCutoff = now.getHours() * 60 + now.getMinutes() >= hours * 60 + minutes;
+  if (first === localDate(tomorrow) && pastCutoff && now.getDay() !== 0) return 'tomorrow';
   return null;
 }

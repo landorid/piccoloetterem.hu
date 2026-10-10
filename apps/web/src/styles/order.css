@@ -612,7 +612,8 @@
   border: 1px solid var(--line-strong);
   background: var(--paper);
 }
-.stepper button[disabled] {
+.stepper button[disabled],
+.stepper button[aria-disabled='true'] {
   color: var(--ink-400);
   cursor: not-allowed;
 }

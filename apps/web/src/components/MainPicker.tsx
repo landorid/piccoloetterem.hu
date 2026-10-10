@@ -87,12 +87,7 @@ export function MainPicker({ open, date, menu, selectedId, onPick, onClose }: Ma
                   ))}
                 </PickerGroup>
               ))}
-              <PickerOption
-                item={null}
-                amount={null}
-                picked={selectedId === null}
-                onPick={() => onPick(null)}
-              />
+              <PickerOption item={null} amount={null} picked={false} onPick={() => onPick(null)} />
             </div>
           </div>
         </>

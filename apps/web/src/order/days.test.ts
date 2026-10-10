@@ -18,18 +18,28 @@ describe('weekDays', () => {
 
 describe('cutoffNote', () => {
   const dates = ['2026-09-09', '2026-09-10'];
+  const cutoff = '09:30';
 
   it('promises today while today is the first orderable day', () => {
-    expect(cutoffNote(dates, new Date(2026, 8, 9, 8, 0))).toBe('today');
+    expect(cutoffNote(dates, new Date(2026, 8, 9, 8, 0), cutoff)).toBe('today');
   });
 
-  it('says today is over when the first orderable day is tomorrow', () => {
-    expect(cutoffNote(dates, new Date(2026, 8, 8, 10, 0))).toBe('tomorrow');
-    expect(cutoffNote(['2026-10-01'], new Date(2026, 8, 30, 23, 59))).toBe('tomorrow');
+  it('says today is over once the cutoff has passed on a weekday and tomorrow is first', () => {
+    expect(cutoffNote(dates, new Date(2026, 8, 8, 9, 30), cutoff)).toBe('tomorrow');
+    expect(cutoffNote(['2026-10-01'], new Date(2026, 8, 30, 23, 59), cutoff)).toBe('tomorrow');
+  });
+
+  it('says nothing before the cutoff, when staff closed today and tomorrow is first', () => {
+    expect(cutoffNote(['2026-09-08'], new Date(2026, 8, 7, 8, 0), cutoff)).toBeNull();
+    expect(cutoffNote(['2026-09-08'], new Date(2026, 8, 7, 9, 29), cutoff)).toBeNull();
+  });
+
+  it('says nothing on a Sunday, which has no intake to close', () => {
+    expect(cutoffNote(['2026-09-07'], new Date(2026, 8, 6, 12, 0), cutoff)).toBeNull();
   });
 
   it('says nothing when the first orderable day is further away', () => {
-    expect(cutoffNote(dates, new Date(2026, 8, 5, 12, 0))).toBeNull();
-    expect(cutoffNote([], new Date(2026, 8, 9, 8, 0))).toBeNull();
+    expect(cutoffNote(dates, new Date(2026, 8, 5, 12, 0), cutoff)).toBeNull();
+    expect(cutoffNote([], new Date(2026, 8, 9, 8, 0), cutoff)).toBeNull();
   });
 });

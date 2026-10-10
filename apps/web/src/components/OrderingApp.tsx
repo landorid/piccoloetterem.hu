@@ -57,16 +57,27 @@ function WeekMenu({
   const [store] = useState(createOrderStore);
   const [load, setLoad] = useState<Load>({ status: 'loading' });
   const loaded = useRef(false);
+  const latest = useRef(0);
 
+  // Two refetches can race around the cutoff: only the latest request may apply its answer or
+  // its error, so an older answer arriving last never brings back a day the cart dropped.
   const fetchMenu = useCallback(
-    (signal?: AbortSignal) =>
-      loadMenu(api, { signal }).then((menu) => {
-        const order = store.getState();
-        if (menu.state === 'open') order.reconcile(menu.orderableDates);
-        else order.clear();
-        loaded.current = true;
-        setLoad({ status: 'loaded', menu });
-      }),
+    (signal?: AbortSignal) => {
+      const request = ++latest.current;
+      return loadMenu(api, { signal }).then(
+        (menu) => {
+          if (request !== latest.current) return;
+          const order = store.getState();
+          if (menu.state === 'open') order.reconcile(menu.orderableDates);
+          else order.clear();
+          loaded.current = true;
+          setLoad({ status: 'loaded', menu });
+        },
+        (error: unknown) => {
+          if (request === latest.current) throw error;
+        },
+      );
+    },
     [api, store],
   );
 

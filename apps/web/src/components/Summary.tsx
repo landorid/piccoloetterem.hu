@@ -59,7 +59,7 @@ export function Summary({ variant, menu, pricing, deliveryFee, onContinue }: Sum
       )}
       {open && (
         <div className="detail" id={detailId}>
-          <Totals priced={priced} deliveryFee={deliveryFee} />
+          <Totals priced={priced} deliveryFee={deliveryFee} live={variant === 'desktop'} />
         </div>
       )}
       <button
@@ -74,8 +74,19 @@ export function Summary({ variant, menu, pricing, deliveryFee, onContinue }: Sum
   );
 }
 
-/** Per day the food and the delivery fee, then what is paid in total. */
-function Totals({ priced, deliveryFee }: { priced: PricedCart; deliveryFee: number }) {
+/**
+ * Per day the food and the delivery fee, then what is paid in total. `live` announces the grand
+ * total; the mobile bar announces its own, so its expanded detail must not repeat it.
+ */
+function Totals({
+  priced,
+  deliveryFee,
+  live,
+}: {
+  priced: PricedCart;
+  deliveryFee: number;
+  live: boolean;
+}) {
   if (priced.days.length === 0) {
     return (
       <div className="totals">
@@ -106,7 +117,9 @@ function Totals({ priced, deliveryFee }: { priced: PricedCart; deliveryFee: numb
       ))}
       <div className="grand">
         <span>{summary.grandTotal}</span>
-        <span className="amt num">{forint(priced.total)}</span>
+        <span className="amt num" aria-live={live ? 'polite' : undefined}>
+          {forint(priced.total)}
+        </span>
       </div>
       <p className="totals-note">{summary.feeNote(forint(deliveryFee))}</p>
     </div>

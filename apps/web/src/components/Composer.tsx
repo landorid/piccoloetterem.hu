@@ -422,7 +422,9 @@ function ExtraRow({ date, extra, quantity }: { date: IsoDate; extra: ExtraDef; q
     (quantity === 0 ? add : more).current?.focus();
   }, [quantity]);
 
+  const atMax = quantity >= maxExtraQuantity;
   const step = (delta: 1 | -1) => {
+    if (delta === 1 && atMax) return;
     refocus.current = (quantity === 0 && delta === 1) || (quantity === 1 && delta === -1);
     stepExtra(date, extra.key, delta);
   };
@@ -460,7 +462,8 @@ function ExtraRow({ date, extra, quantity }: { date: IsoDate; extra: ExtraDef; q
             ref={more}
             type="button"
             aria-label={strings.extras.moreOf(extra.name)}
-            disabled={quantity >= maxExtraQuantity}
+            // Not `disabled`: the + the guest just pressed keeps focus at the maximum.
+            aria-disabled={atMax || undefined}
             onClick={() => step(1)}
           >
             +
