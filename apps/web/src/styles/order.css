@@ -1212,9 +1212,6 @@
   font-size: var(--t-md);
   color: var(--ink-700);
 }
-.btn .spinner {
-  margin-right: var(--s-2);
-}
 .spinner {
   display: inline-block;
   width: 16px;
@@ -1233,6 +1230,9 @@
   .spinner {
     animation-duration: 3s;
   }
+}
+.btn .spinner {
+  margin-right: var(--s-2);
 }
 .cartsum {
   display: flex;

@@ -156,12 +156,13 @@ describe('readRejection', () => {
   });
 
   it('marks what the guest cannot fix from the form as other', () => {
-    for (const fields of [
+    const unfixable: Record<string, string>[] = [
       { 'days.0.menus.0.variation': 'variation_required' },
       { 'days.5.deliveryDate': 'cutoff_passed' },
       { 'days.0.extras.0.quantity': 'invalid_quantity' },
       { days: 'too_many' },
-    ]) {
+    ];
+    for (const fields of unfixable) {
       expect(readRejection(new ApiError(400, 'validation', '', fields), days)).toMatchObject({
         kind: 'invalid',
         other: true,
