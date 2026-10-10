@@ -21,8 +21,8 @@ failed send never reaches the guest. In every run it is a dry run: `wrangler.tom
 
 ## How to get to it (user POV)
 
-- The guest submits an order. Today that is `POST $API_URL/api/orders` (see
-  [order-submission.md](./order-submission.md)); after O7 it is the checkout on `/megrendeles`.
+- The guest submits an order from checkout on `/megrendeles` (see
+  [order-submission.md](./order-submission.md)).
 - The guest reads the e-mail in their inbox. A run never sends one, so the API log stands in for
   the inbox, and `email-preview`'s HTML for how it looks.
 
