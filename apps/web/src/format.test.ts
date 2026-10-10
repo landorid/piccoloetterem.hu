@@ -12,15 +12,15 @@ import {
 
 describe('format', () => {
   it('writes forints the Hungarian way, grouping from five digits', () => {
-    expect(forint(650)).toBe('650 Ft');
-    expect(forint(2200)).toBe('2200 Ft');
-    expect(forint(10400)).toMatch(/^10[  ]400 Ft$/);
+    expect(forint(650)).toBe('650\u00a0Ft');
+    expect(forint(2200)).toBe('2200\u00a0Ft');
+    expect(forint(10400)).toMatch(/^10[\u00a0\u202f]400\u00a0Ft$/);
   });
 
   it('signs an adjustment with a plus or a minus sign, and leaves zero bare', () => {
-    expect(signedForint(650)).toBe('+650 Ft');
-    expect(signedForint(-100)).toBe('−100 Ft');
-    expect(signedForint(0)).toBe('0 Ft');
+    expect(signedForint(650)).toBe('+650\u00a0Ft');
+    expect(signedForint(-100)).toBe('−100\u00a0Ft');
+    expect(signedForint(0)).toBe('0\u00a0Ft');
   });
 
   it('names a calendar date without reading a clock', () => {
