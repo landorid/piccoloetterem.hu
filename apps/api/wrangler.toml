@@ -86,7 +86,7 @@ id = "22222222222222222222222222222222"
 
 [env.production]
 name = "piccolo-api-production"
-routes = [{ pattern = "api-prod.piccoloetterem.hu", custom_domain = true }]
+routes = [{ pattern = "api.piccoloetterem.hu", custom_domain = true }]
 
 [env.production.vars]
 ENVIRONMENT = "production"
