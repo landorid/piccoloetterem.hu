@@ -36,7 +36,7 @@ export function weekDays(
 }
 
 /** `YYYY-MM-DD` of `now` in the browser's own zone: "today" is the guest's today. */
-function localDate(now: Date): IsoDate {
+export function localDate(now: Date): IsoDate {
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }

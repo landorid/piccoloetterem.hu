@@ -61,12 +61,11 @@ the phone number. "Tovább a rendeléshez" opens checkout (O7, #35), a screen of
 - `chrome`: the masthead (logo `aria-label` = restaurant name, "Rendelésfelvétel …" intake
   window, phone) and the footer ("Nyitvatartás", "Kiszállítás", "Elérhetőség"). Both come from
   `GET /api/config/public` when the page is rendered.
-- `root-redirect`: `/` redirects to `/megrendeles` (302).
 
 ## How to get to it (user POV)
 
 - Open `$WEB_URL/megrendeles` directly.
-- Open `$WEB_URL/`, which redirects.
+- Follow "Rendeld meg online" on the menu page at `$WEB_URL/` ([public-menu-page.md](./public-menu-page.md)).
 
 ## Driving it with the browser pane and api.sh
 

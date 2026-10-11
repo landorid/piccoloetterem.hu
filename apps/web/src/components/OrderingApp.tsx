@@ -237,30 +237,34 @@ function WeekSkeleton() {
   );
 }
 
-function Message({
-  title,
-  body,
-  config,
-  children,
-}: {
+export function Message(props: MessageProps) {
+  return (
+    <div className="screen single">
+      <MessageCard {...props} />
+    </div>
+  );
+}
+
+type MessageProps = {
   title: string;
   body: string;
   config: PublicConfig | null;
   children?: ReactNode;
-}) {
+};
+
+/** Why the page shows no menu, with the phone number and an optional action. */
+export function MessageCard({ title, body, config, children }: MessageProps) {
   return (
-    <div className="screen single">
-      <section className="message">
-        <h1>{title}</h1>
-        <p>{body}</p>
-        {config && (
-          <p className="contact">
-            <a href={telHref(config.contact.phone)}>{config.contact.phone}</a>
-            <span>{config.contact.address}</span>
-          </p>
-        )}
-        {children}
-      </section>
-    </div>
+    <section className="message">
+      <h1>{title}</h1>
+      <p>{body}</p>
+      {config && (
+        <p className="contact">
+          <a href={telHref(config.contact.phone)}>{config.contact.phone}</a>
+          <span>{config.contact.address}</span>
+        </p>
+      )}
+      {children}
+    </section>
   );
 }
