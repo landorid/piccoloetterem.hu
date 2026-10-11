@@ -175,7 +175,7 @@ export const strings = {
     cardImport: {
       button: 'Betöltés Word-kártyáról',
       fileInput: 'A heti étlap Word-fájlja (.docx)',
-      applied: 'A kártya betöltve. Nézd át, majd mentsd el.',
+      applied: 'A Word-kártya betöltve.',
       unreadable: 'A fájlt nem sikerült megnyitni. Próbáld újra.',
       failures: {
         legacy_doc:
@@ -191,7 +191,7 @@ export const strings = {
         description: ({ replaces, mismatch }: { replaces: boolean; mismatch?: WeekMismatch }) =>
           [
             mismatch &&
-              `A kártya dátuma ${dateRange(mismatch.card)}, de ez a hét ${dateRange(mismatch.week)}.`,
+              `A kártya dátuma ${dateRange(mismatch.card)}, de ez a hét ${dateRange(mismatch.week)}`,
             replaces &&
               'A rács mostani tartalmát, a nem mentett módosításokat is, a kártya váltja fel.',
             'Mentésig semmi sem változik.',
@@ -204,20 +204,21 @@ export const strings = {
         summary: (count: number) => `${count} tétel került a rácsba. Nézd át, majd mentsd el.`,
         dismiss: 'Összefoglaló bezárása',
         splitHint: 'A név és a leírás szétválasztása becslés: nézd meg, hol kezdődik a leírás.',
+        closedHint:
+          'Ha egy üresen maradt napon zárva vagytok, kapcsold be a napnál: Nincs rendelés.',
         permanentHint:
           'Az „Egész héten rendelhető” rész és ami alatta van nem a heti menü része: azt az Étlap oldalon szerkesztheted.',
       },
       /** One text per `ImportFinding['kind']`: a new kind does not compile without its text. */
       findings: {
         week_mismatch: (f) =>
-          `A kártya dátuma ${dateRange(f.card)}, de ez a hét ${dateRange(f.week)}. Ellenőrizd, hogy jó héthez töltötted-e be.`,
+          `A kártya dátuma ${dateRange(f.card)}, de ez a hét ${dateRange(f.week)} Ellenőrizd, hogy jó héthez töltötted-e be.`,
         week_unverified: () =>
           'A kártyán nincs dátum, ezért nem ellenőrizhető, hogy ehhez a héthez tartozik-e.',
         day_without_dishes: (f): string =>
           [
             `${strings.weeklyMenu.days[f.day]}: a kártyán nincs rá étel${f.texts.length > 0 ? ` (${quoted(f.texts)})` : ''}, ezért üresen maradt.`,
             f.withheld.length > 0 && `A több napra szóló ${quoted(f.withheld)} sem került rá.`,
-            `Ha aznap zárva vagytok, kapcsold be a napnál: ${strings.weeklyMenu.closed}.`,
           ]
             .filter(Boolean)
             .join(' '),
@@ -481,7 +482,7 @@ export const strings = {
 
 type WeekMismatch = Extract<ImportFinding, { kind: 'week_mismatch' }>;
 
-/** `06.15.–06.20.` */
+/** `06.15.–06.20.`, which ends a sentence too. */
 function dateRange({ from, to }: DateRange): string {
   const monthDay = ({ month, day }: MonthDay) =>
     `${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}.`;

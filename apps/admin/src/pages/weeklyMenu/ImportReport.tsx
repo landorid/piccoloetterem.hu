@@ -55,6 +55,8 @@ export function ImportReport({ card, onDismiss }: ImportReportProps) {
         </ul>
       )}
       <p className="text-muted-foreground">
+        {card.findings.some((finding) => finding.kind === 'day_without_dishes') &&
+          `${t.report.closedHint} `}
         {t.report.splitHint} {t.report.permanentHint}
       </p>
     </section>
