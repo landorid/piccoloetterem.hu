@@ -71,7 +71,9 @@ function LoadedPage({
   useEffect(() => {
     const controller = new AbortController();
     loadMenuPage(api, now(), { signal: controller.signal }).then(
-      (page) => setLoad({ status: 'loaded', page }),
+      (page) => {
+        if (!controller.signal.aborted) setLoad({ status: 'loaded', page });
+      },
       (error: unknown) => {
         if (!controller.signal.aborted) setLoad({ status: 'failed', error });
       },
@@ -202,11 +204,13 @@ function Week({
         {notice && (
           <div className="banner banner-warn" role="status">
             <div>
-              <h3>
-                {notice === 'next_week_not_published'
-                  ? text.notices.nextWeekTitle
-                  : text.notices.closedTitle}
-              </h3>
+              <p>
+                <strong>
+                  {notice === 'next_week_not_published'
+                    ? text.notices.nextWeekTitle
+                    : text.notices.closedTitle}
+                </strong>
+              </p>
               <p>
                 {notice === 'next_week_not_published'
                   ? text.notices.nextWeekBody
@@ -370,8 +374,9 @@ function PriceCard({ config }: { config: PublicConfig }) {
         <h2>{text.prices.title}</h2>
       </div>
       <ul className="dishes">
-        {rows.map(([name, amount]) => (
-          <li key={name} className="dish">
+        {rows.map(([name, amount], index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: the rows are fixed for the page's life.
+          <li key={index} className="dish">
             <p className="dish-body dish-title">{name}</p>
             <p className="dish-price">
               <span className="dish-amt num">{amount}</span>

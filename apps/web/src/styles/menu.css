@@ -84,7 +84,6 @@
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  max-width: 45%;
   text-align: right;
 }
 .dish-amt {
@@ -92,6 +91,7 @@
   white-space: nowrap;
 }
 .dish-included {
+  white-space: nowrap;
   font-size: var(--t-sm);
   font-weight: 600;
   color: var(--ok-700);

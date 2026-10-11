@@ -135,6 +135,35 @@ describe('MenuPage', () => {
     expect(screen.getAllByRole('link', { name: text.order }).length).toBe(1);
   });
 
+  it('shows the current week to read when the order window is closed', async () => {
+    answers = {
+      '/api/menu': () => Response.json({ state: 'closed' }),
+      '/api/menu?week=2026-W37': () =>
+        Response.json({ ...openMenu, orderableDates: [], closedDates: [] }),
+    };
+    await renderPage(sunday);
+    expect(screen.getByRole('status').textContent).toBe(
+      text.notices.closedTitle + text.notices.closedBody,
+    );
+  });
+
+  it('marks a day staff closed, and still lists its dishes', async () => {
+    answers = {
+      '/api/menu': () =>
+        Response.json({
+          ...openMenu,
+          orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'],
+          closedDates: ['2026-09-10'],
+        }),
+    };
+    await renderPage();
+    const thursday = screen.getByRole('tab', { name: /^Csütörtök/ });
+    expect(thursday.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(thursday);
+    expect(panel().textContent).toContain(strings.errors.closedDay);
+    expect(within(panel()).getByText('Milánói makaróni')).toBeTruthy();
+  });
+
   it('says so when no week is published', async () => {
     answers = {
       '/api/menu': () => Response.json({ state: 'closed' }),

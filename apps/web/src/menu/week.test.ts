@@ -119,10 +119,20 @@ describe('loadMenuPage', () => {
     await expect(loadMenuPage(api, sunday)).resolves.toEqual({ kind: 'none', state: 'closed' });
   });
 
-  it('fails when the fallback fails for any other reason', async () => {
+  it('keeps the API’s answer when the fallback fails for any other reason', async () => {
     const { api } = apiAnswering({
-      '/api/menu': () => Response.json({ state: 'closed' }),
+      '/api/menu': () => Response.json({ state: 'next_week_not_published' }),
       '/api/menu?week=2026-W37': () => Response.json({ error: 'internal' }, { status: 500 }),
+    });
+    await expect(loadMenuPage(api, sunday)).resolves.toEqual({
+      kind: 'none',
+      state: 'next_week_not_published',
+    });
+  });
+
+  it('fails when the order window cannot be loaded', async () => {
+    const { api } = apiAnswering({
+      '/api/menu': () => Response.json({ error: 'internal' }, { status: 500 }),
     });
     await expect(loadMenuPage(api, sunday)).rejects.toBeInstanceOf(ApiError);
   });

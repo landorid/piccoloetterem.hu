@@ -1,6 +1,5 @@
 import { isoWeekOf, type MenuItem, TZDate } from '@piccolo/core';
 import {
-  ApiError,
   loadMenu,
   loadMenuWeek,
   type MenuResponse,
@@ -16,7 +15,7 @@ type NoWindow = Exclude<MenuResponse, { state: 'open' }>['state'];
 /**
  * What `/` shows. `week` is the order window's week when it is open (`notice` null). When the API
  * has no orderable week, it is the guest's current week to read, with `notice` saying why it
- * cannot be ordered; `none` when that week is not published either.
+ * cannot be ordered; `none` when that week is not published either, or cannot be loaded.
  */
 export type MenuPage =
   | {
@@ -34,19 +33,16 @@ export async function loadMenuPage(api: WebApi, now: Date, init?: RequestInit): 
     const { menu, orderableDates, closedDates } = window;
     return { kind: 'week', menu, orderableDates, closedDates, notice: null };
   }
-  try {
-    const current = await loadMenuWeek(api, isoWeekParam(now), init);
-    if (current.state === 'open') {
-      return {
-        kind: 'week',
-        menu: current.menu,
-        orderableDates: [],
-        closedDates: [],
-        notice: window.state,
-      };
-    }
-  } catch (error) {
-    if (!(error instanceof ApiError && error.code === 'week_not_published')) throw error;
+  // Any failure here keeps the API's own answer: the guest still learns why there is no week.
+  const current = await loadMenuWeek(api, isoWeekParam(now), init).catch(() => null);
+  if (current?.state === 'open') {
+    return {
+      kind: 'week',
+      menu: current.menu,
+      orderableDates: [],
+      closedDates: [],
+      notice: window.state,
+    };
   }
   return { kind: 'none', state: window.state };
 }
