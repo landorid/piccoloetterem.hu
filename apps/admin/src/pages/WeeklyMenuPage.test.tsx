@@ -355,10 +355,14 @@ describe('opening the page', () => {
       expect(screen.queryByRole('group', { name: mainName(day, 5) })).toBeTruthy();
       expect(screen.queryByRole('group', { name: mainName(day, 6) })).toBeNull();
     }
-    // Weekdays have one price, Saturday two; daily soups none.
+    // A day's mains have one price, Saturday's 100 more; featured items two; daily soups none.
     expect(field(mainName(1, 3), t.fields.price).value).toBe('1120');
-    expect(field(mainName(6, 5), t.fields.priceWeekday).value).toBe('1170');
-    expect(field(mainName(6, 5), t.fields.priceWeekend).value).toBe('1270');
+    expect(field(mainName(6, 5), t.fields.price).value).toBe('1270');
+    expect(
+      within(card(mainName(6, 5))).queryByRole('textbox', { name: t.fields.priceWeekend }),
+    ).toBeNull();
+    expect(field(featuredName(1), t.fields.priceWeekday)).toBeTruthy();
+    expect(field(featuredName(1), t.fields.priceWeekend)).toBeTruthy();
     expect(within(card(soupName(1, 1))).queryByLabelText(t.fields.price)).toBeNull();
     expect(
       within(card(mainName(1, 1)))
@@ -458,7 +462,7 @@ describe('acceptance 1: a full week survives save and reload', () => {
     expect(sent.days[2].mains[1]?.variations).toEqual(['Kicsi', 'Nagy']);
     expect(sent.days[2].mains[2]?.allergens).toEqual(['gluten', 'milk']);
     expect(sent.days[2].mains[3]?.soupIncluded).toBe(false);
-    expect(sent.days[6].mains[0]).toMatchObject({ priceWeekday: 1020, priceWeekend: 1120 });
+    expect(sent.days[6].mains[0]).toMatchObject({ priceWeekday: 1120, priceWeekend: null });
     expect(sent.featured.map((f) => [f.name, f.priceWeekday, f.priceWeekend])).toEqual([
       ['Ajánlat 1', 2290, null],
       ['Ajánlat 2', 2390, 2590],

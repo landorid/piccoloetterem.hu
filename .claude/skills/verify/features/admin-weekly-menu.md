@@ -12,7 +12,8 @@ items sold out. The week is in the URL, so a reload keeps it.
   shows "Piszkozat" (draft) or "Publikálva: …".
 - `week-edit`: "Leves hozzáadása", "Főétel hozzáadása" and "Ajánlat hozzáadása" add cards. Each
   card is a `group` named like "Hétfő, 1. leves", with "Név", "Leírás" and prices. "Sor törlése"
-  removes a card.
+  removes a card. Every main, Saturday's too, has one "Ár" (Saturday's is the Saturday price);
+  only featured items have "Hétköznapi ár" and "Hétvégi ár".
 - `week-save`: "Mentés" sends `PUT /weeks/<y>/<w>`, shows the toast "A heti menü elmentve.", and
   shows field errors from the API.
 - `week-publish`: "Publikálás" opens "Publikálod a heti menüt?" (it lists days without a main)
