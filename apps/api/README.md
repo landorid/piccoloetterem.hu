@@ -49,10 +49,13 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
    ```
 
    `DATABASE_URL` is your Neon development branch's pooled URL, the same one as in the repo-root
-   `.env` (see packages/db/README.md). Quote it, because it contains `&`. `SENTRY_DSN` is optional;
-   without it, Sentry is disabled. Copy `apps/api/.dev.vars.example` and fill in `CLERK_SECRET_KEY`,
-   `CLERK_PUBLISHABLE_KEY`, `CLERK_JWT_KEY` and `CLERK_ORG_ID` (see below). `ENVIRONMENT`,
-   `RESTAURANT`, `CORS_ORIGINS` and `CLERK_AUTHORIZED_PARTIES` come from `[vars]` in `wrangler.toml`.
+   `.env` (see packages/db/README.md). Quote it, because it contains `&`. The package `dev` script
+   (`scripts/dev.mjs`) exports `CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE` from that
+   URL so local Hyperdrive emulation works — the top-level Worker binds `HYPERDRIVE` because CI
+   deploys it for develop. `SENTRY_DSN` is optional; without it, Sentry is disabled. Copy
+   `apps/api/.dev.vars.example` and fill in `CLERK_SECRET_KEY`, `CLERK_PUBLISHABLE_KEY`,
+   `CLERK_JWT_KEY` and `CLERK_ORG_ID` (see below). `ENVIRONMENT`, `RESTAURANT`, `CORS_ORIGINS`
+   and `CLERK_AUTHORIZED_PARTIES` come from `[vars]` in `wrangler.toml`.
 
 2. `pnpm dev` (from the repo root) runs the API on <http://localhost:8787>, the public site on
    <http://localhost:4321> and the admin on <http://localhost:5173>. The top-level `CORS_ORIGINS`

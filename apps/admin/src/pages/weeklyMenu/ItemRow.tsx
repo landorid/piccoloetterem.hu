@@ -2,6 +2,7 @@ import { cn } from 'cn';
 import { ChevronDownIcon, Trash2Icon } from 'lucide-react';
 import { useId } from 'react';
 import { AllergenSelect } from '@/components/AllergenSelect';
+import { PriceInput } from '@/components/PriceInput';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -19,7 +20,7 @@ const t = strings.weeklyMenu;
  * toggles are narrow columns under their header when there is room for the header (a container at
  * 4xl); below that the rows have no header and keep a visible label beside each toggle.
  */
-const cell = {
+export const cell = {
   name: 'w-56 min-w-0 shrink',
   description: 'w-48 min-w-0 shrink',
   price: 'w-24 shrink-0',
@@ -93,33 +94,18 @@ export function ItemRow({
     );
 
   const price = (field: 'priceWeekday' | 'priceWeekend', caption: string) => (
-    <div className={cn('grid gap-1', field === 'priceWeekend' ? cell.priceWeekend : cell.price)}>
-      <Label htmlFor={`${id}-${field}`} className="sr-only">
-        {caption}
-      </Label>
-      <div className="relative">
-        {field === 'priceWeekend' && (
-          <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center text-muted-foreground text-xs">
-            {t.fields.weekendShort}
-          </span>
-        )}
-        <Input
-          id={`${id}-${field}`}
-          inputMode="numeric"
-          autoComplete="off"
-          value={row[field]}
-          placeholder={field === 'priceWeekend' ? row.priceWeekday : undefined}
-          title={field === 'priceWeekend' ? t.fields.weekendEmpty : undefined}
-          className="h-8 pr-7 text-right tabular-nums"
-          onChange={(event) => onChange({ [field]: event.target.value }, field)}
-          {...invalid(field)}
-        />
-        <span className="pointer-events-none absolute inset-y-0 right-2 flex items-center text-muted-foreground text-xs">
-          {t.fields.currency}
-        </span>
-      </div>
-      {error(field)}
-    </div>
+    <PriceInput
+      id={`${id}-${field}`}
+      label={caption}
+      value={row[field]}
+      weekend={field === 'priceWeekend'}
+      placeholder={field === 'priceWeekend' ? row.priceWeekday : undefined}
+      title={field === 'priceWeekend' ? t.fields.weekendEmpty : undefined}
+      className={field === 'priceWeekend' ? cell.priceWeekend : cell.price}
+      error={error(field)}
+      onChange={(value) => onChange({ [field]: value }, field)}
+      {...invalid(field)}
+    />
   );
 
   return (
@@ -250,7 +236,7 @@ type VariationsCellProps = {
  * The variations of a row as one line of text that truncates, so any number of them keeps the row
  * one line high. The chips and the input to add one are in a popover.
  */
-function VariationsCell({ id, value, onChange, invalid, ...rest }: VariationsCellProps) {
+export function VariationsCell({ id, value, onChange, invalid, ...rest }: VariationsCellProps) {
   const summary = value.join(', ');
   return (
     <Popover>

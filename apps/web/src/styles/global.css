@@ -186,14 +186,22 @@ button {
 
 /* The mockup's breakpoint. */
 @media (min-width: 900px) {
+  /*
+   * Side padding that lines the bands' content up with the screen below: bands keep their full-bleed
+   * background, their content sits in the same centred `--page-max` column as `.screen`.
+   */
+  :root {
+    --page-max: 1280px;
+    --page-gutter: max(var(--s-8), calc((100% - var(--page-max)) / 2 + var(--s-8)));
+  }
   .masthead {
     height: 96px;
-    padding: 0 var(--s-8);
+    padding: 0 var(--page-gutter);
   }
   .masthead svg {
     height: 54px;
   }
   .footer {
-    padding: var(--s-8);
+    padding: var(--s-8) var(--page-gutter);
   }
 }

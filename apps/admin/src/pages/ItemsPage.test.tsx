@@ -233,14 +233,19 @@ function section(name: PermanentSection) {
   return screen.getByRole('region', { name: strings.items.sections[name] });
 }
 
-/** The table row whose name input holds `name`. */
+/** The row (a fieldset) whose name input holds `name`. */
 function row(name: string): HTMLElement {
   const input = screen.getByDisplayValue(name);
-  const tr = input.closest('tr');
-  if (!tr) {
+  const fieldset = input.closest('fieldset');
+  if (!fieldset) {
     throw new Error(`no row for ${name}`);
   }
-  return tr;
+  return fieldset;
+}
+
+/** The rows of a section, in order. */
+function rowsIn(name: PermanentSection): HTMLElement[] {
+  return within(section(name)).getAllByRole('group');
 }
 
 function namesIn(name: PermanentSection): string[] {
@@ -275,15 +280,13 @@ describe('/etlap', () => {
       within(row('Régi pörkölt')).getByRole('button', { name: strings.items.reactivate }),
     ).toBeTruthy();
 
-    const header = (name: PermanentSection) =>
-      within(section(name))
-        .getAllByRole('columnheader')
-        .map((th) => th.textContent);
-    expect(header('sides')).not.toContain(strings.items.columns.priceWeekday);
-    expect(header('sides')).not.toContain(strings.items.columns.priceWeekend);
-    expect(header('sideExtras')).toContain(strings.items.columns.priceWeekend);
-    expect(header('allWeek')).toContain(strings.items.columns.requiresSide);
-    expect(header('desserts')).not.toContain(strings.items.columns.requiresSide);
+    const has = (name: PermanentSection, role: 'textbox' | 'checkbox', label: string) =>
+      within(section(name)).queryAllByRole(role, { name: label }).length > 0;
+    expect(has('sides', 'textbox', strings.items.columns.priceWeekday)).toBe(false);
+    expect(has('sides', 'textbox', strings.items.columns.priceWeekend)).toBe(false);
+    expect(has('sideExtras', 'textbox', strings.items.columns.priceWeekend)).toBe(true);
+    expect(has('allWeek', 'checkbox', strings.items.columns.requiresSide)).toBe(true);
+    expect(has('desserts', 'checkbox', strings.items.columns.requiresSide)).toBe(false);
 
     // An empty weekend price shows the weekday price as its placeholder.
     const weekend = within(row('Cordon bleu')).getByRole('textbox', {
@@ -309,7 +312,7 @@ describe('/etlap', () => {
     fireEvent.click(
       within(section('pickles')).getByRole('button', { name: strings.items.addItem }),
     );
-    const newPickle = within(section('pickles')).getAllByRole('row').at(-2) as HTMLElement;
+    const newPickle = rowsIn('pickles').at(-1) as HTMLElement;
     await waitFor(() =>
       expect(document.activeElement).toBe(
         within(newPickle).getByRole('textbox', { name: strings.items.columns.name }),
@@ -317,11 +320,17 @@ describe('/etlap', () => {
     );
     type(newPickle, strings.items.columns.name, 'Vegyes savanyúság');
     type(newPickle, strings.items.columns.priceWeekday, '400');
-    const variations = within(newPickle).getByRole('textbox', {
-      name: strings.items.columns.variations,
+    // The variations are in a popover, opened from the row.
+    fireEvent.click(within(newPickle).getByRole('button', { name: /^Variációk/ }));
+    const variations = await screen.findByRole('textbox', {
+      name: strings.variationsInput.label,
     });
     fireEvent.change(variations, { target: { value: 'kicsi' } });
     fireEvent.keyDown(variations, { key: 'Enter' });
+    fireEvent.keyDown(variations, { key: 'Escape' });
+    await waitFor(() =>
+      expect(screen.queryByRole('textbox', { name: strings.variationsInput.label })).toBeNull(),
+    );
     // Reorder
     fireEvent.click(within(row('Párolt rizs')).getByRole('button', { name: strings.items.moveUp }));
     expect(namesIn('sides')).toEqual(['Párolt rizs', 'Hasábburgonya']);
@@ -494,7 +503,7 @@ describe('/etlap', () => {
     await renderLoaded();
 
     fireEvent.click(within(section('sides')).getByRole('button', { name: strings.items.addItem }));
-    const newSide = within(section('sides')).getAllByRole('row').at(-2) as HTMLElement;
+    const newSide = rowsIn('sides').at(-1) as HTMLElement;
     expect(
       within(newSide)
         .getByRole('switch', { name: strings.items.columns.soldOut })

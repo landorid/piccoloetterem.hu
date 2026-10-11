@@ -4,6 +4,8 @@
 # Neon pooled URL. Quote it, because it contains `&`. Same value as DATABASE_URL in the repo-root .env.
 # `pnpm dev` also hands it to wrangler as the HYPERDRIVE binding's local connection string.
 DATABASE_URL=
+# A bare `wrangler dev` does not read the Hyperdrive string from this file: export
+# CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE in the shell or put it in apps/api/.env.
 
 # Optional. Without it, Sentry is disabled locally.
 SENTRY_DSN=

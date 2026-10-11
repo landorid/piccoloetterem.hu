@@ -1338,13 +1338,13 @@
     box-shadow: var(--shadow-1);
   }
   .weekbar {
-    padding: var(--s-6) var(--s-8) 0;
+    padding: var(--s-6) var(--page-gutter) 0;
   }
   .weekbar h1 {
     font-size: var(--t-2xl);
   }
   .daybar {
-    padding: 0 var(--s-8);
+    padding: 0 var(--page-gutter);
   }
   .daylist {
     grid-template-columns: repeat(var(--daycols, 6), 84px);
@@ -1362,7 +1362,7 @@
     gap: var(--s-6);
     align-items: start;
     padding: var(--s-6) var(--s-8) var(--s-10);
-    max-width: 1280px;
+    max-width: var(--page-max);
     width: 100%;
     margin: 0 auto;
   }

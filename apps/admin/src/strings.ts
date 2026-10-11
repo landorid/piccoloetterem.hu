@@ -204,9 +204,9 @@ export const strings = {
     },
     /** Reading the week's Word menu card into the grid (`CardImport`, `ImportReport`). */
     cardImport: {
-      button: 'Betöltés Word-kártyáról',
+      button: 'Word menü betöltése',
       fileInput: 'A heti étlap Word-fájlja (.docx)',
-      applied: 'A Word-kártya betöltve.',
+      applied: 'A Word-menü betöltve.',
       unreadable: 'A fájlt nem sikerült megnyitni. Próbáld újra.',
       failures: {
         legacy_doc:
@@ -234,11 +234,8 @@ export const strings = {
         title: 'Word-kártya betöltve',
         summary: (count: number) => `${count} tétel került a rácsba. Nézd át, majd mentsd el.`,
         dismiss: 'Összefoglaló bezárása',
-        splitHint: 'A név és a leírás szétválasztása becslés: nézd meg, hol kezdődik a leírás.',
         closedHint:
           'Ha egy üresen maradt napon zárva vagytok, kapcsold be a napnál: Nincs rendelés.',
-        permanentHint:
-          'Az „Egész héten rendelhető” rész és ami alatta van nem a heti menü része: azt az Étlap oldalon szerkesztheted.',
       },
       findings: findingTexts,
     },
@@ -414,19 +411,18 @@ export const strings = {
       sideExtras: 'Feláras köretek',
     },
     columns: {
-      nameAndDescription: 'Név és leírás',
       name: 'Név',
       description: 'Leírás',
-      priceWeekday: 'Ár hétköznap (Ft)',
-      priceWeekend: 'Ár hétvége (Ft)',
+      priceWeekday: 'Hétköznapi ár',
+      priceWeekend: 'Hétvégi ár',
       variations: 'Variációk',
       requiresSide: 'Köret kötelező',
       allergens: 'Allergének',
       soldOut: 'Elfogyott',
       active: 'Aktív',
-      order: 'Sorrend',
     },
-    descriptionPlaceholder: 'Leírás (nem kötelező)',
+    /** A row's name for screen readers: `Desszertek, 2. tétel`. */
+    rowName: (section: string, position: number) => `${section}, ${position}. tétel`,
     weekendSameAsWeekday: 'Üresen hagyva hétvégén is a hétköznapi ár érvényes.',
     emptySection: 'Ebben a részben még nincs tétel.',
     addItem: 'Új tétel',

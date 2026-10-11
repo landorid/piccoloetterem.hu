@@ -70,7 +70,7 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
           type="button"
           variant="ghost"
           size="sm"
-          className="self-start text-muted-foreground"
+          className="mt-2 self-start text-muted-foreground"
           onClick={() => handlers.onAdd(path)}
         >
           <PlusIcon />

@@ -49,13 +49,13 @@ items sold out. The week is in the URL, so a reload keeps it.
   állítható".
 - `week-leave`: navigating away with unsaved edits asks "Elveted a módosításokat?", with
   "Elvetés" or "Maradok".
-- `week-card-import`: the header button "Betöltés Word-kártyáról" picks the week's Word menu card
+- `week-card-import`: the header button "Word menü betöltése" picks the week's Word menu card
   for the hidden file input "A heti étlap Word-fájlja (.docx)". A readable card fills the unsaved
-  grid and opens the region "Word-kártya betöltve" above it: how many dishes went in, what was
+  grid and opens the region "Word menü betöltve" above it: how many dishes went in, what was
   left out, what to check. "Mentés" then sends the card's week like any edit. When the grid has
-  edits, the stored week has items, or the card's dates are another week's, "Betöltöd a
-  Word-kártyát?" asks first ("Betöltés"). A `.doc` gets a toast asking for a .docx. Real cards to
-  load: `packages/core/src/menu/card/fixtures/<Monday>.docx`.
+  edits, the stored week has items, or the card's dates are another week's, "Betöltöd a Word
+  menüt?" asks first ("Betöltés"). A `.doc` gets a toast asking for a .docx. Real cards to load:
+  `packages/core/src/menu/card/fixtures/<Monday>.docx`.
 
 ## How to get to it (user POV)
 
@@ -78,15 +78,15 @@ Preconditions:
   reads "Minden változás elmentve.", and "Mentés" and "Publikálás" are disabled.
 - **Edit and save.** The empty week already has blank slots, so you add no rows. `find` "Hétfő,
   1. leves", click its "Név" and type a name. Do the same in "Hétfő, 1. főétel", whose "Ár" is
-  already 1020. The `status` changes to "Nem mentett módosítások". Click "Mentés" in the bottom
-  bar. Use `find 'button "Mentés"'`, because a plain "Mentés" first matches the "Mentés után
-  állítható" title of every unsaved row. Wait for "A heti menü elmentve."
+     already 1020. The `status` changes to "Nem mentett módosítások". Click "Mentés" in the bottom
+     bar. Use `find 'button "Mentés"'`, because a plain "Mentés" first matches the "Mentés után
+     állítható" title of every unsaved row. Wait for "A heti menü elmentve."
   - Reload. Monday shows your soup above two blank soup slots, and your main alone. The other
     days show three blank soups and only "Főétel hozzáadása" under "Főételek".
   - `api.sh --save week-save.api GET /api/admin/menu/weeks/2090/10` returns your two items and
     nothing from the blank slots.
 - **Publish.** Click "Publikálás" in the bottom bar. The dialog has its own "Publikálás": `find
-  'button "Publikálás"'` returns the bar's first and the dialog's second, so click the second.
+'button "Publikálás"'` returns the bar's first and the dialog's second, so click the second.
   The toast reads "A heti menü publikálva…", the header reads "Publikálva: …", and the bar no
   longer has "Publikálás". The guest view `api.sh --save week-publish.public GET '/api/menu?week=2090-W10'`
   returns 200 `open` with your dishes.
@@ -97,14 +97,18 @@ Preconditions:
   injected, not picked. Put the worktree's absolute path in `repo`:
 
   ```js
-  const repo = '/absolute/path/to/the/worktree';
-  const name = '2026-06-15.docx';
-  const bytes = await (await fetch(`/@fs${repo}/packages/core/src/menu/card/fixtures/${name}`)).arrayBuffer();
-  const input = document.querySelector('input[type="file"][aria-label="A heti étlap Word-fájlja (.docx)"]');
+  const repo = "/absolute/path/to/the/worktree";
+  const name = "2026-06-15.docx";
+  const bytes = await (
+    await fetch(`/@fs${repo}/packages/core/src/menu/card/fixtures/${name}`)
+  ).arrayBuffer();
+  const input = document.querySelector(
+    'input[type="file"][aria-label="A heti étlap Word-fájlja (.docx)"]',
+  );
   const picked = new DataTransfer();
   picked.items.add(new File([bytes], name));
   input.files = picked.files;
-  input.dispatchEvent(new Event('change', { bubbles: true }));
+  input.dispatchEvent(new Event("change", { bubbles: true }));
   ```
 
   In `2090-W10` the card's dates are another week's, so "Betöltöd a Word-kártyát?" names both
@@ -112,6 +116,7 @@ Preconditions:
   tétel került a rácsba…" and "Hétfő, 1. leves" holds "Erőleves". Click "Mentés", then
   `api.sh --save week-card-import.api GET /api/admin/menu/weeks/2090/10` returns the card's
   dishes. Restore the week as below.
+
 - **Closed day.** Toggle "Hétfő: Nincs rendelés". `api.sh GET '/api/admin/menu/closed-dates?from=2090-03-06&to=2090-03-11'`
   lists the date. Toggle it back, and the list is empty again.
 - **Restore.** `down.sh` does not delete menu weeks. Delete the week you created, children first:

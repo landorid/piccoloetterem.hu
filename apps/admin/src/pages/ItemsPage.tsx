@@ -37,6 +37,9 @@ import { strings } from '@/strings';
 
 const soldOutKey = ['admin', 'menu', 'sold-out'];
 
+/** The same page column as the weekly menu. */
+const container = 'mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-6';
+
 type SoldOutChange = { id: string; soldOut: boolean };
 
 /**
@@ -140,25 +143,23 @@ export function ItemsPage() {
     }),
   );
 
+  const header = (
+    <PageHeader title={strings.pages.items.title} description={strings.pages.items.description} />
+  );
+
   if (menu.isPending) {
     return (
-      <>
-        <PageHeader
-          title={strings.pages.items.title}
-          description={strings.pages.items.description}
-        />
+      <div className={container}>
+        {header}
         <LoadingState rows={8} />
-      </>
+      </div>
     );
   }
 
   if (!state) {
     return (
-      <>
-        <PageHeader
-          title={strings.pages.items.title}
-          description={strings.pages.items.description}
-        />
+      <div className={container}>
+        {header}
         <EmptyState
           icon={TriangleAlertIcon}
           title={strings.items.loadFailed}
@@ -168,7 +169,7 @@ export function ItemsPage() {
             </Button>
           }
         />
-      </>
+      </div>
     );
   }
 
@@ -213,9 +214,12 @@ export function ItemsPage() {
 
   return (
     <>
-      <PageHeader title={strings.pages.items.title} description={strings.pages.items.description} />
-      <div ref={editorRef} className="flex flex-col gap-8">
-        <fieldset disabled={save.isPending} className="flex min-w-0 flex-col gap-8">
+      <div ref={editorRef} className={container}>
+        {header}
+        <fieldset
+          disabled={save.isPending}
+          className="m-0 flex min-w-0 flex-col gap-4 border-0 p-0"
+        >
           {sections.map((section) => (
             <ItemsSection
               key={section}
@@ -227,7 +231,10 @@ export function ItemsPage() {
             />
           ))}
         </fieldset>
-        <div className="sticky bottom-0 z-10 -mx-4 -mb-4 flex flex-wrap items-center gap-3 border-t bg-background px-4 py-3 lg:-mx-6 lg:-mb-6 lg:px-6">
+      </div>
+      {/* The page's actions stay in reach while a long menu scrolls. */}
+      <div className="sticky bottom-0 z-10 -mx-4 -mb-4 border-t bg-background px-4 py-3 lg:-mx-6 lg:-mb-6 lg:px-6">
+        <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3">
           <p
             role="status"
             className={cn(
