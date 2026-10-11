@@ -38,8 +38,7 @@ describe('the delivery date decides the price', () => {
     expect(unitPrice(dish('cordon-bleu'), thu)).toBe(1690);
     const form = fill(
       { slot: 'soup', id: 'szo-husleves' },
-      main('szo-rantott-szelet'),
-      { slot: 'variation', value: 'Csirkemell' },
+      { slot: 'main', item: dish('szo-rantott-szelet'), variation: 'Csirkemell' },
       { slot: 'side', id: 'parolt-rizs' },
     );
     expect(formPrice(form, sat).total).toBe(1220);

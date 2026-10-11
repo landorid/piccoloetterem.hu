@@ -13,11 +13,11 @@ interface WeekBarProps {
   days: readonly WeekDay[];
   /** The cutoff sentence, already chosen; `null` shows none. */
   cutoff: string | null;
-  deliveryFee: number;
-  minimumOrder: number;
+  /** The delivery fee and the daily minimum; the order page leaves them out. */
+  terms?: { deliveryFee: number; minimumOrder: number };
 }
 
-export function WeekBar({ isoWeek, days, cutoff, deliveryFee, minimumOrder }: WeekBarProps) {
+export function WeekBar({ isoWeek, days, cutoff, terms }: WeekBarProps) {
   const first = days[0]?.date;
   const last = days[days.length - 1]?.date;
   return (
@@ -28,7 +28,11 @@ export function WeekBar({ isoWeek, days, cutoff, deliveryFee, minimumOrder }: We
         {first && last && <span>{weekRange(first, last)}</span>}
         {cutoff && <span>{cutoff}</span>}
       </div>
-      <p className="week-terms">{strings.order.terms(forint(deliveryFee), forint(minimumOrder))}</p>
+      {terms && (
+        <p className="week-terms">
+          {strings.order.terms(forint(terms.deliveryFee), forint(terms.minimumOrder))}
+        </p>
+      )}
     </div>
   );
 }

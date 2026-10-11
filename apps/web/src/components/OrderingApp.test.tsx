@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { maxExtraQuantity } from '@piccolo/core';
+import { maxExtraQuantity, orderMessagesHu } from '@piccolo/core';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forint } from '../format';
@@ -105,22 +105,45 @@ describe('the order form', () => {
     expect(tab(/^Szerda/)).toHaveProperty('disabled', false);
   });
 
-  it('keeps "Hozzáadás" disabled until the soup is answered and the main has its variation and side', async () => {
+  it('says why a menu cannot be added only once "Hozzáadás" is clicked, then keeps it current', async () => {
     await renderOrderPage();
-    expect(addButton()).toHaveProperty('disabled', true);
+    const message = () => composer().querySelector('.cf-foot .error')?.textContent ?? null;
 
-    pickMain('Rántott szelet');
-    expect(addButton()).toHaveProperty('disabled', true);
-    expect(within(composer()).getByText('Válassz változatot.')).toBeTruthy();
+    pickMain('Rántott szelet — Csirkemell');
+    expect(
+      within(composer()).getByRole('button', {
+        name: strings.composer.mainChosen('Rántott szelet — Csirkemell'),
+      }),
+    ).toBeTruthy();
+    expect(within(composer()).queryByText(/^Változat/)).toBeNull();
+    expect(block(/^Köret$/)).toBeTruthy();
+    expect(block(/^Leves$/)).toBeTruthy();
+    expect(message()).toBeNull();
 
-    fireEvent.click(within(block(/^Változat/)).getByRole('radio', { name: 'Csirkemell' }));
-    expect(addButton()).toHaveProperty('disabled', true);
-    fireEvent.click(within(block(/^Köret/)).getByRole('radio', { name: 'Párolt rizs' }));
-    expect(addButton()).toHaveProperty('disabled', true);
-    expect(within(composer()).getByText(strings.composer.unanswered)).toBeTruthy();
+    fireEvent.click(addButton());
+    expect(message()).toBe(orderMessagesHu.side_required);
+    expect(within(cart() as HTMLElement).getByText(strings.cart.empty)).toBeTruthy();
+
+    fireEvent.click(within(block(/^Köret$/)).getByRole('radio', { name: 'Párolt rizs' }));
+    expect(message()).toBe(strings.composer.unanswered);
 
     pickSoup(strings.composer.none);
-    expect(addButton()).toHaveProperty('disabled', false);
+    expect(message()).toBeNull();
+    fireEvent.click(addButton());
+    expect(within(cart() as HTMLElement).queryByText(strings.cart.empty)).toBeNull();
+    expect(message()).toBeNull();
+  });
+
+  it('lists each variation of a main as its own row in the picker', async () => {
+    await renderOrderPage();
+    fireEvent.click(within(composer()).getByRole('button', { name: strings.composer.mainPrompt }));
+    const dialog = screen.getByRole('dialog');
+    for (const variation of ['Sertéskaraj', 'Csirkemell', 'Trapista sajt']) {
+      expect(
+        within(dialog).getByRole('button', { name: `Rántott szelet — ${variation}` }),
+      ).toBeTruthy();
+    }
+    expect(within(dialog).queryByRole('button', { name: 'Rántott szelet' })).toBeNull();
   });
 
   it('shows a sold-out dish but does not let it be chosen', async () => {

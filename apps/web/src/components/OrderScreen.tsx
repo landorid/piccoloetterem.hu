@@ -18,6 +18,7 @@ import { strings } from '../strings';
 import { AllergenTipProvider } from './Allergens';
 import { Composer } from './Composer';
 import { DayCart } from './DayCart';
+import { BannerIcon } from './parts';
 import { Summary } from './Summary';
 import { DayRail, tabId, WeekBar } from './WeekHeader';
 
@@ -93,13 +94,7 @@ export function OrderScreen({
 
   return (
     <AllergenTipProvider>
-      <WeekBar
-        isoWeek={menu.isoWeek}
-        days={days}
-        cutoff={cutoff}
-        deliveryFee={config.pricing.deliveryFee}
-        minimumOrder={config.pricing.minimumOrder}
-      />
+      <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={cutoff} />
       <DayRail
         days={days}
         activeDate={activeDate}
@@ -118,9 +113,7 @@ export function OrderScreen({
         <div className="banners">
           {droppedDates.map((date) => (
             <div key={date} className="banner banner-warn" role="status">
-              <span className="icon" aria-hidden="true">
-                i
-              </span>
+              <BannerIcon kind="warn" />
               <div>
                 <h3>{strings.errors.cutoffTitle}</h3>
                 <p>{strings.errors.cutoffBody(weekdayName(date), time)}</p>

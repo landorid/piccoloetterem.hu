@@ -1,4 +1,5 @@
 import type { MenuItem, PublicMenu } from '@piccolo/core';
+import { Check, X } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { dayFull, forint } from '../format';
 import type { IsoDate } from '../order/cart';
@@ -12,16 +13,26 @@ interface MainPickerProps {
   date: IsoDate;
   menu: PublicMenu;
   selectedId: string | null;
-  /** `null` is `composer.none`. */
-  onPick: (item: MenuItem | null) => void;
+  selectedVariation: string | null;
+  /** `null` is `composer.none`; a dish with variations is picked with one of them. */
+  onPick: (item: MenuItem | null, variation?: string) => void;
   onClose: () => void;
 }
 
 /**
  * The one sheet left: the day's mains, the featured dishes and the all-week ones, `composer.none`
- * last. A modal `<dialog>`; its options are buttons, because choosing closes it.
+ * last. A dish with variations is one row per variation, so a single tap picks both. A modal
+ * `<dialog>`; its options are buttons, because choosing closes it.
  */
-export function MainPicker({ open, date, menu, selectedId, onPick, onClose }: MainPickerProps) {
+export function MainPicker({
+  open,
+  date,
+  menu,
+  selectedId,
+  selectedVariation,
+  onPick,
+  onClose,
+}: MainPickerProps) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -69,25 +80,47 @@ export function MainPicker({ open, date, menu, selectedId, onPick, onClose }: Ma
               aria-label={strings.common.close}
               onClick={onClose}
             >
-              ×
+              <X size={20} aria-hidden="true" />
             </button>
           </div>
           <div className="sheet-body">
             <div className="options">
               {groups.map((group) => (
                 <PickerGroup key={group.label} label={group.label}>
-                  {group.items.map((item) => (
-                    <PickerOption
-                      key={item.id}
-                      item={item}
-                      amount={forint(unitPrice(item, date))}
-                      picked={item.id === selectedId}
-                      onPick={() => onPick(item)}
-                    />
-                  ))}
+                  {group.items.flatMap((item) => {
+                    const amount = forint(unitPrice(item, date));
+                    if (item.variations.length === 0) {
+                      return (
+                        <PickerOption
+                          key={item.id}
+                          item={item}
+                          name={item.name}
+                          amount={amount}
+                          picked={item.id === selectedId}
+                          onPick={() => onPick(item)}
+                        />
+                      );
+                    }
+                    return item.variations.map((variation) => (
+                      <PickerOption
+                        key={`${item.id}:${variation}`}
+                        item={item}
+                        name={strings.composer.withVariation(item.name, variation)}
+                        amount={amount}
+                        picked={item.id === selectedId && variation === selectedVariation}
+                        onPick={() => onPick(item, variation)}
+                      />
+                    ));
+                  })}
                 </PickerGroup>
               ))}
-              <PickerOption item={null} amount={null} picked={false} onPick={() => onPick(null)} />
+              <PickerOption
+                item={null}
+                name={strings.composer.none}
+                amount={null}
+                picked={false}
+                onPick={() => onPick(null)}
+              />
             </div>
           </div>
         </>
@@ -107,11 +140,13 @@ function PickerGroup({ label, children }: { label: string; children: React.React
 
 function PickerOption({
   item,
+  name,
   amount,
   picked,
   onPick,
 }: {
   item: MenuItem | null;
+  name: string;
   amount: string | null;
   picked: boolean;
   onPick: () => void;
@@ -130,7 +165,7 @@ function PickerOption({
             aria-describedby={amount === null ? undefined : amountId}
             onClick={onPick}
           >
-            {item ? item.name : strings.composer.none}
+            {name}
           </button>
           {soldOut && <SoldOut />}
         </span>
@@ -147,7 +182,7 @@ function PickerOption({
         )}
       </span>
       <span className="pmark" aria-hidden="true">
-        ✓
+        <Check size={15} strokeWidth={3} />
       </span>
     </div>
   );

@@ -68,11 +68,6 @@ export const strings = {
     },
     none: 'Nem kérek',
     choose: 'Válassz',
-    variationLabel: 'Változat',
-    /** `KÖRET · KÖTELEZŐ`: the block must be answered (uppercased by CSS). */
-    required: (label: string) => `${label} · kötelező`,
-    /** `LEVES · VÁLASSZ`: the soup is not answered yet. */
-    answer: (label: string) => `${label} · válassz`,
     soupHint: 'A napi főételek ára tartalmazza a levest.',
     unanswered: 'Válassz levest — a „Nem kérek” is válasz.',
     formTitle: (n: number) => `${n}. menü összeállítása`,
