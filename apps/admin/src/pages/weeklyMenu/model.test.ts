@@ -1,4 +1,4 @@
-import type { WeekDraft, WeekItemDraft } from '@piccolo/core';
+import { type MenuItem, planWeek, type WeekDraft, type WeekItemDraft } from '@piccolo/core';
 import { describe, expect, it } from 'vitest';
 import {
   buildDraft,
@@ -55,7 +55,7 @@ const stored: WeekDraft = {
         item(4, { allergens: ['gluten', 'milk'] }),
       ],
     },
-    6: { soups: [], mains: [item(5, { priceWeekend: 1120 })] },
+    6: { soups: [], mains: [item(5, { priceWeekday: 1120 })] },
   },
   featured: [item(6, { priceWeekday: 2190, priceWeekend: 2390 })],
 };
@@ -83,12 +83,13 @@ describe('gridFromWeek', () => {
         ['1170', ''],
       ]);
     }
+    // Saturday's mains have one price, 100 more.
     expect(grid.days[6].mains.map((row) => [row.priceWeekday, row.priceWeekend])).toEqual([
-      ['1020', '1120'],
-      ['1020', '1120'],
-      ['1120', '1220'],
-      ['1120', '1220'],
-      ['1170', '1270'],
+      ['1120', ''],
+      ['1120', ''],
+      ['1220', ''],
+      ['1220', ''],
+      ['1270', ''],
     ]);
     expect(grid.days[1].mains.every((row) => row.soupIncluded)).toBe(true);
     expect(grid.days[1].soups.some((row) => row.soupIncluded)).toBe(false);
@@ -147,9 +148,81 @@ describe('gridFromWeek', () => {
   });
 });
 
+describe('Saturday', () => {
+  const saturdayWeek = (main: WeekItemDraft): WeekDraft => ({
+    ...emptyWeek,
+    days: { ...emptyWeek.days, 6: { soups: [], mains: [main] } },
+  });
+
+  it('opens a main stored with a weekend price at that price, and saves it as the one price', () => {
+    const week = saturdayWeek(item(5, { priceWeekday: 1020, priceWeekend: 1120 }));
+    const grid = gridFromWeek(week);
+
+    expect(grid.days[6].mains.map((row) => [row.priceWeekday, row.priceWeekend])).toEqual([
+      ['1120', ''],
+    ]);
+    expect(buildDraft(grid, week).draft.days[6].mains).toEqual([
+      item(5, { priceWeekday: 1120, priceWeekend: null }),
+    ]);
+  });
+
+  it('opens a main stored without a weekend price at its weekday price', () => {
+    const week = saturdayWeek(item(5, { priceWeekday: 1170, priceWeekend: null }));
+    const grid = gridFromWeek(week);
+
+    expect(grid.days[6].mains.map((row) => [row.priceWeekday, row.priceWeekend])).toEqual([
+      ['1170', ''],
+    ]);
+    expect(buildDraft(grid, week).draft).toEqual(week);
+  });
+
+  it('saves the Saturday row of an item that is on a weekday too as a new item', () => {
+    const shared = item(7, { name: 'Rakott krumpli', priceWeekday: 2090, priceWeekend: 2290 });
+    const week: WeekDraft = {
+      ...emptyWeek,
+      days: {
+        ...emptyWeek.days,
+        4: { soups: [], mains: [shared] },
+        6: { soups: [], mains: [shared] },
+      },
+    };
+    const grid = gridFromWeek(week);
+    const { draft } = buildDraft(grid, week);
+
+    expect(grid.days[4].mains[0]).toMatchObject({ priceWeekday: '2090', priceWeekend: '2290' });
+    expect(draft.days[4].mains).toEqual([shared]);
+    expect(draft.days[6].mains).toHaveLength(1);
+    expect(draft.days[6].mains[0]).not.toHaveProperty('id');
+    expect(draft.days[6].mains[0]).toMatchObject({
+      name: 'Rakott krumpli',
+      priceWeekday: 2290,
+      priceWeekend: null,
+    });
+    // The API takes it: the stored item stays as it is, and Saturday gets a new one.
+    const storedItem: MenuItem = {
+      ...shared,
+      id: uuid(7),
+      category: 'daily_main',
+      allergens: [],
+      soldOut: false,
+      active: true,
+      sortOrder: 0,
+    };
+    expect(planWeek(draft, new Map([[uuid(7), storedItem]]))).toMatchObject({
+      ok: true,
+      plan: {
+        items: [
+          { id: uuid(7), changed: false },
+          { id: null, changed: true },
+        ],
+      },
+    });
+  });
+});
+
 describe('newRow', () => {
   it('prices a sixth main like the fifth, and a featured row not at all', () => {
-    expect(newRow('days.6.mains', 5)).toMatchObject({ priceWeekday: '1170', priceWeekend: '1270' });
+    expect(newRow('days.6.mains', 5)).toMatchObject({ priceWeekday: '1270', priceWeekend: '' });
     expect(newRow('featured', 0)).toMatchObject({
       priceWeekday: '',
       priceWeekend: '',
@@ -207,14 +280,14 @@ describe('buildDraft', () => {
   });
 
   it('sends a negative or fractional price as typed, for the API to reject', () => {
-    const grid = editFirst(gridFromWeek(stored), 'days.6.mains', {
+    const grid = editFirst(gridFromWeek(stored), 'featured', {
       priceWeekday: '-50',
       priceWeekend: '1 120.5',
     });
 
     const built = buildDraft(grid, stored);
     expect(built.errors).toEqual({});
-    expect(built.draft.days[6].mains[0]).toMatchObject({ priceWeekday: -50, priceWeekend: 1120.5 });
+    expect(built.draft.featured[0]).toMatchObject({ priceWeekday: -50, priceWeekend: 1120.5 });
   });
 
   it('reports a price that is not a number, or a missing weekday price, by row', () => {

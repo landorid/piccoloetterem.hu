@@ -1,3 +1,42 @@
+import type {
+  CardPlace,
+  DateRange,
+  ImportFailure,
+  ImportFinding,
+  MonthDay,
+} from '@piccolo/core/menu-card';
+
+type FindingTexts = {
+  [K in ImportFinding['kind']]: (finding: Extract<ImportFinding, { kind: K }>) => string;
+};
+
+const findingTexts: FindingTexts = {
+  week_mismatch: (f) =>
+    `A kártya dátuma ${dateRange(f.card)}, de ez a hét ${dateRange(f.week)} Ellenőrizd, hogy jó héthez töltötted-e be.`,
+  week_unverified: () =>
+    'A kártyán nincs dátum, ezért nem ellenőrizhető, hogy ehhez a héthez tartozik-e.',
+  day_without_dishes: (f) =>
+    [
+      `${strings.weeklyMenu.days[f.day]}: a kártyán nincs rá étel${f.texts.length > 0 ? ` (${quoted(f.texts)})` : ''}, ezért üresen maradt.`,
+      f.withheld.length > 0 && `A több napra szóló ${quoted(f.withheld)} sem került rá.`,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  cell_skipped: (f) => `${cardPlace(f.where)}: kimaradt, mert nem étel: ${quoted([f.text])}.`,
+  price_note_ignored: (f) => `${f.row} sor, Áraink: kimaradt ez a megjegyzés: ${quoted([f.text])}.`,
+  price_missing: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} kimaradt, mert nincs mellette ár. Vedd fel kézzel.`,
+  weekend_price_missing: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} mellett nincs szombati ár, ezért szombaton is a hétköznapi ár érvényes.`,
+  allergens_missing: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} mellett nincs allergénszám. Ellenőrizd az allergéneket.`,
+  allergen_unknown: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} ismeretlen allergénszámai kimaradtak: ${f.numbers.join(', ')}.`,
+  featured_unpaired: (f) =>
+    `Kiemelt ajánlatok: ${f.dishes.length} ételhez ${f.prices} ár tartozik, ezért egyik sem került be: ${quoted(f.dishes)}.`,
+  section_skipped: (f) => `Kimaradt ez a rész: ${quoted([f.title])}.`,
+};
+
 /**
  * Every user-facing string of the admin. Hungarian, never inlined into a
  * component (see AGENTS.md); `pnpm lint:strings` fails on Hungarian text
@@ -87,7 +126,7 @@ export const strings = {
       mains: 'Főételek',
       featured: 'Kiemelt ajánlat',
     },
-    featuredHint: 'Egész héten rendelhető, legfeljebb 5 tétel.',
+    featuredHint: 'Egész héten rendelhető.',
     /** A row's name for screen readers: `Hétfő, 2. leves`. */
     rowNames: {
       soups: 'leves',
@@ -162,6 +201,46 @@ export const strings = {
       not_weekly: 'Állandó tétel nem kerülhet a heti menübe.',
       conflict: 'Ez a tétel máshol más tartalommal szerepel.',
       fallback: 'Hibás érték.',
+    },
+    /** Reading the week's Word menu card into the grid (`CardImport`, `ImportReport`). */
+    cardImport: {
+      button: 'Betöltés Word-kártyáról',
+      fileInput: 'A heti étlap Word-fájlja (.docx)',
+      applied: 'A Word-kártya betöltve.',
+      unreadable: 'A fájlt nem sikerült megnyitni. Próbáld újra.',
+      failures: {
+        legacy_doc:
+          'Ez régi Word-formátum (.doc). Nyisd meg Wordben, mentsd el .docx-ként (Fájl > Mentés másként), és azt töltsd be.',
+        not_docx: 'Ez nem Word-fájl (.docx), vagy megsérült.',
+        too_large: 'A fájl túl nagy: legfeljebb 32 MB lehet.',
+        no_menu_table: 'Nincs benne a heti étlap táblázata (Hétfő–Szombat és Áraink fejléccel).',
+        nothing_found: 'A kártyán egyetlen étel sincs.',
+      } satisfies Record<ImportFailure, string>,
+      confirm: {
+        title: 'Betöltöd a Word-kártyát?',
+        confirm: 'Betöltés',
+        description: ({ replaces, mismatch }: { replaces: boolean; mismatch?: WeekMismatch }) =>
+          [
+            mismatch &&
+              `A kártya dátuma ${dateRange(mismatch.card)}, de ez a hét ${dateRange(mismatch.week)}`,
+            replaces &&
+              'A rács mostani tartalmát, a nem mentett módosításokat is, a kártya váltja fel.',
+            'Mentésig semmi sem változik.',
+          ]
+            .filter(Boolean)
+            .join(' '),
+      },
+      report: {
+        title: 'Word-kártya betöltve',
+        summary: (count: number) => `${count} tétel került a rácsba. Nézd át, majd mentsd el.`,
+        dismiss: 'Összefoglaló bezárása',
+        splitHint: 'A név és a leírás szétválasztása becslés: nézd meg, hol kezdődik a leírás.',
+        closedHint:
+          'Ha egy üresen maradt napon zárva vagytok, kapcsold be a napnál: Nincs rendelés.',
+        permanentHint:
+          'Az „Egész héten rendelhető” rész és ami alatta van nem a heti menü része: azt az Étlap oldalon szerkesztheted.',
+      },
+      findings: findingTexts,
     },
   },
   /** The orders of one day at /rendelesek (S2). */
@@ -402,3 +481,27 @@ export const strings = {
     },
   },
 } as const;
+
+type WeekMismatch = Extract<ImportFinding, { kind: 'week_mismatch' }>;
+
+/** `06.15.–06.20.`, which ends a sentence too. */
+function dateRange({ from, to }: DateRange): string {
+  const monthDay = ({ month, day }: MonthDay) =>
+    `${String(month).padStart(2, '0')}.${String(day).padStart(2, '0')}.`;
+  return `${monthDay(from)}–${monthDay(to)}`;
+}
+
+function quoted(texts: readonly string[]): string {
+  return texts.map((text) => `„${text}”`).join(', ');
+}
+
+/** Where a card import finding sat: `Kedd, d sor`, `Hétfő–Péntek, c sor`, `3. kiemelt ajánlat`. */
+function cardPlace(place: CardPlace): string {
+  if (place.part === 'featured') {
+    return `${place.position}. kiemelt ajánlat`;
+  }
+  const names = place.days.map((day) => strings.weeklyMenu.days[day]);
+  const consecutive = place.days.every((day, i) => i === 0 || day === (place.days[i - 1] ?? 0) + 1);
+  const days = consecutive && names.length > 2 ? `${names[0]}–${names.at(-1)}` : names.join(', ');
+  return `${days}, ${place.row} sor`;
+}

@@ -1,5 +1,5 @@
 import { ApiError } from '@piccolo/api-client';
-import { type MenuDay, weekLabel } from '@piccolo/core';
+import { type MenuDay, matchStoredItems, weekLabel } from '@piccolo/core';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { ChevronLeftIcon, ChevronRightIcon, TriangleAlertIcon } from 'lucide-react';
@@ -15,6 +15,8 @@ import { PageHeader } from '@/components/PageHeader';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { strings } from '@/strings';
+import { CardImport, type ImportedCard } from './CardImport';
+import { ImportReport } from './ImportReport';
 import {
   buildDraft,
   daysWithoutMains,
@@ -103,6 +105,7 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
 
   const [draft, setDraft] = useState<{ base: StoredWeek; grid: Grid } | null>(null);
   const [errors, setErrors] = useState<RowErrors>({});
+  const [imported, setImported] = useState<ImportedCard | null>(null);
   const baseFingerprint = useMemo(() => draft && fingerprint(gridFromWeek(draft.base)), [draft]);
   const dirty = draft !== null && fingerprint(draft.grid) !== baseFingerprint;
 
@@ -299,6 +302,26 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
         <PageHeader
           title={strings.pages.weeklyMenu.title}
           description={strings.pages.weeklyMenu.description}
+          actions={
+            draft && (
+              <CardImport
+                week={week}
+                replaces={dirty || !isEmptyWeek(draft.base)}
+                disabled={save.isPending}
+                onImport={(card) => {
+                  setDraft(
+                    (current) =>
+                      current && {
+                        ...current,
+                        grid: gridFromWeek(matchStoredItems(card.draft, current.base)),
+                      },
+                  );
+                  setErrors({});
+                  setImported(card);
+                }}
+              />
+            )
+          }
         />
 
         <div className="flex flex-wrap items-center gap-2">
@@ -333,6 +356,8 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
               <Badge variant="secondary">{t.week.draft}</Badge>
             ))}
         </div>
+
+        {imported && <ImportReport card={imported} onDismiss={() => setImported(null)} />}
 
         {content}
 

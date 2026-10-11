@@ -16,7 +16,6 @@ import {
   type ListPath,
   listAt,
   listPath,
-  maxFeatured,
   maxSoups,
   menuDays,
   type Row,
@@ -46,22 +45,17 @@ type ListProps = GridHandlers & {
 function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps) {
   const path = listPath(kind, day);
   const rows = listAt(grid, path);
-  const full =
-    (kind === 'featured' && rows.length >= maxFeatured) ||
-    (kind === 'soups' && rows.length >= maxSoups);
+  const full = kind === 'soups' && rows.length >= maxSoups;
   const dayName = day === null ? t.groups.featured : t.days[day];
 
   return (
     <>
-      {rows.length > 0 && (
-        <ItemRowHeader kind={kind} weekendPrice={kind === 'featured' || day === 6} />
-      )}
+      {rows.length > 0 && <ItemRowHeader kind={kind} />}
       {rows.map((row, index) => (
         <ItemRow
           key={row.key}
           row={row}
           kind={kind}
-          weekendPrice={kind === 'featured' || day === 6}
           label={`${dayName}, ${index + 1}. ${t.rowNames[kind]}`}
           errors={errors[row.key]}
           soldOut={row.id === undefined ? undefined : (soldOut.get(row.id) ?? false)}
@@ -71,13 +65,12 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
         />
       ))}
       {/* A day's soups come back up to three: a full list has nothing to add. */}
-      {!(kind === 'soups' && full) && (
+      {!full && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
           className="self-start text-muted-foreground"
-          disabled={full}
           onClick={() => handlers.onAdd(path)}
         >
           <PlusIcon />
@@ -196,7 +189,7 @@ type FeaturedProps = GridHandlers & {
   soldOut: ReadonlyMap<string, boolean>;
 };
 
-/** The week's featured items, offered every day of it, up to five. */
+/** The week's featured items, offered every day of it. */
 export function FeaturedSection({ grid, errors, soldOut, ...handlers }: FeaturedProps) {
   const id = useId();
   return (
