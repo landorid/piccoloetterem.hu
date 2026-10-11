@@ -42,7 +42,11 @@ export interface Row {
   id: string | undefined;
   name: string;
   description: string;
-  /** The price inputs' text. An empty weekend price means the weekday price applies. */
+  /**
+   * The price inputs' text. An empty weekend price means the weekday price applies. A Saturday
+   * dish is only ever delivered on Saturday, so its row has one price, the one charged then, in
+   * `priceWeekday`, and an empty weekend price.
+   */
   priceWeekday: string;
   priceWeekend: string;
   variations: readonly string[];
@@ -71,7 +75,7 @@ export const maxSoups = 3;
 const templateSoups = maxSoups;
 const templateFeatured = 4;
 
-/** The old system's default prices of the five daily mains; Saturday's weekend price is +100. */
+/** The old system's default prices of the five daily mains, 100 more on Saturday. */
 const defaultMainPrices = [1020, 1020, 1120, 1120, 1170] as const;
 const saturdaySurcharge = 100;
 
@@ -104,8 +108,8 @@ function dayOf(path: ListPath): MenuDay | null {
 
 /**
  * A new, blank row for position `index` of a list. Daily soups are free (the menu's price
- * includes them); mains get the old system's default price for their position, and Saturday's a
- * weekend price too; featured rows start without prices. Mains and featured include a soup.
+ * includes them); mains get the old system's default price for their position, 100 more on
+ * Saturday; featured rows start without prices. Mains and featured include a soup.
  */
 export function newRow(path: ListPath, index: number): Row {
   const kind = kindOf(path);
@@ -125,23 +129,29 @@ export function newRow(path: ListPath, index: number): Row {
     return { ...blank, priceWeekday: '', priceWeekend: '', soupIncluded: true };
   }
   const price = defaultMainPrices[Math.min(index, defaultMainPrices.length - 1)] ?? 0;
-  const saturday = dayOf(path) === 6;
+  const surcharge = dayOf(path) === 6 ? saturdaySurcharge : 0;
   return {
     ...blank,
-    priceWeekday: String(price),
-    priceWeekend: saturday ? String(price + saturdaySurcharge) : '',
+    priceWeekday: String(price + surcharge),
+    priceWeekend: '',
     soupIncluded: true,
   };
 }
 
+/**
+ * On Saturday a stored item's weekend price is the one charged (`priceFor`), so it becomes the
+ * row's one price. An item with a weekend price that is on a weekday as well then differs on
+ * Saturday, and `buildDraft` saves that row as a new item.
+ */
 function rowFromItem(path: ListPath, item: WeekItemDraft): Row {
+  const saturday = dayOf(path) === 6;
   return {
     key: item.id === undefined ? newKey() : `${path}/${item.id}`,
     id: item.id,
     name: item.name,
     description: item.description ?? '',
-    priceWeekday: String(item.priceWeekday),
-    priceWeekend: item.priceWeekend === null ? '' : String(item.priceWeekend),
+    priceWeekday: String(saturday ? (item.priceWeekend ?? item.priceWeekday) : item.priceWeekday),
+    priceWeekend: saturday || item.priceWeekend === null ? '' : String(item.priceWeekend),
     variations: item.variations,
     allergens: sortAllergens(item.allergens),
     soupIncluded: item.soupIncluded,

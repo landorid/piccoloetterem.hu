@@ -53,15 +53,12 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
 
   return (
     <>
-      {rows.length > 0 && (
-        <ItemRowHeader kind={kind} weekendPrice={kind === 'featured' || day === 6} />
-      )}
+      {rows.length > 0 && <ItemRowHeader kind={kind} />}
       {rows.map((row, index) => (
         <ItemRow
           key={row.key}
           row={row}
           kind={kind}
-          weekendPrice={kind === 'featured' || day === 6}
           label={`${dayName}, ${index + 1}. ${t.rowNames[kind]}`}
           errors={errors[row.key]}
           soldOut={row.id === undefined ? undefined : (soldOut.get(row.id) ?? false)}

@@ -31,11 +31,12 @@ const cell = {
 
 type FieldErrors = Partial<Record<RowField, string>>;
 
+/** A daily dish is delivered on its own day only, so only featured items have a weekend price. */
+const hasWeekendPrice = (kind: ListKind) => kind === 'featured';
+
 type ItemRowProps = {
   row: Row;
   kind: ListKind;
-  /** Saturday's mains and featured items have a weekend price as well. */
-  weekendPrice: boolean;
   /** For screen readers, e.g. "Monday, 2. soup" in Hungarian (strings.weeklyMenu.rowNames). */
   label: string;
   errors: FieldErrors | undefined;
@@ -60,7 +61,6 @@ export function errorMessage(code: string): string {
 export function ItemRow({
   row,
   kind,
-  weekendPrice,
   label,
   errors = {},
   soldOut,
@@ -70,13 +70,14 @@ export function ItemRow({
 }: ItemRowProps) {
   const id = useId();
   const soup = kind === 'soups';
+  const weekendPrice = hasWeekendPrice(kind);
   // Errors the row has no field for, such as an `id` the API rejected, are listed below it.
   const shown = new Set<RowField>(['name', 'description', 'variations', 'allergens']);
   if (!soup) {
     shown.add('priceWeekday');
     shown.add('soupIncluded');
   }
-  if (!soup && weekendPrice) {
+  if (weekendPrice) {
     shown.add('priceWeekend');
   }
   const other = Object.entries(errors).filter(([field]) => !shown.has(field as RowField));
@@ -156,7 +157,7 @@ export function ItemRow({
           {error('description')}
         </div>
         {!soup && price('priceWeekday', weekendPrice ? t.fields.priceWeekday : t.fields.price)}
-        {!soup && weekendPrice && price('priceWeekend', t.fields.priceWeekend)}
+        {weekendPrice && price('priceWeekend', t.fields.priceWeekend)}
       </div>
 
       <div className="flex min-w-0 flex-[2_1_34rem] flex-wrap items-start gap-2 @4xl:contents">
@@ -293,8 +294,9 @@ function VariationsCell({ id, value, onChange, invalid, ...rest }: VariationsCel
  * The column names above a list's rows, in the rows' widths. Only where the rows are one line
  * (a container at 4xl); narrower, each field says what it is on its own.
  */
-export function ItemRowHeader({ kind, weekendPrice }: { kind: ListKind; weekendPrice: boolean }) {
+export function ItemRowHeader({ kind }: { kind: ListKind }) {
   const soup = kind === 'soups';
+  const weekendPrice = hasWeekendPrice(kind);
   const title = (text: string, width: string, extra?: string) => (
     <span className={cn('truncate', width, extra)}>{text}</span>
   );
@@ -310,7 +312,7 @@ export function ItemRowHeader({ kind, weekendPrice }: { kind: ListKind; weekendP
       {title(t.fields.description, cell.description)}
       {!soup &&
         title(weekendPrice ? t.fields.priceWeekday : t.fields.price, cell.price, 'text-right')}
-      {!soup && weekendPrice && title(t.fields.priceWeekend, cell.priceWeekend, 'text-right')}
+      {weekendPrice && title(t.fields.priceWeekend, cell.priceWeekend, 'text-right')}
       {title(strings.variationsInput.label, cell.variations)}
       {title(strings.allergenSelect.label, cell.allergens)}
       {!soup && toggle(t.fields.soupIncluded)}
