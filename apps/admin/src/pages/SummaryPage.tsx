@@ -21,13 +21,10 @@ function PrintTitle({ date, tab }: { date: string; tab: Tab }) {
   const config = useQuery(configQuery);
   const day = fromIsoDate(date);
   return (
-    <div className="hidden print:block">
-      <p className="text-sm">{config.data?.name ?? strings.appName}</p>
-      <h1 className="font-semibold text-xl">
-        {strings.summary.tabs[tab]}
-        {day && ` – ${formatDateLong(day)}`}
-      </h1>
-    </div>
+    <h1 className="hidden font-semibold text-[13pt] print:block">
+      {config.data?.name ?? strings.appName} · {strings.summary.tabs[tab]}
+      {day && ` · ${formatDateLong(day)}`}
+    </h1>
   );
 }
 
@@ -66,7 +63,7 @@ export function SummaryPage() {
         />
       </div>
       {date ? (
-        <Tabs value={tab} onValueChange={setTab} className="gap-4">
+        <Tabs value={tab} onValueChange={setTab} className="gap-4 print:gap-2">
           <TabsList className="print:hidden">
             {tabs.map((each) => (
               <TabsTrigger key={each} value={each}>

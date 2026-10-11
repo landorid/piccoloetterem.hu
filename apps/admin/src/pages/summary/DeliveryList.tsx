@@ -25,6 +25,12 @@ const statusVariant = {
 
 /** Only on paper: an empty box the courier ticks when the order is handed over. */
 const paperOnly = 'hidden print:table-cell';
+/**
+ * On paper the phone sits under the name and the note under the address, so a row of a full A4
+ * list stays two or three lines high.
+ */
+const screenOnly = 'print:hidden';
+const paperOnlyInline = 'hidden print:inline';
 
 function ListContent({ list }: { list: DeliveryListData }) {
   if (list.orders.length === 0) {
@@ -42,16 +48,25 @@ function ListContent({ list }: { list: DeliveryListData }) {
     <Table data-print="table">
       <TableHeader>
         <TableRow>
-          <TableHead className={`${paperOnly} w-12`}>
+          <TableHead className={`${paperOnly} w-[10mm] text-[7pt]`}>
             {strings.summary.columns.handedOver}
           </TableHead>
-          <TableHead>{strings.summary.columns.name}</TableHead>
-          <TableHead>{strings.summary.columns.phone}</TableHead>
-          <TableHead>{strings.summary.columns.address}</TableHead>
-          <TableHead className="text-right">{strings.summary.columns.menus}</TableHead>
-          <TableHead className="text-right">{strings.summary.columns.total}</TableHead>
-          <TableHead>{strings.summary.columns.note}</TableHead>
-          <TableHead>{strings.summary.columns.status}</TableHead>
+          <TableHead className="print:w-[34mm]">{strings.summary.columns.name}</TableHead>
+          <TableHead className={screenOnly}>{strings.summary.columns.phone}</TableHead>
+          <TableHead>
+            <span className={screenOnly}>{strings.summary.columns.address}</span>
+            <span className={paperOnlyInline}>{strings.summary.columns.addressAndNote}</span>
+          </TableHead>
+          <TableHead className="text-right print:w-[11mm] print:text-[8pt]">
+            {strings.summary.columns.menus}
+          </TableHead>
+          <TableHead className="text-right print:w-[20mm]">
+            {strings.summary.columns.total}
+          </TableHead>
+          <TableHead className={screenOnly}>{strings.summary.columns.note}</TableHead>
+          <TableHead className="print:w-[17mm] print:text-[8pt]">
+            {strings.summary.columns.status}
+          </TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -60,20 +75,30 @@ function ListContent({ list }: { list: DeliveryListData }) {
             <TableCell className={paperOnly}>
               <span aria-hidden className="block size-4 border border-current" />
             </TableCell>
-            <TableCell className="whitespace-normal font-medium">{order.name}</TableCell>
-            <TableCell>
+            <TableCell className="whitespace-normal">
+              <span className="font-medium">{order.name}</span>
+              <span className="hidden print:block">{order.phone}</span>
+            </TableCell>
+            <TableCell className={screenOnly}>
               <a href={`tel:${order.phone}`} className="underline-offset-4 hover:underline">
                 {order.phone}
               </a>
             </TableCell>
             <TableCell className="whitespace-normal">
               {order.address || strings.summary.pickup}
+              {order.note && (
+                <span className="hidden whitespace-pre-line break-words italic print:block">
+                  {order.note}
+                </span>
+              )}
             </TableCell>
             <TableCell className="text-right tabular-nums">{order.menuCount}</TableCell>
             <TableCell className="text-right tabular-nums">
               {strings.summary.money(order.total)}
             </TableCell>
-            <TableCell className="min-w-40 whitespace-pre-line break-words">{order.note}</TableCell>
+            <TableCell className={`${screenOnly} min-w-40 whitespace-pre-line break-words`}>
+              {order.note}
+            </TableCell>
             <TableCell>
               <Badge variant={statusVariant[order.status]}>
                 {strings.summary.statuses[order.status]}
@@ -85,10 +110,15 @@ function ListContent({ list }: { list: DeliveryListData }) {
       <TableFooter>
         <TableRow>
           <TableCell className={paperOnly} />
-          <TableCell colSpan={3}>{strings.summary.deliveryTotal(list.orders.length)}</TableCell>
+          <TableCell className="whitespace-normal">
+            {strings.summary.deliveryTotal(list.orders.length)}
+          </TableCell>
+          <TableCell className={screenOnly} />
+          <TableCell />
           <TableCell className="text-right tabular-nums">{menus}</TableCell>
           <TableCell className="text-right tabular-nums">{strings.summary.money(total)}</TableCell>
-          <TableCell colSpan={2} />
+          <TableCell className={screenOnly} />
+          <TableCell />
         </TableRow>
       </TableFooter>
     </Table>

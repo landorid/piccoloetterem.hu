@@ -109,6 +109,25 @@ const rowsOf = (table: HTMLElement) =>
     .getAllByRole('row')
     .map((row) => row.textContent);
 
+/**
+ * jsdom applies no Tailwind, so the display utilities decide what each medium shows: `hidden`
+ * leaves the screen, `print:hidden` and a `hidden` without a `print:` display leave the paper.
+ */
+const offScreen = '.hidden';
+const offPaper =
+  '.print\\:hidden, .hidden:not(.print\\:block, .print\\:inline, .print\\:table-cell)';
+
+const rowsOn = (medium: 'screen' | 'paper', table: HTMLElement) =>
+  within(table)
+    .getAllByRole('row')
+    .map((row) => {
+      const copy = row.cloneNode(true) as HTMLElement;
+      for (const gone of copy.querySelectorAll(medium === 'screen' ? offScreen : offPaper)) {
+        gone.remove();
+      }
+      return [...copy.children].map((cell) => cell.textContent);
+    });
+
 describe('SummaryPage', () => {
   it("shows the day's counts and each slot's dishes, mains first, in the API's order", async () => {
     renderPage(`?date=${date}`);
@@ -145,21 +164,75 @@ describe('SummaryPage', () => {
     expect(requests).toContain(`/api/admin/orders/summary?date=${date}`);
   });
 
-  it('lists deliveries by the API order, with a paper-only tick column and no minimum', async () => {
+  it('lists deliveries by the API order, with a phone and a note column on screen', async () => {
     renderPage(`?date=${date}&tab=delivery`);
 
     const table = await screen.findByRole('table');
-    expect(rowsOf(table).slice(1)).toEqual([
-      `Kiss Anna+36301234567Ady Endre utca 2.2${strings.summary.money(4_550)}Kapucsengő: 12${strings.summary.statuses.received}`,
-      `Nagy Béla+36209876543${strings.summary.pickup}1${strings.summary.money(2_350)}${strings.summary.statuses.processed}`,
-      `${strings.summary.deliveryTotal(2)}3${strings.summary.money(6_900)}`,
+    const { columns, money, statuses } = strings.summary;
+    expect(rowsOn('screen', table)).toEqual([
+      [
+        columns.name,
+        columns.phone,
+        columns.address,
+        columns.menus,
+        columns.total,
+        columns.note,
+        columns.status,
+      ],
+      [
+        'Kiss Anna',
+        '+36301234567',
+        'Ady Endre utca 2.',
+        '2',
+        money(4_550),
+        'Kapucsengő: 12',
+        statuses.received,
+      ],
+      [
+        'Nagy Béla',
+        '+36209876543',
+        strings.summary.pickup,
+        '1',
+        money(2_350),
+        '',
+        statuses.processed,
+      ],
+      [strings.summary.deliveryTotal(2), '', '', '3', money(6_900), '', ''],
     ]);
-    const tick = within(table).getByRole('columnheader', {
-      name: strings.summary.columns.handedOver,
-    });
-    expect(tick.className).toMatch(/(^| )hidden( |$)/);
-    expect(tick.className).toContain('print:table-cell');
     expect(table.textContent).not.toMatch(/minimum/i);
+  });
+
+  it('prints a tick box, the phone under the name and the note under the address', async () => {
+    renderPage(`?date=${date}&tab=delivery`);
+
+    const table = await screen.findByRole('table');
+    const { columns, money, statuses } = strings.summary;
+    expect(rowsOn('paper', table)).toEqual([
+      [
+        columns.handedOver,
+        columns.name,
+        columns.addressAndNote,
+        columns.menus,
+        columns.total,
+        columns.status,
+      ],
+      [
+        '',
+        'Kiss Anna+36301234567',
+        'Ady Endre utca 2.Kapucsengő: 12',
+        '2',
+        money(4_550),
+        statuses.received,
+      ],
+      ['', 'Nagy Béla+36209876543', strings.summary.pickup, '1', money(2_350), statuses.processed],
+      ['', strings.summary.deliveryTotal(2), '', '3', money(6_900), ''],
+    ]);
+    const title = await screen.findByRole('heading', {
+      level: 1,
+      name: 'Piccolo Club Étterem · Kiszállítási lista · 2026. október 14., szerda',
+    });
+    expect(title.matches(offScreen)).toBe(true);
+    expect(title.matches(offPaper)).toBe(false);
   });
 
   it('shows a status change made elsewhere after one 60 s refresh, on both tabs', async () => {

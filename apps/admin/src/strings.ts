@@ -292,6 +292,8 @@ export const strings = {
       count: 'Darab',
       phone: 'Telefon',
       address: 'Cím',
+      /** On paper the note is printed under the address. */
+      addressAndNote: 'Cím, megjegyzés',
       menus: 'Menük',
       total: 'Összeg',
       note: 'Megjegyzés',
