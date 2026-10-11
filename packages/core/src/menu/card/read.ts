@@ -83,7 +83,7 @@ export type ImportFinding =
   | { kind: 'price_note_ignored'; row: string; text: string }
   /** A main with no price on the card: left out rather than given an invented one. */
   | { kind: 'price_missing'; where: CardPlace; name: string }
-  /** A Saturday main without its own price line: imported with the row's price only. */
+  /** A Saturday main without its own price line: imported at the row's weekday price. */
   | { kind: 'weekend_price_missing'; where: CardPlace; name: string }
   /** A dish listed without allergen numbers: imported with none, which may be wrong. */
   | { kind: 'allergens_missing'; where: CardPlace; name: string }
@@ -296,17 +296,17 @@ function readDays(table: DayTable) {
       }
       const { allergens, unknown } = allergensOf(dish.allergenNumbers);
       const soupIncluded = !saysNoSoup(row.priceText) && !saysNoSoup(text);
+      // A dish's own price line beats the row's: on Saturday it is the Saturday price. A daily
+      // main is only ever delivered on its own day, so it has that one price and no weekend one.
+      const price = dish.price ?? row.price;
       const unpriced: MenuDay[] = [];
       for (const day of placed) {
         if (row.list === 'soups') {
           days[day].soups.push(itemOf(dish, allergens, 0, null, false));
-          continue;
-        }
-        const { weekday, weekend } = mainPricesOn(day, row.price, dish.price);
-        if (weekday === null) {
+        } else if (price === null) {
           unpriced.push(day);
         } else {
-          days[day].mains.push(itemOf(dish, allergens, weekday, weekend, soupIncluded));
+          days[day].mains.push(itemOf(dish, allergens, price, null, soupIncluded));
         }
       }
       const name = dish.name;
@@ -322,12 +322,6 @@ function readDays(table: DayTable) {
     }
   }
   return { days, findings };
-}
-
-function mainPricesOn(day: MenuDay, rowPrice: number | null, cellPrice: number | null) {
-  return day === 6 && rowPrice !== null && cellPrice !== null
-    ? { weekday: rowPrice, weekend: cellPrice }
-    : { weekday: cellPrice ?? rowPrice, weekend: null };
 }
 
 /** The featured dishes under the `Kiemelt ajánlatunk` heading; the permanent menu ends them. */

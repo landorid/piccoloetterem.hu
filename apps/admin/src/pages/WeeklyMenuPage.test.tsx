@@ -724,8 +724,7 @@ describe('the Word menu card', () => {
     expect(report.textContent).toContain(t.cardImport.report.summary(43));
     expect(field(soupName(1, 1), t.fields.name).value).toBe('Erőleves');
     expect(field(soupName(1, 1), t.fields.description).value).toBe('finommetélttel');
-    expect(field(mainName(6, 1), t.fields.priceWeekday).value).toBe('2850');
-    expect(field(mainName(6, 1), t.fields.priceWeekend).value).toBe('3050');
+    expect(field(mainName(6, 1), t.fields.price).value).toBe('3050');
     expect(screen.queryByRole('group', { name: featuredName(7) })).toBeTruthy();
     expect(screen.getByRole('button', { name: t.add.featured }).hasAttribute('disabled')).toBe(
       false,
@@ -735,6 +734,22 @@ describe('the Word menu card', () => {
     await screen.findByText(t.toasts.saved);
     const card = readMenuCard(bytes, { isoYear: 2026, isoWeek: 25 });
     expect(api.requests.find((r) => r.method === 'PUT')?.body).toEqual(card.ok && card.draft);
+  });
+
+  it('keeps every saved item, Saturday mains too, when the same card is read again', async () => {
+    await openWeek('2026-W25');
+    const bytes = cardBytes('2026-06-15');
+    pick(bytes, '2026-06-15.docx');
+    await screen.findByRole('region', { name: t.cardImport.report.title });
+    fireEvent.click(saveButton());
+    await screen.findByText(t.toasts.saved);
+
+    pick(bytes, '2026-06-15.docx');
+    const dialog = await screen.findByRole('alertdialog');
+    fireEvent.click(within(dialog).getByRole('button', { name: t.cardImport.confirm.confirm }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(field(mainName(6, 1), t.fields.price).value).toBe('3050');
+    expect(saveButton().hasAttribute('disabled')).toBe(true);
   });
 
   it('refuses a .doc, and asks before a card for another week replaces a stored one', async () => {
