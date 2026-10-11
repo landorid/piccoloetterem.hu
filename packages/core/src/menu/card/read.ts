@@ -325,12 +325,9 @@ function readDays(table: DayTable) {
 }
 
 function mainPricesOn(day: MenuDay, rowPrice: number | null, cellPrice: number | null) {
-  if (day !== 6) {
-    return { weekday: rowPrice, weekend: null };
-  }
-  return rowPrice === null
-    ? { weekday: cellPrice, weekend: null }
-    : { weekday: rowPrice, weekend: cellPrice };
+  return day === 6 && rowPrice !== null && cellPrice !== null
+    ? { weekday: rowPrice, weekend: cellPrice }
+    : { weekday: cellPrice ?? rowPrice, weekend: null };
 }
 
 /** The featured dishes under the `Kiemelt ajánlatunk` heading; the permanent menu ends them. */

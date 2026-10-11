@@ -49,6 +49,11 @@ export function withoutNoSoup(text: string): string {
   return fold(text).replace(noSoup, '');
 }
 
+/** `Zárva`, `Nyitás január 5.`, `Nyitva 11-14`: when the restaurant is open, not a dish. */
+export function isOpeningNote(line: string): boolean {
+  return /^(?:zarva|nyitas|nyitva)/.test(fold(line));
+}
+
 /** The card's week above the table, `06.15.–06.20.` (month.day, no year), any dash. */
 export const dateRange = /(\d{1,2})\.\s*(\d{1,2})\.\s*[-–—]\s*(\d{1,2})\.\s*(\d{1,2})\./;
 

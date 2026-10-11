@@ -286,6 +286,84 @@ describe('a hand-written card with every kind of trouble', () => {
   });
 });
 
+describe('a weekday dish with a price line of its own', () => {
+  const soups = dayRow('a', Array(5).fill(soup), ['a menü ára tartalmaz'], soup);
+  const halaszle = ['Halászlé', '1,4', '3500 Ft'];
+  const porkolt = ['Pörkölt', '1'];
+  const read = (...rows: string[]) =>
+    readMenuCard(handWritten(`<w:tbl>${header}${soups}${rows.join('')}</w:tbl>`), week);
+
+  it('costs that price on its day, not the row price', () => {
+    const result = read(
+      dayRow('b', [halaszle, ...Array(4).fill(porkolt)], ['2400 Ft'], [...porkolt, '2590 Ft']),
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      draft: {
+        days: {
+          1: { mains: [{ name: 'Halászlé', priceWeekday: 3500, priceWeekend: null }] },
+          2: { mains: [{ name: 'Pörkölt', priceWeekday: 2400, priceWeekend: null }] },
+          6: { mains: [{ name: 'Pörkölt', priceWeekday: 2400, priceWeekend: 2590 }] },
+        },
+      },
+      findings: [{ kind: 'week_unverified' }],
+    });
+  });
+
+  it('is imported in a mains row with no price of its own', () => {
+    const result = read(
+      dayRow('b', Array(5).fill(porkolt), ['2400 Ft'], [...porkolt, '2590 Ft']),
+      dayRow('c', [halaszle, [], [], [], []], [], ['Gulyás', '1', '2590 Ft']),
+    );
+    expect(result).toMatchObject({
+      ok: true,
+      draft: {
+        days: {
+          1: {
+            mains: [
+              { name: 'Pörkölt', priceWeekday: 2400, priceWeekend: null },
+              { name: 'Halászlé', priceWeekday: 3500, priceWeekend: null },
+            ],
+          },
+          6: {
+            mains: [
+              { name: 'Pörkölt', priceWeekday: 2400, priceWeekend: 2590 },
+              { name: 'Gulyás', priceWeekday: 2590, priceWeekend: null },
+            ],
+          },
+        },
+      },
+      findings: [{ kind: 'week_unverified' }],
+    });
+  });
+});
+
+describe('a closed Saturday that says when the restaurant opens', () => {
+  it.each([[['Nyitás január 5']], [['Nyitás december', '29']], [['Nyitva 11-14']]])(
+    'stays closed with %j under a priced row',
+    (note) => {
+      const result = readMenuCard(
+        handWritten(
+          `<w:tbl>${header}${[
+            dayRow('a', Array(5).fill(soup), ['a menü ára tartalmaz'], ['Zárva']),
+            dayRow('c', Array(5).fill(['Rántott csirkemáj', '1,3,7']), ['2850 Ft'], ['Zárva']),
+            dayRow('d', Array(5).fill(['Pörkölt', '1']), ['2200 Ft'], note),
+          ].join('')}</w:tbl>`,
+        ),
+        week,
+      );
+      expect(result).toMatchObject({
+        ok: true,
+        draft: { days: { 6: { soups: [], mains: [] } } },
+        findings: [
+          { kind: 'week_unverified' },
+          { kind: 'day_without_dishes', day: 6, texts: ['Zárva', note.join(' ')], withheld: [] },
+        ],
+      });
+    },
+  );
+});
+
 describe('a file that is not a menu card', () => {
   it('passes on why a file is not a readable .docx', () => {
     const doc = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]);

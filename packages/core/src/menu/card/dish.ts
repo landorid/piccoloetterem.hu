@@ -1,5 +1,5 @@
 import { allergenCodes } from '../../config/types';
-import { isAdjectiveLine, startsDescription } from './vocabulary.hu';
+import { isAdjectiveLine, isOpeningNote, startsDescription } from './vocabulary.hu';
 
 /*
  * One dish's text on the card, a day cell's lines or one featured paragraph, as the parts of a
@@ -19,7 +19,7 @@ export interface DishText {
   variations: readonly string[];
   /** The allergen numbers as listed; `null` when the card lists none. */
   allergenNumbers: readonly number[] | null;
-  /** The cell's own price line (a Saturday dish's price); `null` without one. */
+  /** The cell's own price line; `null` without one. */
   price: number | null;
 }
 
@@ -49,10 +49,14 @@ export function isLegendNumber(n: number): boolean {
 
 /**
  * A day cell's lines as a dish, or `null` when the cell is not one. A dish ends in an allergen
- * line (or allergen numbers ending its last line), a price line, or both; `Zárva`, `Pünkösd`,
- * `05.26.` / `Kedd` and a greeting end in neither.
+ * line (or allergen numbers ending its last line), a price line, or both; `Pünkösd`,
+ * `05.26.` / `Kedd` and a greeting end in neither. A note on opening hours is never a dish, even
+ * when it ends in a number (`Nyitás január 5`).
  */
 export function readDayCell(lines: readonly string[]): DishText | null {
+  if (lines.some(isOpeningNote)) {
+    return null;
+  }
   const last = lines.at(-1) ?? '';
   const price = priceLine.test(last) ? Number(last.replace(/\D/g, '')) : null;
   const { text, allergenNumbers } = takeAllergens(price === null ? lines : lines.slice(0, -1));
