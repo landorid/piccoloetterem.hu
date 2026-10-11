@@ -4,12 +4,6 @@ import { type DishText, readDayCell, readFeaturedLine, readPrices } from './dish
 import { readDocx } from './docx';
 import { saysNoSoup } from './vocabulary.hu';
 
-/*
- * One dish's text, with cells copied from the six example cards. The name/description split is
- * the rule most likely to be tuned: each case pins one part of it, and its known misses are pinned
- * with `it.fails`, so a better rule shows up here as a failing "fails" rather than unnoticed.
- */
-
 describe('readDayCell: name and description', () => {
   it.each([
     [['Erőleves', 'finommetélttel', '1'], 'Erőleves', 'finommetélttel'],
@@ -214,7 +208,6 @@ describe('on the six cards', () => {
     return docx.ok ? docx.body.tables.flat().flatMap((row) => row.map((cell) => cell.lines)) : [];
   });
 
-  /** The text without spaces, commas, digits, dashes and `Ft`: what a dish must keep, in order. */
   const letters = (texts: readonly (string | null)[]) =>
     texts.join(' ').replace(/Ft\b|[\d\s,-]/g, '');
   const dishLetters = (dish: DishText) =>

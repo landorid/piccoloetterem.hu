@@ -2,7 +2,14 @@ import { datesOfIsoWeek } from '../../calendar';
 import { type AllergenCode, allergenCodes } from '../../config/types';
 import type { MenuItemContent } from '../edit';
 import type { MenuDay } from '../types';
-import { type DishText, readDayCell, readFeaturedLine, readPrices, withoutPrices } from './dish';
+import {
+  type DishText,
+  isLegendNumber,
+  readDayCell,
+  readFeaturedLine,
+  readPrices,
+  withoutPrices,
+} from './dish';
 import { type Cell, type DocxFailure, type Row, readDocx, type Table } from './docx';
 import {
   dateRange,
@@ -67,7 +74,10 @@ export type ImportFinding =
       texts: readonly string[];
       withheld: readonly string[];
     }
-  /** A cell on an open day that is not a dish: no allergen line and no price line. */
+  /**
+   * Text that is not a dish: a day-row cell on an open day or shared by several days, or a
+   * featured line with no name.
+   */
   | { kind: 'cell_skipped'; where: CardPlace; text: string }
   /** The prices column of a mains row says more than the price and "no soup". */
   | { kind: 'price_note_ignored'; row: string; text: string }
@@ -203,13 +213,23 @@ const wordsOf = (dish: DishText) =>
     .replace(/[^\p{L}\p{N}]+/gu, ' ')
     .trim();
 
-/** The day rows with their label, list, price and the cells that cover a day. */
+function readCopiesAsShared(cells: readonly DayCell[]): DayCell[] {
+  const shared = cells.flatMap((cell) => (cell.dish && cell.days.length > 1 ? [cell.dish] : []));
+  return cells.map((cell) => {
+    const { dish } = cell;
+    if (!dish || cell.days.length !== 1) {
+      return cell;
+    }
+    const original = shared.find((other) => wordsOf(other) === wordsOf(dish));
+    return original ? { ...cell, dish: { ...original, price: dish.price } } : cell;
+  });
+}
+
 function readDayRows({ dayAt, pricesColumn, dayRows }: DayTable) {
   let pricedYet = false;
   return dayRows.map((row, index) => {
     const priceText = textOf(row.find((cell) => cell.column === pricesColumn));
     const price = readPrices(priceText)[0] ?? null;
-    // Rows above the first priced row are soups: their prices cell only says the menu includes one.
     pricedYet ||= price !== null;
     const cells = row.flatMap((cell): DayCell[] => {
       const days = daysOf(cell, dayAt);
@@ -217,18 +237,12 @@ function readDayRows({ dayAt, pricesColumn, dayRows }: DayTable) {
         ? [{ days, text: textOf(cell), dish: readDayCell(cell.lines) }]
         : [];
     });
-    // Saturday repeats row c, sometimes wrapped otherwise: one dish, read one way.
-    const wide = cells.flatMap((cell) => (cell.dish && cell.days.length > 1 ? [cell.dish] : []));
     return {
       label: textOf(row.find((cell) => cell.column === 0)) || String(index + 1),
       list: pricedYet ? ('mains' as const) : ('soups' as const),
       price,
       priceText,
-      cells: cells.map(({ dish, ...cell }) => {
-        const twin =
-          dish && cell.days.length === 1 && wide.find((other) => wordsOf(other) === wordsOf(dish));
-        return { ...cell, dish: twin && dish ? { ...twin, price: dish.price } : dish };
-      }),
+      cells: readCopiesAsShared(cells),
     };
   });
 }
@@ -267,8 +281,8 @@ function readDays(table: DayTable) {
       const placed = covered.filter((day) => open.has(day));
       const where = { part: 'daily', row: row.label, days: placed } as const;
       if (!dish) {
-        // A closed day's own cells are listed with the day.
-        if (covered.length > 1 || placed.length > 0) {
+        const listedUnderClosedDay = covered.length === 1 && placed.length === 0;
+        if (!listedUnderClosedDay) {
           findings.push({
             kind: 'cell_skipped',
             where: { ...where, days: placed.length > 0 ? placed : covered },
@@ -288,9 +302,7 @@ function readDays(table: DayTable) {
           days[day].soups.push(itemOf(dish, allergens, 0, null, false));
           continue;
         }
-        // Saturday's own price line is its weekend price; it is all a row without a price has.
-        const weekday = row.price ?? (day === 6 ? dish.price : null);
-        const weekend = day === 6 && row.price !== null ? dish.price : null;
+        const { weekday, weekend } = mainPricesOn(day, row.price, dish.price);
         if (weekday === null) {
           unpriced.push(day);
         } else {
@@ -310,6 +322,15 @@ function readDays(table: DayTable) {
     }
   }
   return { days, findings };
+}
+
+function mainPricesOn(day: MenuDay, rowPrice: number | null, cellPrice: number | null) {
+  if (day !== 6) {
+    return { weekday: rowPrice, weekend: null };
+  }
+  return rowPrice === null
+    ? { weekday: cellPrice, weekend: null }
+    : { weekday: rowPrice, weekend: cellPrice };
 }
 
 /** The featured dishes under the `Kiemelt ajánlatunk` heading; the permanent menu ends them. */
@@ -335,7 +356,6 @@ function readFeatured(rows: readonly Row[], width: number) {
       continue;
     }
     const lines = row[0]?.lines ?? [];
-    // The `Hétköznap Szombat` header of the prices cell holds no price.
     const priceLines = row.length > 1 ? (row.at(-1)?.lines ?? []) : [];
     const prices = priceLines.filter((line) => readPrices(line).length > 0);
     if (lines.length !== prices.length) {
@@ -391,7 +411,7 @@ function allergensOf(numbers: readonly number[] | null) {
   const listed = new Set(numbers);
   return {
     allergens: allergenCodes.filter((_, index) => listed.has(index + 1)),
-    unknown: [...listed].filter((n) => n < 1 || n > allergenCodes.length),
+    unknown: [...listed].filter((n) => !isLegendNumber(n)),
   };
 }
 

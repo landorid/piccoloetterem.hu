@@ -5,12 +5,6 @@ import { isoWeekOf, parseIsoDate } from '../../calendar';
 import { planWeek } from '../edit';
 import { type ImportFinding, readMenuCard } from './read';
 
-/*
- * The six real cards, each named by its Monday so the week to read it into is derived from the
- * name, and hand-written cards for the trouble the real ones do not show. The oracle for every
- * card: core's own save rules accept the week as it is read.
- */
-
 const cards = [
   '2025-12-22',
   '2026-05-25',
@@ -204,11 +198,6 @@ it('says when the card starts on another Monday than the week being edited', () 
   ]);
 });
 
-/*
- * A card written by hand: the real template's header (one column per day, Áraink between Friday
- * and Saturday, 8 columns), day rows of [label, Monday … Friday, prices, Saturday], and full-width
- * rows. A cell is its lines.
- */
 const p = (text: string) => `<w:p><w:r><w:t>${text}</w:t></w:r></w:p>`;
 const tc = (lines: readonly string[], span = 1) =>
   `<w:tc><w:tcPr><w:gridSpan w:val="${span}"/></w:tcPr>${lines.map(p).join('') || '<w:p/>'}</w:tc>`;

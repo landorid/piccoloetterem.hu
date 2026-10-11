@@ -7,10 +7,10 @@ import { menuDays } from './model';
 
 const t = strings.weeklyMenu.cardImport;
 
-function describe(finding: ImportFinding): string {
-  // `t.findings` holds one text per kind, typed by kind; TypeScript cannot pair them by itself.
-  const text = t.findings[finding.kind] as (finding: ImportFinding) => string;
-  return text(finding);
+function describe<K extends ImportFinding['kind']>(
+  finding: Extract<ImportFinding, { kind: K }>,
+): string {
+  return t.findings[finding.kind](finding);
 }
 
 type ImportReportProps = {

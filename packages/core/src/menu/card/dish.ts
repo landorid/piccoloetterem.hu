@@ -1,3 +1,4 @@
+import { allergenCodes } from '../../config/types';
 import { isAdjectiveLine, startsDescription } from './vocabulary.hu';
 
 /*
@@ -42,6 +43,10 @@ export function withoutPrices(text: string): string {
   return text.replace(amount, '');
 }
 
+export function isLegendNumber(n: number): boolean {
+  return n >= 1 && n <= allergenCodes.length;
+}
+
 /**
  * A day cell's lines as a dish, or `null` when the cell is not one. A dish ends in an allergen
  * line (or allergen numbers ending its last line), a price line, or both; `Zárva`, `Pünkösd`,
@@ -75,8 +80,7 @@ function takeAllergens(lines: readonly string[]): {
   }
   const [, rest, tail] = allergenTail.exec(last) ?? [];
   const numbers = numbersOf(tail ?? '');
-  // Inline numbers outside the legend are text: `Nyitás December 29` is no dish.
-  if (rest === undefined || !numbers.every((n) => n >= 1 && n <= 14)) {
+  if (rest === undefined || !numbers.every(isLegendNumber)) {
     return { text: lines, allergenNumbers: null };
   }
   return { text: [...lines.slice(0, -1), rest], allergenNumbers: numbers };
@@ -90,7 +94,6 @@ function nameOf(lines: readonly string[]): string {
   return lines.join(' ').replace(/[\s,]+$/, '');
 }
 
-/** The lines left once the numbers are taken, as name, description and variations. */
 function splitDish(
   lines: readonly string[],
 ): Pick<DishText, 'name' | 'description' | 'variations'> {
@@ -99,15 +102,14 @@ function splitDish(
     return { ...splitName(lines), variations: [] };
   }
   const alternative = [lines[dash]?.replace(dashLine, ''), ...lines.slice(dash + 1)].join(' ');
-  // With no topping line between the name and the alternative, there is nothing to choose from.
-  if (dash === 1) {
-    return { name: nameOf(lines.slice(0, 1)), description: alternative, variations: [] };
+  const topping = dash > 1 ? lines[dash - 1] : undefined;
+  if (topping === undefined) {
+    return { name: nameOf(lines.slice(0, dash)), description: alternative, variations: [] };
   }
-  // Dávid, 2026-10-10: the topping line and its alternative are the dish's two variations.
   return {
     name: nameOf(lines.slice(0, dash - 1)),
     description: null,
-    variations: [...new Set([lines[dash - 1] ?? '', alternative])],
+    variations: [...new Set([topping, alternative])],
   };
 }
 

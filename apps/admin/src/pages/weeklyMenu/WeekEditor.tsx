@@ -309,7 +309,6 @@ export function WeekEditor({ week, onWeekChange }: WeekEditorProps) {
                 replaces={dirty || !isEmptyWeek(draft.base)}
                 disabled={save.isPending}
                 onImport={(card) => {
-                  // Unchanged dishes keep their stored items, and so their sold-out flags.
                   setDraft(
                     (current) =>
                       current && {

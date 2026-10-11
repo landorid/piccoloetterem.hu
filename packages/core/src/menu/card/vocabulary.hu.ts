@@ -14,12 +14,10 @@ export function fold(text: string): string {
   return text.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
-/** A header cell naming Monday … Saturday, as core names the days. */
 export const dayByHeader: ReadonlyMap<string, MenuDay> = new Map(
   ([1, 2, 3, 4, 5, 6] as const).map((day) => [fold(weekdayNamesHu[day]), day]),
 );
 
-/** The header cell of the prices column. */
 export const pricesHeader = fold('Áraink');
 
 /**

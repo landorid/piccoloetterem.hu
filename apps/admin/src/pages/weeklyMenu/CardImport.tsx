@@ -64,7 +64,6 @@ export function CardImport({ week, replaces, disabled, onImport }: CardImportPro
       <input
         ref={input}
         type="file"
-        // `.doc` stays selectable, so a Word 97 file is told to be saved as .docx.
         accept=".docx,.doc"
         aria-label={t.fileInput}
         hidden

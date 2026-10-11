@@ -744,7 +744,6 @@ describe('the Word menu card', () => {
     const dialog = await screen.findByRole('alertdialog');
     expect(dialog.textContent).toContain('06.15.–06.20.');
     expect(dialog.textContent).toContain('10.12.–10.17.');
-    // Behind the dialog, the stored week is still the grid.
     expect(screen.getByDisplayValue('Gulyásleves')).toBeTruthy();
 
     fireEvent.click(within(dialog).getByRole('button', { name: t.cardImport.confirm.confirm }));

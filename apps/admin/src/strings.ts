@@ -6,6 +6,37 @@ import type {
   MonthDay,
 } from '@piccolo/core/menu-card';
 
+type FindingTexts = {
+  [K in ImportFinding['kind']]: (finding: Extract<ImportFinding, { kind: K }>) => string;
+};
+
+const findingTexts: FindingTexts = {
+  week_mismatch: (f) =>
+    `A kártya dátuma ${dateRange(f.card)}, de ez a hét ${dateRange(f.week)} Ellenőrizd, hogy jó héthez töltötted-e be.`,
+  week_unverified: () =>
+    'A kártyán nincs dátum, ezért nem ellenőrizhető, hogy ehhez a héthez tartozik-e.',
+  day_without_dishes: (f) =>
+    [
+      `${strings.weeklyMenu.days[f.day]}: a kártyán nincs rá étel${f.texts.length > 0 ? ` (${quoted(f.texts)})` : ''}, ezért üresen maradt.`,
+      f.withheld.length > 0 && `A több napra szóló ${quoted(f.withheld)} sem került rá.`,
+    ]
+      .filter(Boolean)
+      .join(' '),
+  cell_skipped: (f) => `${cardPlace(f.where)}: kimaradt, mert nem étel: ${quoted([f.text])}.`,
+  price_note_ignored: (f) => `${f.row} sor, Áraink: kimaradt ez a megjegyzés: ${quoted([f.text])}.`,
+  price_missing: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} kimaradt, mert nincs mellette ár. Vedd fel kézzel.`,
+  weekend_price_missing: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} mellett nincs szombati ár, ezért szombaton is a hétköznapi ár érvényes.`,
+  allergens_missing: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} mellett nincs allergénszám. Ellenőrizd az allergéneket.`,
+  allergen_unknown: (f) =>
+    `${cardPlace(f.where)}: ${quoted([f.name])} ismeretlen allergénszámai kimaradtak: ${f.numbers.join(', ')}.`,
+  featured_unpaired: (f) =>
+    `Kiemelt ajánlatok: ${f.dishes.length} ételhez ${f.prices} ár tartozik, ezért egyik sem került be: ${quoted(f.dishes)}.`,
+  section_skipped: (f) => `Kimaradt ez a rész: ${quoted([f.title])}.`,
+};
+
 /**
  * Every user-facing string of the admin. Hungarian, never inlined into a
  * component (see AGENTS.md); `pnpm lint:strings` fails on Hungarian text
@@ -209,36 +240,7 @@ export const strings = {
         permanentHint:
           'Az „Egész héten rendelhető” rész és ami alatta van nem a heti menü része: azt az Étlap oldalon szerkesztheted.',
       },
-      /** One text per `ImportFinding['kind']`: a new kind does not compile without its text. */
-      findings: {
-        week_mismatch: (f) =>
-          `A kártya dátuma ${dateRange(f.card)}, de ez a hét ${dateRange(f.week)} Ellenőrizd, hogy jó héthez töltötted-e be.`,
-        week_unverified: () =>
-          'A kártyán nincs dátum, ezért nem ellenőrizhető, hogy ehhez a héthez tartozik-e.',
-        day_without_dishes: (f): string =>
-          [
-            `${strings.weeklyMenu.days[f.day]}: a kártyán nincs rá étel${f.texts.length > 0 ? ` (${quoted(f.texts)})` : ''}, ezért üresen maradt.`,
-            f.withheld.length > 0 && `A több napra szóló ${quoted(f.withheld)} sem került rá.`,
-          ]
-            .filter(Boolean)
-            .join(' '),
-        cell_skipped: (f) => `${cardPlace(f.where)}: kimaradt, mert nem étel: ${quoted([f.text])}.`,
-        price_note_ignored: (f) =>
-          `${f.row} sor, Áraink: kimaradt ez a megjegyzés: ${quoted([f.text])}.`,
-        price_missing: (f) =>
-          `${cardPlace(f.where)}: ${quoted([f.name])} kimaradt, mert nincs mellette ár. Vedd fel kézzel.`,
-        weekend_price_missing: (f) =>
-          `${cardPlace(f.where)}: ${quoted([f.name])} mellett nincs szombati ár, ezért szombaton is a hétköznapi ár érvényes.`,
-        allergens_missing: (f) =>
-          `${cardPlace(f.where)}: ${quoted([f.name])} mellett nincs allergénszám. Ellenőrizd az allergéneket.`,
-        allergen_unknown: (f) =>
-          `${cardPlace(f.where)}: ${quoted([f.name])} ismeretlen allergénszámai kimaradtak: ${f.numbers.join(', ')}.`,
-        featured_unpaired: (f) =>
-          `Kiemelt ajánlatok: ${f.dishes.length} ételhez ${f.prices} ár tartozik, ezért egyik sem került be: ${quoted(f.dishes)}.`,
-        section_skipped: (f) => `Kimaradt ez a rész: ${quoted([f.title])}.`,
-      } satisfies {
-        [K in ImportFinding['kind']]: (finding: Extract<ImportFinding, { kind: K }>) => string;
-      },
+      findings: findingTexts,
     },
   },
   /** The orders of one day at /rendelesek (S2). */
@@ -489,7 +491,6 @@ function dateRange({ from, to }: DateRange): string {
   return `${monthDay(from)}–${monthDay(to)}`;
 }
 
-/** `„Zárva”, „Pünkösd”` */
 function quoted(texts: readonly string[]): string {
   return texts.map((text) => `„${text}”`).join(', ');
 }

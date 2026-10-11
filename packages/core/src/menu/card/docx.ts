@@ -35,7 +35,6 @@ export type DocxFailure = 'legacy_doc' | 'not_docx' | 'too_large';
 export type DocxResult = { ok: true; body: DocxBody } | { ok: false; reason: DocxFailure };
 
 const maxFileBytes = 32 * 1024 * 1024;
-/** `word/document.xml` of a real card is ~0.5 MB; the file is mostly its photo. */
 const maxDocumentBytes = 16 * 1024 * 1024;
 const documentPath = 'word/document.xml';
 /** An OLE compound file: Word 97–2003's `.doc`. */
@@ -101,8 +100,8 @@ function localName(name: string | undefined): string {
   return name?.slice(name.indexOf(':') + 1) ?? '';
 }
 
-/** Elements whose whole subtree is not read: a fallback copy, tracked deletions. */
-const skipped = new Set(['Fallback', 'del', 'moveFrom']);
+/** Elements whose whole subtree is not read: a fallback copy, tracked deletions, tab stops. */
+const skipped = new Set(['Fallback', 'del', 'moveFrom', 'tabs']);
 
 /**
  * `word/document.xml` as a `DocxBody`, or `null` when it is not well-formed. One pass over the
@@ -113,8 +112,7 @@ function readDocumentXml(xml: string): DocxBody | null {
   const outsideText: string[] = [];
   const tables: Table[] = [];
   const open: string[] = [];
-  /** The depth of the element that started a skipped subtree; 0 when not skipping. */
-  let skipFrom = 0;
+  let skipFrom: number | null = null;
   let textBoxes = 0;
   let inText = false;
   let table: Row[] | null = null;
@@ -127,7 +125,7 @@ function readDocumentXml(xml: string): DocxBody | null {
   const start = (name: string, attributes: string) => {
     const local = localName(name);
     open.push(name);
-    if (skipFrom > 0) {
+    if (skipFrom !== null) {
       return;
     }
     const inGrid = table !== null && textBoxes === 0;
@@ -151,7 +149,6 @@ function readDocumentXml(xml: string): DocxBody | null {
     } else if (local === 't') {
       inText = true;
     } else if (local === 'tab' || local === 'br' || local === 'cr') {
-      // A tab stop (`w:tabs/w:tab`) leads its paragraph, so the space it adds is trimmed.
       paragraphs.at(-1)?.push(' ');
     }
   };
@@ -159,8 +156,8 @@ function readDocumentXml(xml: string): DocxBody | null {
   const end = (name: string) => {
     const local = localName(name);
     const inGrid = table !== null && textBoxes === 0;
-    if (skipFrom > 0) {
-      skipFrom = open.length === skipFrom ? 0 : skipFrom;
+    if (skipFrom !== null) {
+      skipFrom = open.length === skipFrom ? null : skipFrom;
     } else if (local === 'txbxContent') {
       textBoxes -= 1;
     } else if (local === 't') {
@@ -206,7 +203,7 @@ function readDocumentXml(xml: string): DocxBody | null {
         return null;
       }
       end(closing);
-    } else if (inText && skipFrom === 0) {
+    } else if (inText && skipFrom === null) {
       paragraphs.at(-1)?.push(cdata ?? decode(text ?? ''));
     }
   }
