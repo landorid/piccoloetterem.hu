@@ -173,10 +173,16 @@ describe('the price column', () => {
     ['2300Ft', [2300]],
     ['Nem tartalmaz levest! 2850Ft', [2850]],
     ['12 990 Ft 12.990 Ft', [12990, 12990]],
+    ['3190 Ft            3290 Ft', [3190, 3290]],
+    ['1234567 Ft', []],
     ['Hétköznap Szombat', []],
     ['Egy választott levest (a-b) a menü ára tartalmaz', []],
   ])('readPrices(%j) is %j', (text, prices) => {
     expect(readPrices(text)).toEqual(prices);
+  });
+
+  it('reads a long run of digits as no price, without stalling on it', () => {
+    expect(readPrices('1'.repeat(200_000))).toEqual([]);
   });
 
   it.each([

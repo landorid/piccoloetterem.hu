@@ -31,8 +31,11 @@ const allergenTail = /^(.*[^\d\s,])\s*(\d{1,2}(?:\s*,\s*\d{1,2})*)$/;
 const priceLine = /^\d[\d .]*\s*Ft$/i;
 /** `-----szója fasírttal`: an alternative to the line above it. */
 const dashLine = /^-{3,}\s*(?=\S)/;
-/** An amount in forints: `2200 Ft`, `2850Ft`, `12 990 Ft`, `12.990 Ft`. */
-const amount = /(\d{1,3}(?:[ .]\d{3})+|\d+)\s*Ft\b/gi;
+/**
+ * An amount in forints: `2200 Ft`, `2850Ft`, `12 990 Ft`, `12.990 Ft`. No price on the card has
+ * more than six digits, and bounding them keeps a long run of digits from taking quadratic time.
+ */
+const amount = /(?<!\d)(\d{1,3}[ .]\d{3}|\d{1,6})\s*Ft\b/gi;
 
 /** Every amount in forints in `text`, in order: `3190 Ft 3290 Ft` → `[3190, 3290]`. */
 export function readPrices(text: string): number[] {

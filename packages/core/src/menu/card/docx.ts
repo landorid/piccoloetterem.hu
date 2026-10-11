@@ -35,8 +35,11 @@ export type DocxFailure = 'legacy_doc' | 'not_docx' | 'too_large';
 export type DocxResult = { ok: true; body: DocxBody } | { ok: false; reason: DocxFailure };
 
 const maxFileBytes = 32 * 1024 * 1024;
-const maxDocumentBytes = 16 * 1024 * 1024;
-const documentPath = 'word/document.xml';
+const maxPartBytes = 16 * 1024 * 1024;
+/** A card holds about 16 files. */
+const maxEntries = 10_000;
+/** Where Word writes the main document, unless the package's relationships say otherwise. */
+const defaultDocumentPath = 'word/document.xml';
 /** An OLE compound file: Word 97–2003's `.doc`. */
 const oleSignature = [0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1];
 
@@ -47,16 +50,19 @@ export function readDocx(file: Uint8Array): DocxResult {
   if (file.length > maxFileBytes) {
     return { ok: false, reason: 'too_large' };
   }
+  const entries = declaredEntries(file);
+  if (entries === null || entries > maxEntries) {
+    return { ok: false, reason: 'not_docx' };
+  }
   try {
-    let oversized = false;
-    // Only the main document is inflated, into a buffer of the size the zip declares for it.
-    const xml = unzipSync(file, {
-      filter: ({ name, originalSize }) => {
-        oversized ||= name === documentPath && originalSize > maxDocumentBytes;
-        return name === documentPath && !oversized;
-      },
-    })[documentPath];
-    if (oversized || (xml && xml.length > maxDocumentBytes)) {
+    const relationships = readPart(file, '_rels/.rels');
+    if (relationships === 'too_large') {
+      return { ok: false, reason: 'too_large' };
+    }
+    const documentPath =
+      (relationships && mainDocumentPath(strFromU8(relationships))) ?? defaultDocumentPath;
+    const xml = readPart(file, documentPath);
+    if (xml === 'too_large') {
       return { ok: false, reason: 'too_large' };
     }
     const body = xml && readDocumentXml(strFromU8(xml));
@@ -64,6 +70,54 @@ export function readDocx(file: Uint8Array): DocxResult {
   } catch {
     return { ok: false, reason: 'not_docx' };
   }
+}
+
+/**
+ * How many files the zip's end of central directory declares (its zip64 record's count when it
+ * has one), or `null` without a readable one. fflate walks that many entries whatever the file's
+ * size, so 98 bytes can keep it busy for minutes.
+ */
+function declaredEntries(file: Uint8Array): number | null {
+  const view = new DataView(file.buffer, file.byteOffset, file.byteLength);
+  const u32At = (at: number) => (at >= 0 && at + 4 <= file.length ? view.getUint32(at, true) : 0);
+  for (let end = file.length - 22; end >= Math.max(0, file.length - 65_557); end -= 1) {
+    if (u32At(end) !== 0x06054b50) {
+      continue;
+    }
+    if (u32At(end - 20) !== 0x07064b50) {
+      return view.getUint16(end + 10, true);
+    }
+    const zip64 = Number(view.getBigUint64(end - 12, true));
+    return zip64 + 40 <= file.length && u32At(zip64) === 0x06064b50
+      ? Number(view.getBigUint64(zip64 + 32, true))
+      : null;
+  }
+  return null;
+}
+
+/** The part at `path`, inflated into a buffer of the size the zip declares for it. */
+function readPart(file: Uint8Array, path: string): Uint8Array | undefined | 'too_large' {
+  let oversized = false;
+  const part = unzipSync(file, {
+    filter: ({ name, originalSize }) => {
+      oversized ||= name === path && originalSize > maxPartBytes;
+      return name === path && !oversized;
+    },
+  })[path];
+  return oversized || (part && part.length > maxPartBytes) ? 'too_large' : part;
+}
+
+/** The target of the package's `officeDocument` relationship, as a zip path. */
+function mainDocumentPath(relationships: string): string | undefined {
+  for (const [element] of relationships.matchAll(/<(?:[\w.-]+:)?Relationship\s[^<>]*>/g)) {
+    const attribute = (name: string) =>
+      new RegExp(`\\s${name}\\s*=\\s*["']([^"']*)`).exec(element)?.[1];
+    const target = attribute('Target');
+    if (attribute('Type')?.endsWith('/officeDocument') && target) {
+      return target.replace(/^\//, '');
+    }
+  }
+  return undefined;
 }
 
 /**
@@ -104,7 +158,7 @@ function localName(name: string | undefined): string {
 const skipped = new Set(['Fallback', 'del', 'moveFrom', 'tabs']);
 
 /**
- * `word/document.xml` as a `DocxBody`, or `null` when it is not well-formed. One pass over the
+ * The main document as a `DocxBody`, or `null` when it is not well-formed. One pass over the
  * tokens, no DOM (core runs without one). Elements are matched by local name, so the prefix a
  * producer binds does not matter.
  */

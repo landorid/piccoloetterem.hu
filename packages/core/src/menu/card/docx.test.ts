@@ -50,6 +50,19 @@ function declaring(bytes: Uint8Array, size: number): Uint8Array {
   return patched;
 }
 
+/** 98 bytes of zip without a file, whose zip64 end of central directory declares `entries`. */
+function declaringEntries(entries: number): Uint8Array {
+  const bytes = new Uint8Array(98);
+  const view = new DataView(bytes.buffer);
+  view.setUint32(0, 0x06064b50, true);
+  view.setBigUint64(32, BigInt(entries), true);
+  view.setUint32(56, 0x07064b50, true);
+  view.setUint32(76, 0x06054b50, true);
+  view.setUint16(84, 1, true);
+  view.setUint16(86, 1, true);
+  return bytes;
+}
+
 describe('the real cards', () => {
   it.each(cards)('%s has one table on a grid of ten columns', (name) => {
     const result = readDocx(card(name));
@@ -66,6 +79,25 @@ describe('the real cards', () => {
     const result = readDocx(card(name));
     const dates = result.ok ? result.body.outsideText.filter((line) => line.includes('–')) : [];
     expect(dates.filter((line) => line.startsWith(`${month}.${day}.`))).toHaveLength(1);
+  });
+});
+
+describe('the package', () => {
+  it('reads the main document its relationships name, wherever it is', () => {
+    const type = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+    const relationships = `<Relationships>
+      <Relationship Id="rId1" Type="${type}/extended-properties" Target="docProps/app.xml"/>
+      <Relationship Id="rId2" Type="${type}/officeDocument" Target="/word/document2.xml"/>
+    </Relationships>`;
+    const result = readDocx(
+      zip({
+        '_rels/.rels': relationships,
+        'docProps/app.xml': '<Properties/>',
+        'word/document.xml': document(p('régi')),
+        'word/document2.xml': document(p('Hétfő')),
+      }),
+    );
+    expect(result.ok && result.body.outsideText).toEqual(['Hétfő']);
   });
 });
 
@@ -150,6 +182,10 @@ describe('a file that is not a readable .docx', () => {
       16 * 1024 * 1024 + 1,
     );
     expect(readDocx(declared)).toEqual({ ok: false, reason: 'too_large' });
+  });
+
+  it('is not_docx when the zip declares more files than a card has, before walking them', () => {
+    expect(readDocx(declaringEntries(0xffff_ffff))).toEqual({ ok: false, reason: 'not_docx' });
   });
 
   it('inflates no more than the declared size of a document that understates it', () => {
