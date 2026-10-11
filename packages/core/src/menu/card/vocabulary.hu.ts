@@ -37,9 +37,10 @@ export function headingKind(text: string): 'featured' | 'permanent' | 'other' {
 
 /**
  * `Nem tartalmaz levest!`, `levest nem tartalmaz`, `leves nélkül`: the price does not include a
- * soup. The soup rows' `a menü ára tartalmaz` says the opposite and must not match.
+ * soup. It takes the soup word: the soup rows' `a menü ára tartalmaz` says the opposite, and a dish
+ * that `nem tartalmaz glutént` still comes with its soup.
  */
-const noSoup = /nem tartalmaz\w*(?: levest)?|levest? nem(?: tartalmaz\w*)?|leves\w* nelkul/;
+const noSoup = /nem tartalmaz\w* leves\w*|leves\w* (?:nem(?: tartalmaz\w*)?|nelkul)/;
 
 export function saysNoSoup(text: string): boolean {
   return noSoup.test(fold(text));

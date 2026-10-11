@@ -190,6 +190,9 @@ describe('the price column', () => {
     ['Levest nem tartalmaz', true],
     ['Rántott sajt leves nélkül', true],
     ['Egy választott levest (a-b) a menü ára tartalmaz', false],
+    ['a menü ára tartalmaz', false],
+    ['Nem tartalmaz glutént', false],
+    ['Rántott szelet, nem tartalmaz tejet', false],
     ['2200 Ft', false],
   ])('saysNoSoup(%j) is %s', (text, result) => {
     expect(saysNoSoup(text)).toBe(result);

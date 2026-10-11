@@ -280,15 +280,19 @@ describe('a hand-written card with every kind of trouble', () => {
     expect(result.ok && result.draft.featured).toEqual([]);
   });
 
-  it('takes "no soup" from a featured price line too', () => {
+  it('takes "no soup" from a featured price line too, and only about a soup', () => {
     const result = readMenuCard(
       handWritten(
-        `<w:tbl>${header}${heading('Kiemelt ajánlatunk')}${tr(tc(['Aréna tál 1'], 7), tc(['12990 Ft Levest nem tartalmaz']))}</w:tbl>`,
+        `<w:tbl>${header}${heading('Kiemelt ajánlatunk')}${tr(
+          tc(['Aréna tál 1', 'Rántott szelet /nem tartalmaz glutént/ 3'], 7),
+          tc(['12990 Ft Levest nem tartalmaz', '3190 Ft']),
+        )}</w:tbl>`,
       ),
       week,
     );
     expect(result.ok && result.draft.featured).toEqual([
       expect.objectContaining({ name: 'Aréna tál', priceWeekday: 12990, soupIncluded: false }),
+      expect.objectContaining({ name: 'Rántott szelet', priceWeekday: 3190, soupIncluded: true }),
     ]);
   });
 });
