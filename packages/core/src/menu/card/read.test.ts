@@ -126,14 +126,14 @@ describe('2026-06-15, a normal week', () => {
     ]);
   });
 
-  it("gives Saturday's mains the row price and their own price for the weekend", () => {
+  it("gives Saturday's mains one price, their own Saturday price", () => {
     expect(
       draft.days[6].mains.map((main) => [main.priceWeekday, main.priceWeekend, main.soupIncluded]),
     ).toEqual([
-      [2850, 3050, false],
-      [2200, 2590, true],
-      [2300, 2690, true],
-      [2400, 2790, true],
+      [3050, null, false],
+      [2590, null, true],
+      [2690, null, true],
+      [2790, null, true],
     ]);
   });
 
@@ -178,13 +178,15 @@ describe('days the card closes', () => {
 
 it("reads row c's Saturday copy as the Monday–Friday dish, however it is wrapped", () => {
   const { draft } = read('2026-07-06');
-  const { priceWeekend: _, ...saturday } = draft.days[6].mains[0] ?? {};
-  const { priceWeekend: __, ...monday } = draft.days[1].mains[0] ?? {};
+  const { priceWeekday: saturdayPrice, ...saturday } = draft.days[6].mains[0] ?? {};
+  const { priceWeekday: mondayPrice, ...monday } = draft.days[1].mains[0] ?? {};
   expect(saturday).toEqual(monday);
   expect(monday).toMatchObject({
     name: 'Baconnel sült csirkemáj sajtmártással, párolt rizzsel',
     description: null,
+    priceWeekend: null,
   });
+  expect([mondayPrice, saturdayPrice]).toEqual([2850, 3050]);
 });
 
 it('says when the card starts on another Monday than the week being edited', () => {
@@ -303,7 +305,7 @@ describe('a weekday dish with a price line of its own', () => {
         days: {
           1: { mains: [{ name: 'Halászlé', priceWeekday: 3500, priceWeekend: null }] },
           2: { mains: [{ name: 'Pörkölt', priceWeekday: 2400, priceWeekend: null }] },
-          6: { mains: [{ name: 'Pörkölt', priceWeekday: 2400, priceWeekend: 2590 }] },
+          6: { mains: [{ name: 'Pörkölt', priceWeekday: 2590, priceWeekend: null }] },
         },
       },
       findings: [{ kind: 'week_unverified' }],
@@ -327,7 +329,7 @@ describe('a weekday dish with a price line of its own', () => {
           },
           6: {
             mains: [
-              { name: 'Pörkölt', priceWeekday: 2400, priceWeekend: 2590 },
+              { name: 'Pörkölt', priceWeekday: 2590, priceWeekend: null },
               { name: 'Gulyás', priceWeekday: 2590, priceWeekend: null },
             ],
           },
