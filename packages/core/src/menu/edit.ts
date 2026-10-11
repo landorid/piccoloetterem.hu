@@ -185,6 +185,32 @@ export function weekDraftIds(draft: WeekDraft): string[] {
   return [...new Set(ids)];
 }
 
+/**
+ * `draft` with each new item given the id of an item of `stored` in the same list with the same
+ * content, each stored item at most once per list. A week read afresh (from the menu card) then
+ * keeps the items it did not change, and their sold-out flags: saving it updates them rather
+ * than replacing them.
+ */
+export function matchStoredItems(draft: WeekDraft, stored: WeekDraft): WeekDraft {
+  const match = (list: readonly WeekItemDraft[], storedList: readonly WeekItemDraft[]) => {
+    const taken = new Set(list.map((item) => item.id));
+    const unused = storedList.filter((item) => item.id !== undefined && !taken.has(item.id));
+    return list.map((item) => {
+      const at = item.id === undefined ? unused.findIndex((other) => sameContent(other, item)) : -1;
+      const [hit] = at === -1 ? [] : unused.splice(at, 1);
+      return hit ? { ...item, id: hit.id } : item;
+    });
+  };
+  const day = (d: MenuDay) => ({
+    soups: match(draft.days[d].soups, stored.days[d].soups),
+    mains: match(draft.days[d].mains, stored.days[d].mains),
+  });
+  return {
+    days: { 1: day(1), 2: day(2), 3: day(3), 4: day(4), 5: day(5), 6: day(6) },
+    featured: match(draft.featured, stored.featured),
+  };
+}
+
 function sameContent(a: MenuItemContent, b: MenuItemContent): boolean {
   return (
     a.name === b.name &&

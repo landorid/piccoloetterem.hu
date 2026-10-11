@@ -1,5 +1,8 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { AllergenCode, MenuDay, MenuItem, WeekDraft } from '@piccolo/core';
 import { planWeek } from '@piccolo/core';
+import { readMenuCard } from '@piccolo/core/menu-card';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { createMemoryRouter, useLocation } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
@@ -701,6 +704,55 @@ describe('publishing', () => {
     const publish = screen.getByRole('button', { name: t.actions.publish });
     expect(publish.hasAttribute('disabled')).toBe(true);
     expect(publish.getAttribute('title')).toBe(t.actions.saveFirst);
+  });
+});
+
+describe('the Word menu card', () => {
+  const fixtures = join(import.meta.dirname, '../../../../packages/core/src/menu/card/fixtures');
+  const cardBytes = (name: string) => new Uint8Array(readFileSync(join(fixtures, `${name}.docx`)));
+  const pick = (bytes: Uint8Array<ArrayBuffer>, name: string) =>
+    fireEvent.change(screen.getByLabelText(t.cardImport.fileInput), {
+      target: { files: [new File([bytes], name)] },
+    });
+
+  it("fills an empty week from its card, reports it, and saves exactly the card's week", async () => {
+    await openWeek('2026-W25');
+    const bytes = cardBytes('2026-06-15');
+
+    pick(bytes, '2026-06-15.docx');
+    const report = await screen.findByRole('region', { name: t.cardImport.report.title });
+    expect(report.textContent).toContain(t.cardImport.report.summary(43));
+    expect(field(soupName(1, 1), t.fields.name).value).toBe('Erőleves');
+    expect(field(soupName(1, 1), t.fields.description).value).toBe('finommetélttel');
+    expect(field(mainName(6, 1), t.fields.priceWeekday).value).toBe('2850');
+    expect(field(mainName(6, 1), t.fields.priceWeekend).value).toBe('3050');
+    expect(screen.queryByRole('group', { name: featuredName(7) })).toBeTruthy();
+    expect(screen.getByRole('button', { name: t.add.featured }).hasAttribute('disabled')).toBe(
+      false,
+    );
+
+    fireEvent.click(saveButton());
+    await screen.findByText(t.toasts.saved);
+    const card = readMenuCard(bytes, { isoYear: 2026, isoWeek: 25 });
+    expect(api.requests.find((r) => r.method === 'PUT')?.body).toEqual(card.ok && card.draft);
+  });
+
+  it('refuses a .doc, and asks before a card for another week replaces a stored one', async () => {
+    api.seedWeek(2026, 42, oneDayWeek);
+    await openWeek();
+
+    pick(new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1]), 'heti.doc');
+    expect(await screen.findByText(t.cardImport.failures.legacy_doc)).toBeTruthy();
+
+    pick(cardBytes('2026-06-15'), '2026-06-15.docx');
+    const dialog = await screen.findByRole('alertdialog');
+    expect(dialog.textContent).toContain('06.15.–06.20.');
+    expect(dialog.textContent).toContain('10.12.–10.17.');
+    expect(screen.getByDisplayValue('Gulyásleves')).toBeTruthy();
+
+    fireEvent.click(within(dialog).getByRole('button', { name: t.cardImport.confirm.confirm }));
+    await waitFor(() => expect(field(soupName(1, 1), t.fields.name).value).toBe('Erőleves'));
+    expect(saveButton().hasAttribute('disabled')).toBe(false);
   });
 });
 

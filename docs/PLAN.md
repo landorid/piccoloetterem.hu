@@ -122,6 +122,8 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   seed priced both sides. Decided by Dávid, as in the old app, where a köret had a name and no
   price field (LEGACY-INVENTORY.md §2, "Étlap"); recorded in PR #87.
 - Weekly items are scheduled to an ISO week and day (1–6; featured items have no day).
+- A week has any number of featured items: no five-item cap as in the old app, since the week's
+  menu card usually lists seven and the import keeps them all. Decided by Dávid 2026-10-10.
 - A week is a draft until published (`published_at`). Publishing invalidates the public menu cache.
 - Editing a week upserts; it never deletes and recreates. Orders snapshot item name and price.
 - The permanent menu is saved as a whole: one `PUT /api/admin/menu/items` carries every permanent
@@ -130,7 +132,11 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 - Allergens per item, EU list of 14, multi-select. They stay on `/megrendeles` as chips on every
   choice row and on the main-course picker: for a distance sale, EU Regulation 1169/2011 Art. 14
   requires allergen information before the purchase is concluded (#58).
-- No entry helpers (no name parsing, no autocomplete, no copy-week), no images, no edit history.
+- No entry helpers other than the menu card import (no autocomplete, no copy-week), no images, no
+  edit history. Revised 2026-10-10: the week's Word menu card (.docx) can pre-fill the weekly menu
+  form, splitting each dish into name and description and reading a soy alternative as two
+  variations; staff review the grid and save it as usual. The original decision ruled out any name
+  parsing. Decided by Dávid.
 
 **Staff**
 

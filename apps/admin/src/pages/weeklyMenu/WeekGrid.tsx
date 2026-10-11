@@ -16,7 +16,6 @@ import {
   type ListPath,
   listAt,
   listPath,
-  maxFeatured,
   maxSoups,
   menuDays,
   type Row,
@@ -46,9 +45,7 @@ type ListProps = GridHandlers & {
 function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps) {
   const path = listPath(kind, day);
   const rows = listAt(grid, path);
-  const full =
-    (kind === 'featured' && rows.length >= maxFeatured) ||
-    (kind === 'soups' && rows.length >= maxSoups);
+  const full = kind === 'soups' && rows.length >= maxSoups;
   const dayName = day === null ? t.groups.featured : t.days[day];
 
   return (
@@ -68,13 +65,12 @@ function ListEditor({ grid, kind, day, errors, soldOut, ...handlers }: ListProps
         />
       ))}
       {/* A day's soups come back up to three: a full list has nothing to add. */}
-      {!(kind === 'soups' && full) && (
+      {!full && (
         <Button
           type="button"
           variant="ghost"
           size="sm"
           className="self-start text-muted-foreground"
-          disabled={full}
           onClick={() => handlers.onAdd(path)}
         >
           <PlusIcon />
@@ -193,7 +189,7 @@ type FeaturedProps = GridHandlers & {
   soldOut: ReadonlyMap<string, boolean>;
 };
 
-/** The week's featured items, offered every day of it, up to five. */
+/** The week's featured items, offered every day of it. */
 export function FeaturedSection({ grid, errors, soldOut, ...handlers }: FeaturedProps) {
   const id = useId();
   return (

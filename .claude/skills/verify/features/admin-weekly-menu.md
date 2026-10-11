@@ -1,7 +1,7 @@
 # Weekly menu
 
 At `/heti-menu` staff plan one ISO week as a grid. Monday to Saturday each have soups and mains,
-and the week has up to five featured items. They save the week as a whole and publish it once,
+and the week has any number of featured items. They save the week as a whole and publish it once,
 after which guests can order from it. They can mark a day "Nincs rendelés" (closed), and mark
 items sold out. The week is in the URL, so a reload keeps it.
 
@@ -26,6 +26,13 @@ items sold out. The week is in the URL, so a reload keeps it.
   "Újra rendelhető."
 - `week-leave`: navigating away with unsaved edits asks "Elveted a módosításokat?", with
   "Elvetés" or "Maradok".
+- `week-card-import`: the header button "Betöltés Word-kártyáról" picks the week's Word menu card
+  for the hidden file input "A heti étlap Word-fájlja (.docx)". A readable card fills the unsaved
+  grid and opens the region "Word-kártya betöltve" above it: how many dishes went in, what was
+  left out, what to check. "Mentés" then sends the card's week like any edit. When the grid has
+  edits, the stored week has items, or the card's dates are another week's, "Betöltöd a
+  Word-kártyát?" asks first ("Betöltés"). A `.doc` gets a toast asking for a .docx. Real cards to
+  load: `packages/core/src/menu/card/fixtures/<Monday>.docx`.
 
 ## How to get to it (user POV)
 
@@ -52,6 +59,28 @@ Preconditions:
 - **Publish.** Click "Publikálás" and confirm. The toast reads "A heti menü publikálva…" and the
   header reads "Publikálva: …". The guest view `api.sh --save week-publish.public GET '/api/menu?week=2090-W10'`
   returns 200 `open` with your dishes.
+- **Card import.** The browser pane cannot work a native file picker, so do not click "Betöltés
+  Word-kártyáról". A `javascript_tool` script fetches a fixture through the admin's Vite server
+  and hands it to the hidden input. This is the one place a script sets a value (SKILL.md
+  otherwise forbids it): it sets nothing but the file, and the run's report says the card was
+  injected, not picked. Put the worktree's absolute path in `repo`:
+
+  ```js
+  const repo = '/absolute/path/to/the/worktree';
+  const name = '2026-06-15.docx';
+  const bytes = await (await fetch(`/@fs${repo}/packages/core/src/menu/card/fixtures/${name}`)).arrayBuffer();
+  const input = document.querySelector('input[type="file"][aria-label="A heti étlap Word-fájlja (.docx)"]');
+  const picked = new DataTransfer();
+  picked.items.add(new File([bytes], name));
+  input.files = picked.files;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+  ```
+
+  In `2090-W10` the card's dates are another week's, so "Betöltöd a Word-kártyát?" names both
+  ranges; confirm with "Betöltés". It worked when the region "Word-kártya betöltve" reads "43
+  tétel került a rácsba…" and "Hétfő, 1. leves" holds "Erőleves". Click "Mentés", then
+  `api.sh --save week-card-import.api GET /api/admin/menu/weeks/2090/10` returns the card's
+  dishes. Restore the week as below.
 - **Closed day.** Toggle "Hétfő: Nincs rendelés". `api.sh GET '/api/admin/menu/closed-dates?from=2090-03-06&to=2090-03-11'`
   lists the date. Toggle it back, and the list is empty again.
 - **Restore.** `down.sh` does not delete menu weeks. Delete the week you created, children first:

@@ -3,6 +3,7 @@ import type { Category } from '../config/types';
 import {
   groupPermanentItems,
   type MenuItemContent,
+  matchStoredItems,
   type PermanentItemDraft,
   type PermanentItemsDraft,
   permanentDraftIds,
@@ -303,6 +304,57 @@ describe('weekDraftIds', () => {
         ),
       ),
     ).toEqual(['s', 'a', 'f']);
+  });
+});
+
+describe('matchStoredItems', () => {
+  const week = draft(
+    { 1: { soups: [soup({ id: 's' })], mains: [main({ id: 'a' }), main({ id: 'b' })] } },
+    [main({ id: 'f' })],
+  );
+  const { id: _, ...fresh } = main();
+
+  it('gives a new item the id of an unused stored item in its list with the same content', () => {
+    expect(
+      matchStoredItems(draft({ 1: { soups: [soup()], mains: [fresh, fresh, fresh] } }), week),
+    ).toEqual(
+      draft({
+        1: { soups: [soup({ id: 's' })], mains: [main({ id: 'a' }), main({ id: 'b' }), fresh] },
+      }),
+    );
+  });
+
+  it('leaves an item new when its content differs, or the same item sits in another list', () => {
+    const changed = draft({ 1: { mains: [main({ priceWeekday: 2290 })] }, 2: { mains: [fresh] } });
+    expect(matchStoredItems(changed, week)).toEqual(changed);
+  });
+
+  it('keeps an id the draft already has, and does not give it out again', () => {
+    expect(matchStoredItems(draft({ 1: { mains: [fresh, main({ id: 'a' })] } }), week)).toEqual(
+      draft({ 1: { mains: [main({ id: 'b' }), main({ id: 'a' })] } }),
+    );
+  });
+
+  it('makes saving an unchanged week write nothing', () => {
+    const withoutIds = draft(
+      { 1: { soups: [{ ...goulash }], mains: [{ ...stew }, { ...stew }] } },
+      [{ ...stew }],
+    );
+    const plan = planWeek(
+      matchStoredItems(withoutIds, week),
+      stored(
+        storedItem('s', 'daily_soup', goulash),
+        storedItem('a', 'daily_main'),
+        storedItem('b', 'daily_main'),
+        storedItem('f', 'featured'),
+      ),
+    );
+    expect(plan.ok && plan.plan.items.map(({ id, changed }) => [id, changed])).toEqual([
+      ['s', false],
+      ['a', false],
+      ['b', false],
+      ['f', false],
+    ]);
   });
 });
 
