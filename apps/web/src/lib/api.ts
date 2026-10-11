@@ -62,6 +62,14 @@ export async function loadMenu(api: WebApi, init?: RequestInit) {
   return unwrap(await api.api.menu.$get({ query: {} }, { init }));
 }
 
+/**
+ * `GET /api/menu?week=2026-W42`: one published week, always `open`, with no orderable day unless
+ * it is the order window's week. An unpublished week is an `ApiError` with `week_not_published`.
+ */
+export async function loadMenuWeek(api: WebApi, week: string, init?: RequestInit) {
+  return unwrap(await api.api.menu.$get({ query: { week } }, { init }));
+}
+
 export type MenuResponse = Awaited<ReturnType<typeof loadMenu>>;
 export type OpenMenu = Extract<MenuResponse, { state: 'open' }>;
 export type PublicMenu = OpenMenu['menu'];

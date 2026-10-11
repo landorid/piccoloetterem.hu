@@ -98,6 +98,13 @@ describe('the order form', () => {
     expect(within(cart() as HTMLElement).getByText(strings.cart.menuNumber(3))).toBeTruthy();
   });
 
+  it('disables the days whose intake is over', async () => {
+    await renderOrderPage();
+    expect(tab(/^Hétfő/)).toHaveProperty('disabled', true);
+    expect(tab(/^Hétfő/).title).toBe(strings.days.pastTitle);
+    expect(tab(/^Szerda/)).toHaveProperty('disabled', false);
+  });
+
   it('keeps "Hozzáadás" disabled until the soup is answered and the main has its variation and side', async () => {
     await renderOrderPage();
     expect(addButton()).toHaveProperty('disabled', true);

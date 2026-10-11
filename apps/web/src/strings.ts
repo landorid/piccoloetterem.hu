@@ -230,6 +230,63 @@ export const strings = {
       `${fee} / cím / nap. Minimum ${minimum} ételérték naponta.`,
     contactTitle: 'Elérhetőség',
   },
+  /** `/`: the week's menu and the permanent menu, to read. Ordering is on /megrendeles. */
+  menuPage: {
+    meta: {
+      title: 'Heti menü — Piccolo Club Étterem',
+      description:
+        'A Piccolo Club Étterem heti menüje és étlapja: napi levesek és főételek, desszertek, savanyúságok. Rendeld meg online, kiszállítással Szombathelyen.',
+    },
+    order: 'Rendeld meg online',
+    soups: 'Levesek',
+    mains: 'Főételek',
+    mainsHint: 'A napi főételek ára tartalmaz egy választott levest.',
+    emptyDay: 'Erre a napra nincs feltöltve menü.',
+    /** In place of a daily soup's price, which the menu's price includes. */
+    soupIncluded: 'Benne van a menü árában',
+    soupAlone: (price: string) => `külön ${price}`,
+    saturday: (price: string) => `szombaton ${price}`,
+    withSoup: '+ választott leves',
+    withSide: '+ választott köret',
+    variations: (names: readonly string[]) => `Választható: ${names.join(', ')}`,
+    sections: {
+      featured: 'Kiemelt ajánlat',
+      allWeek: 'Egész héten rendelhető',
+      desserts: 'Desszertek',
+      pickles: 'Savanyúságok',
+      sides: 'Köretek',
+      sideExtras: 'Feláras köretek',
+    },
+    sidesHint: 'A köretes főételekhez egy köret felár nélkül jár.',
+    /** The page shows this week because the API has no orderable week now. */
+    notices: {
+      nextWeekTitle: 'A jövő heti menü még nem érhető el',
+      nextWeekBody:
+        'A következő hét menüjét vasárnap este vagy hétfő reggel töltjük fel. Addig az e heti menüt látod.',
+      closedTitle: 'Erre a hétre már nem tudsz online rendelni',
+      closedBody: 'Telefonon szívesen segítünk.',
+    },
+    prices: {
+      title: 'Árak és extrák',
+      soupAlone: 'Csak leves',
+      noSoup: 'Főétel leves nélkül',
+      perPiece: (price: string) => `${price} / db`,
+      vat: 'Az árak forintban értendők, és tartalmazzák az áfát.',
+    },
+    info: {
+      title: 'Rendelj házhoz!',
+      deliveryFee: 'Kiszállítás',
+      deliveryFeeValue: (fee: string) => `${fee} / cím / nap`,
+      deliveryDays: 'Hétfőtől szombatig szállítunk.',
+      minimum: 'Minimum rendelés',
+      minimumValue: (minimum: string) => `${minimum} ételérték címenként, naponta`,
+      intake: 'Rendelésfelvétel',
+      intakeValue: (from: string, until: string) => `${from}–${until}`,
+      phone: 'Telefon',
+      opening: 'Nyitvatartás',
+      address: 'Cím',
+    },
+  },
   common: {
     close: 'Bezár',
     /** `amount` is already grouped by `Intl.NumberFormat('hu-HU')`; see format.ts. */

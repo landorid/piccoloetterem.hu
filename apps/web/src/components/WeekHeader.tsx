@@ -42,17 +42,37 @@ interface DayRailProps {
   onSelect: (date: IsoDate) => void;
 }
 
-/**
- * The week strip: six equal columns, never scrolled. Past days are disabled. A day staff closed
- * keeps its place, looks disabled and can still be selected, to say why it cannot be ordered.
- * Arrow keys move focus; Enter, Space or a click selects.
- */
-export function DayRail({ days, activeDate, panelId, onSelect }: DayRailProps) {
+/** The order page's week strip: each day carries the number of menus in its cart. */
+export function DayRail(props: DayRailProps) {
   const menusByDate = useOrder((s) => s.menusByDate);
+  return <DayTabs {...props} count={(date) => menusByDate[date]?.length ?? 0} />;
+}
+
+interface DayTabsProps extends DayRailProps {
+  /** The badge of a day; none when 0. */
+  count?: (date: IsoDate) => number;
+  /** Every day can be selected and none is greyed out as past: the week is only read. */
+  browse?: boolean;
+}
+
+/**
+ * The week strip: six equal columns, never scrolled. Past days are disabled unless `browse`. A
+ * day staff closed keeps its place, looks disabled and can still be selected, to say why it
+ * cannot be ordered. Arrow keys move focus; Enter, Space or a click selects.
+ */
+export function DayTabs({
+  days,
+  activeDate,
+  panelId,
+  onSelect,
+  count: countOf = () => 0,
+  browse = false,
+}: DayTabsProps) {
   const tabs = useRef(new Map<IsoDate, HTMLButtonElement>());
+  const isPast = (day: WeekDay) => !browse && day.state === 'past';
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    const reachable = days.filter((day) => day.state !== 'past').map((day) => day.date);
+    const reachable = days.filter((day) => !isPast(day)).map((day) => day.date);
     const current = reachable.findIndex(
       (date) => tabs.current.get(date) === document.activeElement,
     );
@@ -79,7 +99,7 @@ export function DayRail({ days, activeDate, panelId, onSelect }: DayRailProps) {
       >
         {days.map((day) => {
           const selected = day.date === activeDate;
-          const count = menusByDate[day.date]?.length ?? 0;
+          const count = countOf(day.date);
           const mark =
             count > 0
               ? dayStrings.badgeTitle(count)
@@ -101,8 +121,8 @@ export function DayRail({ days, activeDate, panelId, onSelect }: DayRailProps) {
               aria-controls={panelId}
               aria-label={dayStrings.tabLabel(dayFull(day.date), mark)}
               aria-disabled={day.state === 'closed' || undefined}
-              disabled={day.state === 'past'}
-              title={day.state === 'past' ? dayStrings.pastTitle : undefined}
+              disabled={isPast(day)}
+              title={isPast(day) ? dayStrings.pastTitle : undefined}
               tabIndex={selected ? 0 : -1}
               onClick={() => onSelect(day.date)}
             >

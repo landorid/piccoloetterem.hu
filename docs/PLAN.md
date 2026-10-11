@@ -23,7 +23,7 @@ to make the first build small. The old site keeps running untouched.
 
 | In | Out (backlog, see §7) |
 |---|---|
-| `/megrendeles` — the order page: day strip, order form, the day's order, summary, checkout (Astro page + React island) | `/`, `/galeria`, `/elerhetoseg`, `/adatkezeles`, apex cutover |
+| `/megrendeles` — the order page: day strip, order form, the day's order, summary, checkout (Astro page + React island); `/` — the public menu page (revised 2026-10-11) | `/galeria`, `/elerhetoseg`, `/adatkezeles`, apex cutover |
 | Order composition, group ordering, multi-day cart, extras, checkout, confirmation email | "My orders" magic link, customer self-cancel |
 | Admin: weekly menu grid, permanent items with allergens, draft → publish | "Ordering paused" runtime toggle |
 | Admin: orders per day, search, detail, `received → processed`, cancel, kitchen summary, delivery list, print | Order editing in admin, staff notifications |
@@ -34,7 +34,13 @@ the weekly menu gets a public page of its own. Every dish is still chosen in the
 its allergens (§2 "Menu"). Decided by Dávid while reviewing the O2 mockup (#30, #58). Revised
 2026-10-09: the weekly menu page is **not in release 1**. It is backlog, together with `/` and the
 other public pages (§7, #46), and #46 plans `/` as the weekly menu landing page, as in the old app.
-Until it lands, no public page shows the menu outside the order form. Decided by Dávid (#58).
+Until it lands, no public page shows the menu outside the order form. Decided by Dávid (#58). Revised
+2026-10-11: the public menu page **is in release 1**, at `/`, replacing the redirect to
+`/megrendeles`. It shows the week's daily soups and mains on Monday–Saturday tabs, then the
+featured and permanent sections, prices as core computes them, allergens per dish, and the
+delivery and ordering info from the public config. It takes no orders; it links to
+`/megrendeles`. `/galeria`, `/elerhetoseg` and `/adatkezeles` stay in the backlog (#46).
+Decided by Dávid; it reverses the 2026-10-09 decision recorded on #58.
 
 ## 2. Decisions (from the planning interview, 2026-09-06)
 
@@ -308,7 +314,7 @@ Manual issues (label `manual`) are Dávid's and skip the guardrail and stop sect
 
 - "My orders" for customers: magic link, `verified_at`, cancel before cutoff.
 - "Ordering paused" runtime toggle with message (small `settings` table).
-- Remaining public pages (`/`, `/galeria`, `/elerhetoseg`, `/adatkezeles`), SEO/JSON-LD, apex cutover.
+- Remaining public pages (`/galeria`, `/elerhetoseg`, `/adatkezeles`), SEO/JSON-LD, apex cutover.
 - Cookie-free analytics (Cloudflare Web Analytics).
 - Playwright smoke test of the ordering flow.
 - Neon consumption monitor (STACK.md §2).

@@ -43,6 +43,9 @@ api.sh`, `Gotchas`.
 
 ## Features
 
+- [Public menu page](./public-menu-page.md): `/` shows the week's menu on day tabs, the
+  featured and permanent sections, the price rules and the delivery info, to read. It links to
+  `/megrendeles`.
 - [Public ordering page](./public-ordering-page.md): `/megrendeles` is the order form for the
   week guests can order from (day strip, form, day's order, summary), or explains why there is
   none.
