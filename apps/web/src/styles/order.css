@@ -598,6 +598,7 @@
   padding-top: 1px;
 }
 .cart-line .what {
+  text-wrap: balance;
   flex: 1;
   min-width: 0;
 }
@@ -1011,6 +1012,7 @@
 .pickrow .pname {
   overflow-wrap: anywhere;
   hyphens: auto;
+  text-wrap: balance;
   font-size: var(--t-lg);
   font-weight: 600;
   line-height: 1.3;
@@ -1256,7 +1258,6 @@
   font-size: var(--t-xl);
   font-weight: 600;
   letter-spacing: -0.01em;
-  text-wrap: balance;
 }
 /* Tall enough that the footer starts below the fold, so the loaded page shifts nothing in view.
    Edge to edge on a phone, like the form it stands in for. */
@@ -1513,7 +1514,6 @@
   font-size: var(--t-2xl);
   font-weight: 600;
   letter-spacing: -0.015em;
-  text-wrap: balance;
 }
 .success .lead,
 .success .questions {

@@ -102,6 +102,15 @@ body {
   margin: 0;
 }
 
+/* Short lines (headings, dish names) wrap into lines of even length instead of leaving one word
+   alone below; running text only avoids a lone last word. */
+:is(h1, h2, h3, h4) {
+  text-wrap: balance;
+}
+:is(p, li, label, legend) {
+  text-wrap: pretty;
+}
+
 ul {
   padding: 0;
   list-style: none;
