@@ -62,6 +62,28 @@ export {
   type WeekPlanResult,
   weekDraftIds,
 } from './menu/edit';
+export {
+  byRendition,
+  checkImageUpload,
+  type ImageFileFacts,
+  type ImageMime,
+  type ImageRendition,
+  type ImageUploadCheck,
+  type ImageUploadErrorCode,
+  type ImageUploadErrors,
+  imageMimes,
+  imageRenditions,
+  maxSourceBytes,
+  planRenditions,
+  type Rect,
+  type RenditionFit,
+  type RenditionPlan,
+  type RenditionSpec,
+  renditionSpecs,
+  type Size,
+  sniffBytes,
+  sniffImageMime,
+} from './menu/image';
 export { priceFor } from './menu/price';
 export { buildPublicMenu } from './menu/public';
 export {

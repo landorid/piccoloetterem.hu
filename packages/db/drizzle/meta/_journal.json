@@ -22,6 +22,13 @@
       "when": 1791637852128,
       "tag": "0002_order_confirmation_sent_at",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791833677070,
+      "tag": "0003_item_image_version",
+      "breakpoints": true
     }
   ]
 }

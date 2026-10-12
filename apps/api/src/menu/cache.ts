@@ -32,7 +32,7 @@ export interface PublicMenuCache extends MenuCache {
  * Bump whenever the shape or the meaning of `CachedWeek` (and so of `PublicMenu`) changes.
  * Entries never expire, so without a bump a deploy would keep serving the old ones.
  */
-export const CACHE_FORMAT = 1;
+export const CACHE_FORMAT = 2;
 
 /** Caches nothing, so there is nothing to purge. */
 export const noopMenuCache: PublicMenuCache = {

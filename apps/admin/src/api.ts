@@ -1,5 +1,5 @@
 import { getToken } from '@clerk/react';
-import { createApiClient } from '@piccolo/api-client';
+import { createApiClient, type ItemImageRendition, itemImageUrl } from '@piccolo/api-client';
 import { adminApiOrigin, adminAuthorizationHeaders } from './apiAuth';
 import { NetworkError } from './errors';
 
@@ -30,3 +30,9 @@ export const api = createApiClient({
     }
   },
 });
+
+/** The URL of a stored item's image on the API this admin talks to; `null` without one. */
+export const adminImageUrl = (
+  item: { id: string; imageVersion?: string | undefined },
+  rendition: ItemImageRendition,
+) => itemImageUrl(baseUrl, item, rendition);

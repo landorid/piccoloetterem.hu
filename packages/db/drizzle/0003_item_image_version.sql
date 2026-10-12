@@ -1,0 +1,3 @@
+ALTER TABLE "menu_items" ADD COLUMN "image_version" text;--> statement-breakpoint
+ALTER TABLE "menu_items" ADD CONSTRAINT "menu_items_image_permanent_only" CHECK ("menu_items"."image_version" is null or "menu_items"."category" in ('all_week', 'dessert', 'pickle', 'side', 'side_extra'));--> statement-breakpoint
+ALTER TABLE "menu_items" ADD CONSTRAINT "menu_items_image_version_uuid" CHECK ("menu_items"."image_version" ~ '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$');

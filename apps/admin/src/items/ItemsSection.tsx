@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import type { ItemField, ItemRow, RowErrors } from '@/items/editor';
+import { ItemImageCell } from '@/items/ItemImageCell';
 import { cell, VariationsCell } from '@/pages/weeklyMenu/ItemRow';
 import { strings } from '@/strings';
 
@@ -29,12 +30,20 @@ export type ItemsSectionProps = {
   errors: RowErrors;
   /** Stored items whose sold-out switch is on its way to the API. */
   soldOutPending: ReadonlySet<string>;
+  /** Stored item id → its image's version, for the items that have one. */
+  imageVersions: ReadonlyMap<string, string>;
+  /** Stored items with an image upload or removal in flight. */
+  imagePending: ReadonlySet<string>;
+  /** The list is being saved: no image operation may start. */
+  saving: boolean;
   onEdit: (key: string, patch: Partial<Pick<ItemRow, ItemField>>) => void;
   onAdd: () => void;
   onRemove: (key: string) => void;
   onMove: (key: string, direction: -1 | 1) => void;
   onActive: (key: string, active: boolean) => void;
   onSoldOut: (id: string, soldOut: boolean) => void;
+  onImagePick: (id: string, file: File) => void;
+  onImageRemove: (id: string) => void;
 };
 
 function errorMessage(code: string): string {
@@ -62,7 +71,14 @@ function fieldsOf(section: PermanentSection) {
 
 type RowProps = Pick<
   ItemsSectionProps,
-  'onEdit' | 'onRemove' | 'onMove' | 'onActive' | 'onSoldOut'
+  | 'onEdit'
+  | 'onRemove'
+  | 'onMove'
+  | 'onActive'
+  | 'onSoldOut'
+  | 'onImagePick'
+  | 'onImageRemove'
+  | 'saving'
 > & {
   row: ItemRow;
   section: PermanentSection;
@@ -71,6 +87,8 @@ type RowProps = Pick<
   isFirst: boolean;
   isLast: boolean;
   soldOutPending: boolean;
+  imageVersion: string | undefined;
+  imagePending: boolean;
 };
 
 /**
@@ -86,11 +104,16 @@ function EditableRow({
   isFirst,
   isLast,
   soldOutPending,
+  imageVersion,
+  imagePending,
+  saving,
   onEdit,
   onRemove,
   onMove,
   onActive,
   onSoldOut,
+  onImagePick,
+  onImageRemove,
 }: RowProps) {
   const id = useId();
   const { priced, sideChoice } = fieldsOf(section);
@@ -130,6 +153,15 @@ function EditableRow({
           dim && '[&>*]:opacity-60',
         )}
       >
+        <ItemImageCell
+          id={row.id}
+          version={imageVersion}
+          label={label}
+          busy={imagePending}
+          disabled={saving || imagePending}
+          onPick={(file) => row.id !== undefined && onImagePick(row.id, file)}
+          onRemove={() => row.id !== undefined && onImageRemove(row.id)}
+        />
         <div className={cn('grid gap-1', cell.name)}>
           <Input
             id={`${row.key}-name`}
@@ -335,6 +367,7 @@ function ItemsHeader({ section }: { section: PermanentSection }) {
       aria-hidden="true"
       className="hidden flex-nowrap items-end gap-x-2 pb-1 text-muted-foreground text-xs @4xl:flex"
     >
+      <span className="w-10 shrink-0" />
       {title(t.columns.name, cell.name)}
       {title(t.columns.description, cell.description)}
       {priced && title(t.columns.priceWeekday, cell.price, 'text-right')}
@@ -358,6 +391,8 @@ export function ItemsSection({
   rows,
   errors,
   soldOutPending,
+  imageVersions,
+  imagePending,
   onAdd,
   ...handlers
 }: ItemsSectionProps) {
@@ -388,6 +423,8 @@ export function ItemsSection({
             isFirst={index === 0}
             isLast={index === activeRows - 1}
             soldOutPending={row.id !== undefined && soldOutPending.has(row.id)}
+            imageVersion={row.id === undefined ? undefined : imageVersions.get(row.id)}
+            imagePending={row.id !== undefined && imagePending.has(row.id)}
             {...handlers}
           />
         ))}

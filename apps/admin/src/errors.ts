@@ -1,4 +1,5 @@
 import { ApiError } from '@piccolo/api-client';
+import { ImagePrepareError } from './items/image/prepare';
 import { strings } from './strings';
 
 /** A request that never reached the API: offline, DNS, or blocked by CORS. */
@@ -27,6 +28,8 @@ export function describeError(error: unknown): { code: string; message: string }
     code = error.code;
   } else if (error instanceof NetworkError) {
     code = 'network';
+  } else if (error instanceof ImagePrepareError) {
+    code = error.code;
   }
   return {
     code,

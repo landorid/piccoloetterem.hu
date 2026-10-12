@@ -460,6 +460,26 @@ export const strings = {
       weekly_item: 'Ez heti tétel, a heti menüben szerkeszthető.',
     },
     fieldErrorFallback: 'Hibás érték.',
+    /** A row's photo (`ItemImageCell`). */
+    image: {
+      /** The cell's button for screen readers: `Desszertek, 2. tétel: kép`. */
+      cell: (row: string) => `${row}: kép`,
+      add: 'Kép feltöltése',
+      replace: 'Kép cseréje',
+      remove: 'Kép törlése',
+      /** An unsaved row has no id to attach an image to yet. */
+      afterSave: 'Mentés után tölthető fel',
+      preview: 'A tétel képe',
+      missing: 'A kép nem található ezen a gépen.',
+      uploading: 'Feltöltés…',
+      uploaded: 'A kép feltöltve.',
+      removed: 'A kép törölve.',
+      removeConfirm: {
+        title: 'Törlöd a képet?',
+        description: 'A kép és a kicsinyített változata is törlődik. Később újra feltöltheted.',
+        confirm: 'Törlés',
+      },
+    },
   },
   errors: {
     codeLabel: 'Hibakód',
@@ -474,6 +494,12 @@ export const strings = {
       internal: 'Hiba történt a szerveren. Próbáld újra később.',
       order_not_found: 'Ez a rendelés nem található.',
       invalid_transition: 'A rendelés állapota közben megváltozott. Frissítettük.',
+      item_not_found: 'Ez a tétel már nem található. Töltsd újra az oldalt.',
+      payload_too_large: 'A feltöltés túl nagy.',
+      source_too_big: 'A kép túl nagy (legfeljebb 30 MB lehet).',
+      undecodable: 'Ezt a képet nem lehet beolvasni. Próbálj JPEG, PNG vagy WebP képet.',
+      encode_failed: 'A képet nem sikerült átalakítani. Próbálj másik képet.',
+      result_too_big: 'A kép átalakítva is túl nagy maradt. Próbálj egyszerűbb képet.',
     },
   },
 } as const;

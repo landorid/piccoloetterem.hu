@@ -19,6 +19,15 @@ vi.mock('@clerk/react', () => ({
   getToken: async () => 'session-token',
 }));
 
+// jsdom has no canvas: the resize is `prepare.test.ts`'s, here it hands over two small files.
+vi.mock('@/items/image/prepare', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/items/image/prepare')>()),
+  prepareItemImage: async () => ({
+    large: new File(['large'], 'large.webp', { type: 'image/webp' }),
+    thumb: new File(['thumb'], 'thumb.webp', { type: 'image/webp' }),
+  }),
+}));
+
 const ids = {
   rantott: '00000000-0000-4000-8000-0000000000a1',
   cordon: '00000000-0000-4000-8000-0000000000a2',
@@ -156,7 +165,39 @@ const requests: ApiRequest[] = [];
 /** Overrides the fake API for one route, e.g. to fail or to hold a response. */
 let override: ((request: ApiRequest) => Promise<Reply> | Reply | undefined) | undefined;
 
+function withImage(id: string, imageVersion: string | undefined): MenuItem | undefined {
+  let changed: MenuItem | undefined;
+  server = Object.fromEntries(
+    Object.entries(server).map(([name, list]) => [
+      name,
+      list.map((entry) => {
+        if (entry.id !== id) {
+          return entry;
+        }
+        const { imageVersion: _, ...rest } = entry;
+        changed = imageVersion === undefined ? rest : { ...rest, imageVersion };
+        return changed;
+      }),
+    ]),
+  ) as PermanentMenu;
+  return changed;
+}
+
+let versions = 0;
+
 function respond(request: ApiRequest): Reply {
+  const image = /^\/api\/admin\/menu\/items\/([^/]+)\/image$/.exec(request.path);
+  if (image?.[1] && (request.method === 'PUT' || request.method === 'DELETE')) {
+    versions += 1;
+    const version =
+      request.method === 'PUT'
+        ? `7d3f0c52-58a1-4b1e-9a43-${String(versions).padStart(12, '0')}`
+        : undefined;
+    const item = withImage(image[1], version);
+    return item
+      ? { status: 200, body: { item } }
+      : { status: 404, body: { error: 'item_not_found' } };
+  }
   if (request.path === '/api/admin/menu/items' && request.method === 'GET') {
     return { status: 200, body: server };
   }
@@ -195,7 +236,17 @@ beforeEach(() => {
       const request: ApiRequest = {
         method: init?.method ?? 'GET',
         path: url.pathname,
-        body: typeof init?.body === 'string' ? JSON.parse(init.body) : undefined,
+        body:
+          typeof init?.body === 'string'
+            ? JSON.parse(init.body)
+            : init?.body instanceof FormData
+              ? Object.fromEntries(
+                  [...init.body].map(([name, value]) => [
+                    name,
+                    value instanceof File ? value.name : value,
+                  ]),
+                )
+              : undefined,
       };
       requests.push(request);
       const reply = (await override?.(request)) ?? respond(request);
@@ -530,5 +581,176 @@ describe('/etlap', () => {
     expect(await screen.findByDisplayValue('Steakburgonya')).toBeTruthy();
     expect(screen.getByText(strings.items.upToDate)).toBeTruthy();
     expect(puts()).toEqual([]);
+  });
+});
+
+describe('/etlap images', () => {
+  const imageButton = (name: string) => within(row(name)).getByRole('button', { name: /: kép$/ });
+  const thumbnail = (name: string) => imageButton(name).querySelector('img');
+  const pick = (name: string) => {
+    const input = row(name).querySelector('input[type="file"]') as HTMLInputElement;
+    fireEvent.change(input, {
+      target: { files: [new File(['photo'], 'photo.jpg', { type: 'image/jpeg' })] },
+    });
+  };
+  const imageRequests = () => requests.filter((request) => request.path.endsWith('/image'));
+
+  beforeEach(() => {
+    server = {
+      ...server,
+      desserts: server.desserts.map((dessert) =>
+        dessert.id === ids.somloi
+          ? { ...dessert, imageVersion: '7d3f0c52-58a1-4b1e-9a43-0d9a1c3e2b10' }
+          : dessert,
+      ),
+    };
+  });
+
+  it('uploads a picked file at once, shows its thumbnail, and leaves nothing to save', async () => {
+    await renderLoaded();
+    expect(thumbnail('Túrós palacsinta')).toBeNull();
+
+    pick('Túrós palacsinta');
+
+    await waitFor(() =>
+      expect(thumbnail('Túrós palacsinta')?.getAttribute('src')).toMatch(
+        new RegExp(`/api/images/${ids.palacsinta}/7d3f0c52-58a1-4b1e-9a43-\\d{12}/thumb$`),
+      ),
+    );
+    expect(imageRequests()[0]).toEqual({
+      method: 'PUT',
+      path: `/api/admin/menu/items/${ids.palacsinta}/image`,
+      body: { large: 'large.webp', thumb: 'thumb.webp' },
+    });
+    expect(await screen.findByText(strings.items.image.uploaded)).toBeTruthy();
+    expect(screen.getByText(strings.items.upToDate)).toBeTruthy();
+  });
+
+  it('keeps unsaved edits through an upload, and Save waits for it', async () => {
+    let release: (reply: Reply) => void = () => {};
+    override = (request) =>
+      request.path.endsWith('/image')
+        ? new Promise<Reply>((resolve) => {
+            release = resolve;
+          })
+        : undefined;
+    await renderLoaded();
+    type(row('Csemege uborka'), strings.items.columns.priceWeekday, '390');
+
+    pick('Túrós palacsinta');
+
+    await waitFor(() => expect(imageRequests()).toHaveLength(1));
+    expect(saveButton().hasAttribute('disabled')).toBe(true);
+    expect(imageButton('Túrós palacsinta').hasAttribute('disabled')).toBe(true);
+
+    await act(async () => release(respond(imageRequests()[0] as ApiRequest)));
+    await waitFor(() => expect(saveButton().hasAttribute('disabled')).toBe(false));
+    expect(screen.getByDisplayValue('390')).toBeTruthy();
+    expect(screen.getByText(strings.items.unsaved)).toBeTruthy();
+  });
+
+  it('keeps Save disabled until the menu refetched after an upload is back', async () => {
+    let release: (reply: Reply) => void = () => {};
+    let uploaded = false;
+    override = (request) => {
+      if (request.path.endsWith('/image')) {
+        uploaded = true;
+        return undefined;
+      }
+      return uploaded && request.method === 'GET' && request.path === '/api/admin/menu/items'
+        ? new Promise<Reply>((resolve) => {
+            release = resolve;
+          })
+        : undefined;
+    };
+    await renderLoaded();
+    type(row('Csemege uborka'), strings.items.columns.priceWeekday, '390');
+    const gets = () =>
+      requests.filter(
+        (request) => request.method === 'GET' && request.path === '/api/admin/menu/items',
+      );
+
+    pick('Túrós palacsinta');
+
+    await waitFor(() => expect(gets()).toHaveLength(2));
+    await waitFor(() => expect(thumbnail('Túrós palacsinta')).not.toBeNull());
+    expect(saveButton().hasAttribute('disabled')).toBe(true);
+
+    await act(async () => release(respond(gets()[1] as ApiRequest)));
+    await waitFor(() => expect(saveButton().hasAttribute('disabled')).toBe(false));
+  });
+
+  it('locks every image while the list is being saved', async () => {
+    let release: (reply: Reply) => void = () => {};
+    override = (request) =>
+      request.method === 'PUT' && request.path === '/api/admin/menu/items'
+        ? new Promise<Reply>((resolve) => {
+            release = resolve;
+          })
+        : undefined;
+    await renderLoaded();
+    type(row('Csemege uborka'), strings.items.columns.priceWeekday, '390');
+
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(imageButton('Somlói galuska').hasAttribute('disabled')).toBe(true));
+    await act(async () => release(respond(puts()[0] as ApiRequest)));
+    await waitFor(() => expect(imageButton('Somlói galuska').hasAttribute('disabled')).toBe(false));
+  });
+
+  it('cannot add an image to a new item before it is saved', async () => {
+    await renderLoaded();
+
+    fireEvent.click(within(section('sides')).getByRole('button', { name: strings.items.addItem }));
+
+    const cell = within(rowsIn('sides').at(-1) as HTMLElement).getByRole('button', {
+      name: /: kép$/,
+    });
+    expect(cell.hasAttribute('disabled')).toBe(true);
+    expect(cell.closest('[title]')?.getAttribute('title')).toBe(strings.items.image.afterSave);
+  });
+
+  it('removes an image only after a confirmation', async () => {
+    await renderLoaded();
+
+    fireEvent.click(imageButton('Somlói galuska'));
+    fireEvent.click(await screen.findByRole('button', { name: strings.items.image.remove }));
+    expect(imageRequests()).toEqual([]);
+    fireEvent.click(
+      await screen.findByRole('button', { name: strings.items.image.removeConfirm.confirm }),
+    );
+
+    await waitFor(() => expect(thumbnail('Somlói galuska')).toBeNull());
+    expect(imageRequests()).toEqual([
+      {
+        method: 'DELETE',
+        path: `/api/admin/menu/items/${ids.somloi}/image`,
+        body: undefined,
+      },
+    ]);
+  });
+
+  it('keeps the old thumbnail and reports the failure when an upload is refused', async () => {
+    override = (request) =>
+      request.path.endsWith('/image')
+        ? { status: 413, body: { error: 'payload_too_large' } }
+        : undefined;
+    await renderLoaded();
+    const before = thumbnail('Somlói galuska')?.getAttribute('src');
+
+    pick('Somlói galuska');
+
+    expect(await screen.findByText(strings.errors.byCode.payload_too_large)).toBeTruthy();
+    expect(thumbnail('Somlói galuska')?.getAttribute('src')).toBe(before);
+  });
+
+  it('says so when this machine does not have the image, and still offers to replace it', async () => {
+    await renderLoaded();
+
+    fireEvent.error(thumbnail('Somlói galuska') as HTMLImageElement);
+    fireEvent.click(imageButton('Somlói galuska'));
+
+    expect(await screen.findByText(strings.items.image.missing)).toBeTruthy();
+    expect(screen.getByRole('button', { name: strings.items.image.replace })).toBeTruthy();
   });
 });

@@ -32,6 +32,8 @@ import {
   withoutError,
 } from '@/items/editor';
 import { ItemsSection } from '@/items/ItemsSection';
+import { imageVersions } from '@/items/image/model';
+import { useItemImages } from '@/items/useItemImages';
 import { permanentItemsQuery } from '@/queries';
 import { strings } from '@/strings';
 
@@ -44,7 +46,8 @@ type SoldOutChange = { id: string; soldOut: boolean };
 
 /**
  * The permanent menu at `/etlap`: every section's items edited in place and saved together with
- * one `PUT /api/admin/menu/items`. The sold-out switch alone acts at once, on its own route.
+ * one `PUT /api/admin/menu/items`. The sold-out switch and the image act at once, on their own
+ * routes.
  */
 export function ItemsPage() {
   const queryClient = useQueryClient();
@@ -57,6 +60,9 @@ export function ItemsPage() {
   const [focusId, setFocusId] = useState<string | null>(null);
   const [errorFocus, setErrorFocus] = useState(0);
   const editorRef = useRef<HTMLDivElement>(null);
+  const images = useItemImages();
+  const versions = useMemo(() => imageVersions(menu.data), [menu.data]);
+  const [removingImage, setRemovingImage] = useState<string | null>(null);
 
   const state = edited ?? base;
   const dirty = edited !== null && base !== undefined && isDirty(edited, base);
@@ -210,7 +216,11 @@ export function ItemsPage() {
     onActive: (key: string, active: boolean) =>
       edit((current) => setActive(current, section, key, active)),
     onSoldOut: (id: string, soldOut: boolean) => markSoldOut.mutate({ id, soldOut }),
+    onImagePick: images.upload,
+    onImageRemove: setRemovingImage,
   });
+  // A save's answer is the whole list as it was read; it must not land on a newer image.
+  const imageBusy = images.pending.size > 0;
 
   return (
     <>
@@ -227,6 +237,9 @@ export function ItemsPage() {
               rows={state[section]}
               errors={errors}
               soldOutPending={soldOutPending}
+              imageVersions={versions}
+              imagePending={images.pending}
+              saving={save.isPending}
               {...handlers(section)}
             />
           ))}
@@ -256,7 +269,7 @@ export function ItemsPage() {
             >
               {strings.items.discard}
             </Button>
-            <Button disabled={!dirty || save.isPending} onClick={onSave}>
+            <Button disabled={!dirty || save.isPending || imageBusy} onClick={onSave}>
               {save.isPending ? strings.items.saving : strings.items.save}
             </Button>
           </div>
@@ -273,6 +286,15 @@ export function ItemsPage() {
           setEdited(null);
           setErrors({});
         }}
+      />
+      <ConfirmDialog
+        open={removingImage !== null}
+        onOpenChange={(open) => !open && setRemovingImage(null)}
+        title={strings.items.image.removeConfirm.title}
+        description={strings.items.image.removeConfirm.description}
+        confirmLabel={strings.items.image.removeConfirm.confirm}
+        destructive
+        onConfirm={() => removingImage !== null && images.remove(removingImage)}
       />
     </>
   );

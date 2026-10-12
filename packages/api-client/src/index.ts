@@ -16,6 +16,7 @@ declare global {
   }
 }
 
+export { type ItemImageRendition, itemImageUrl } from './images';
 export type { AppType };
 
 export type ApiClientOptions = {

@@ -28,13 +28,19 @@ export interface MenuItem {
   soldOut: boolean;
   active: boolean;
   sortOrder: number;
+  /**
+   * The version of the item's current image (`itemImageUrl` in `@piccolo/api-client` builds its
+   * URL); it changes with every upload. Absent: no image. Never set on a weekly item. Not
+   * content: only the image routes set it, never a draft (`MenuItemContent` has no image).
+   */
+  imageVersion?: string;
 }
 
 /**
  * A menu item as submitted by staff, before validation. `category` and `allergens` are plain
  * strings because `validateMenuItem` is what checks them.
  */
-export type MenuItemInput = Omit<MenuItem, 'id' | 'category' | 'allergens'> & {
+export type MenuItemInput = Omit<MenuItem, 'id' | 'category' | 'allergens' | 'imageVersion'> & {
   category: string;
   allergens: readonly string[];
 };

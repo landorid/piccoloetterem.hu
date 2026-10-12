@@ -88,7 +88,10 @@ looks off. A `FAIL` line names the broken check. Read that server's log, and if 
   guess them.
 - Refs change after every navigation, so run `find` again.
 - To read state that has no accessible name (for example which row a switch is in), a read-only
-  `javascript_tool` query is fine. Never use it to click or to set values.
+  `javascript_tool` query is fine. Never use it to click or to set values. The one exception is a
+  file input: the pane cannot drive the operating system's file dialog, so a `DataTransfer` puts
+  the file in and a `change` event follows (`features/admin-etlap.md`, `etlap-image`). Say so in
+  the report.
 
 **The API, the way the frontends call it:**
 
@@ -172,7 +175,7 @@ evidence.
 |---|---|
 | `scripts/up.sh` | Launch a run (above) |
 | `scripts/doctor.sh [--db]` | Read-only health of the run |
-| `scripts/api.sh [--anon] [--save NAME] METHOD PATH [BODY\|@FILE]` | Call the API as the web or the admin |
+| `scripts/api.sh [--anon] [--save NAME] [--form NAME=@FILE]… [--out FILE] METHOD PATH [BODY\|@FILE]` | Call the API as the web or the admin; multipart bodies, binary responses |
 | `scripts/sql.mjs "<sql>" [param…]` | Query the run's database |
 | `scripts/shot.sh URL NAME [WxH]` | PNG of a page into `$EVIDENCE` |
 | `scripts/down.sh` | Tear the run down, keep the evidence |

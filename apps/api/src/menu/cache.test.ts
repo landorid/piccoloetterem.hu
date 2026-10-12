@@ -157,7 +157,7 @@ describe('kvMenuCache', () => {
     if (!week.published) {
       throw new Error('unreachable');
     }
-    expect(CACHE_FORMAT).toBe(1);
+    expect(CACHE_FORMAT).toBe(2);
     expect({
       week: Object.keys(week),
       menu: Object.keys(week.menu),
@@ -185,6 +185,17 @@ describe('kvMenuCache', () => {
         'sortOrder',
       ],
     });
+  });
+
+  it('adds imageVersion last to a dish that has an image', () => {
+    const imageVersion = '7d3f0c52-58a1-4b1e-9a43-0d9a1c3e2b10';
+    const menu = buildPublicMenu(
+      { isoYear: 2026, isoWeek: 41, publishedAt: new Date('2026-10-01T18:00:00Z') },
+      [],
+      [{ ...soup, category: 'dessert', imageVersion }],
+      config,
+    );
+    expect(Object.keys(menu.permanent.desserts[0] ?? {}).at(-1)).toBe('imageVersion');
   });
 });
 
