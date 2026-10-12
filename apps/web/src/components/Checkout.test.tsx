@@ -222,10 +222,6 @@ describe('checkout', () => {
     expect(name().value).toBe('Kovács Anna');
     expect(address().value).toBe('Szombathely, Fő tér 1.');
     expect(field(/^Megjegyzés/).value).toBe('');
-
-    fireEvent.click(screen.getByRole('button', { name: checkout.forgetLabel }));
-    expect(name().value).toBe('');
-    expect(localStorage.getItem(customerStorageKey)).toBeNull();
   });
 
   it('sends the honeypot when something filled it', async () => {

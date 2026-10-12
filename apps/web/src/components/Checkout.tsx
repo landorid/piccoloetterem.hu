@@ -12,7 +12,6 @@ import {
   contactFields,
   contactMessage,
   emptyContact,
-  forgetCustomer,
   needsAddress,
   readCustomer,
   readRejection,
@@ -91,8 +90,10 @@ export function Checkout({
   );
   const delivery = needsAddress(days);
 
-  const [remembered, setRemembered] = useState(() => readCustomer(browserStorage()));
-  const [contact, setContact] = useState<Contact>(() => ({ ...emptyContact, ...remembered }));
+  const [contact, setContact] = useState<Contact>(() => ({
+    ...emptyContact,
+    ...readCustomer(browserStorage()),
+  }));
   const [fieldErrors, setFieldErrors] = useState<ContactErrors>({});
   const [showSummary, setShowSummary] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
@@ -126,15 +127,6 @@ export function Checkout({
   const focusFirst = (found: ContactErrors) => {
     const first = asked.find((field) => found[field]);
     if (first) inputs.current[first]?.focus();
-  };
-
-  const forget = () => {
-    forgetCustomer(browserStorage());
-    setRemembered(null);
-    setContact(emptyContact);
-    setFieldErrors({});
-    setShowSummary(false);
-    inputs.current.name?.focus();
   };
 
   const submit = async (event?: { preventDefault(): void }) => {
@@ -248,19 +240,6 @@ export function Checkout({
             <h2 id="checkout-contact">{checkout.contact}</h2>
           </div>
           <div className="card-body fields">
-            {remembered && (
-              <p className="remembered">
-                {checkout.remembered}{' '}
-                <button
-                  type="button"
-                  className="btn-quiet"
-                  aria-label={checkout.forgetLabel}
-                  onClick={forget}
-                >
-                  {checkout.forget}
-                </button>
-              </p>
-            )}
             <Field
               field="name"
               label={checkout.name}

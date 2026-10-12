@@ -145,10 +145,6 @@ export const strings = {
     minimumDay: (day: string, missing: string) => `${day}: ${missing} különbözet`,
     submit: 'Rendelés elküldése',
     submitting: 'Küldés folyamatban…',
-    // TODO(O2): not in the handover: the prefill from the last order and its 'Törlés' link.
-    remembered: 'Az adataidat a legutóbbi rendelésedből töltöttük ki.',
-    forget: 'Törlés',
-    forgetLabel: 'A megjegyzett adatok törlése',
     /** The honeypot's label. People never see it; a bot that reads labels fills it in. */
     honeypot: 'Weboldal',
     errors: {
