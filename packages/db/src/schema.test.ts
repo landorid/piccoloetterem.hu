@@ -31,7 +31,7 @@ describe('enums', () => {
 describe('nullability', () => {
   it('leaves only the columns that can be absent nullable', () => {
     expect(nullableColumns(customers)).toEqual([]);
-    expect(nullableColumns(menuItems)).toEqual(['description', 'price_weekend']);
+    expect(nullableColumns(menuItems)).toEqual(['description', 'price_weekend', 'image_version']);
     expect(nullableColumns(menuWeeks)).toEqual(['published_at']);
     expect(nullableColumns(menuSchedule)).toEqual(['day']);
     expect(nullableColumns(orders)).toEqual([

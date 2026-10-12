@@ -20,6 +20,7 @@ const item = (
   soldOut: false,
   active: true,
   sortOrder: 0,
+  imageVersion: null,
   ...fields,
 });
 
