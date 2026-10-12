@@ -4,7 +4,8 @@ At `/etlap` staff edit the permanent items in five sections: "Egész héten rend
 "Desszertek", "Savanyúságok", "Köretek" and "Feláras köretek". They can rename items and change
 prices, variations, allergens, side requirement and order. They add new items, deactivate and
 reactivate items, and save everything with one "Mentés". The "Elfogyott" switch marks an item
-sold out at once, with no save. Guests see the result in the public menu.
+sold out at once, with no save. Each saved row also has an image cell that uploads, replaces or
+removes the item's photo at once, with no save. Guests see the result in the public menu.
 
 ## Sub-features
 
@@ -22,6 +23,13 @@ sold out at once, with no save. Guests see the result in the public menu.
 - `etlap-order`: "Feljebb" / "Lejjebb" reorder rows within a section.
 - `etlap-discard`: "Változások elvetése" asks "Elveted a változásokat?" and restores the loaded
   values.
+- `etlap-image`: the square button before each row's name ("<row name>: kép") picks a file. The
+  browser resizes it (`items/image/prepare.ts`) and sends one multipart
+  `PUT /api/admin/menu/items/<id>/image`. The toast says "A kép feltöltve." and the thumbnail
+  appears. Clicking it opens a popover with the large rendition, "Kép cseréje" and "Kép
+  törlése"; removing asks "Törlöd a képet?". Unsaved rows have the button disabled, titled
+  "Mentés után tölthető fel". The images are served by `GET /api/images/<id>/<version>/<rendition>`
+  and the version shows as `imageVersion` in `GET /api/menu`.
 
 ## How to get to it (user POV)
 
@@ -62,6 +70,22 @@ Preconditions:
 - **Proof.** The before / after-on / restored JSON, the API-log lines, the guest-view `.http` file,
   and a `shot.sh "$ADMIN_URL/etlap" etlap-<sub>.page` PNG.
 
+- **Image, through the API.** Make a JPEG with `sips` (`sips -s format jpeg -Z 1200 <any
+  macOS picture> --out large.jpg`, and `sips -z 192 192 … --out thumb.jpg`), then
+  `api.sh --save etlap-image.upload --form large=@large.jpg --form thumb=@thumb.jpg PUT
+  /api/admin/menu/items/<id>/image`. Read each rendition with
+  `api.sh --out etlap-image.thumb.jpg GET /api/images/<id>/<version>/thumb` (headers only on
+  stdout: `immutable`, `nosniff`, the sandbox CSP), then `GET /api/menu`, a whole-list
+  `PUT /api/admin/menu/items` (the version survives), `DELETE …/image` and the same GET (404).
+- **Image, through the UI.** The browser pane cannot drive the operating system's file dialog.
+  Serve the JPEG through the admin's Vite (`$ADMIN_URL/@fs/<absolute path under the checkout>`),
+  then, in one `javascript_tool` step, put it into the row's
+  `input[type=file]` with a `DataTransfer` and dispatch `change`. That is the only scripted step;
+  the resize, the upload, the popover and the removal are clicked. Say so in the report.
+- **Proof.** For images: the `.http` files, the `image_version` before/after/restored rows, the
+  downloaded renditions (`sips -g pixelWidth -g pixelHeight`), and pane screenshots of the cell
+  and the popover.
+
 ## Gotchas
 
 - Every change here is live for every guest of the shared development database. Restore it in
@@ -73,5 +97,12 @@ Preconditions:
   Both routes are the same `POST /items/:id/sold-out`.
 - A guest sees the change in `GET /api/menu` only for a published week. The current window
   answers `next_week_not_published` with no items. Read a published week with `?week=`.
-- New rows get their id on save. Their "Elfogyott" switch is disabled until then; that is
-  intended.
+- New rows get their id on save. Their "Elfogyott" switch and image cell are disabled until
+  then; that is intended.
+- The images live in the run's Miniflare R2 (`state/`, wiped by `down.sh`), while the
+  `image_version` lives in the database. A version written from another machine, or left over
+  from an earlier run, has no object here: the cell then shows the "image off" mark and the
+  popover says "A kép nem található ezen a gépen." Remove every image you attach before
+  `down.sh` (`DELETE …/image`), and check `image_version` is back to NULL.
+- Until the image migration is on the shared development branch, run against a local Postgres
+  that has it: `DATABASE_URL=postgres://… up.sh` (the environment wins over `.dev.vars`).

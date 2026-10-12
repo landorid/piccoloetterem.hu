@@ -143,6 +143,12 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   form, splitting each dish into name and description and reading a soy alternative as two
   variations; staff review the grid and save it as usual. The original decision ruled out any name
   parsing. Decided by Dávid.
+  Revised 2026-10-11: permanent (étlap) items may carry one image each; weekly items never do. It
+  is stored in Cloudflare R2 behind the API Worker (a private bucket, served by
+  `GET /api/images/<item>/<version>/<rendition>`), in two renditions, a large one (at most 1200 px)
+  and a square thumbnail (192 px), both made in the admin browser before the upload. The image is
+  uploaded, replaced and removed at once, outside the permanent menu's save. Guests see it only on
+  `/megrendeles`, not on `/`. Decided by Dávid.
 
 **Staff**
 
@@ -165,7 +171,7 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 customers            id, email_key UNIQUE, email, name, phone, address, last_order_at
 menu_items           id, category, name, description, price_weekday, price_weekend,
                      variations[], allergens[], soup_included, requires_side, sold_out,
-                     active, sort_order
+                     active, sort_order, image_version (NULL | uuid; permanent items only)
 menu_weeks           iso_year, iso_week (PK), published_at
 menu_schedule        iso_year, iso_week, day (1–6 | NULL for featured), menu_item_id, sort_order
 orders               id, submission_id, customer_id, delivery_date, fulfilment (delivery|pickup),

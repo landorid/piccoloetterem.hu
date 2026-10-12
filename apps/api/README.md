@@ -28,6 +28,11 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/menu/repo.ts` | Their Drizzle queries |
 | `src/menu/cache.ts` | The menu cache on Workers KV: `purgeWeek`, `purgeAll`, `week`; `menuCacheFor(env)` |
 | `src/menu/memoryKv.ts` | An in-memory `KvStore` for tests |
+| `src/images/admin.routes.ts` | `PUT`/`DELETE /api/admin/menu/items/:id/image`, mounted by the admin menu router (see below) |
+| `src/images/public.routes.ts` | `GET /api/images/:id/:version/:rendition`: an item's image, anonymous, no database (see below) |
+| `src/images/store.ts` | The R2 key layout, `put`/`get`/`discard`; `itemImagesFor(env)` |
+| `src/images/schemas.ts` | The multipart form, the body limit and the GET params, all from core's `renditionSpecs` |
+| `src/images/memoryR2.ts` | An in-memory `R2Store` for tests |
 | `src/orders/public.routes.ts` | `POST /api/orders`: a guest's submission (see below) |
 | `src/orders/submit.ts` | `submitOrder()`: the transaction that decides and stores a submission |
 | `src/orders/submission.ts` | Its steps without HTTP or database: the week, the rejection, the snapshot rows |
@@ -101,6 +106,8 @@ week are saved as a whole, in one request: `planPermanentItems` and `planWeek` c
 | `GET /items` | `{ allWeek, desserts, pickles, sides, sideExtras }` (the keys of `PublicMenu.permanent`): every permanent item, active and inactive, each section by `sortOrder` |
 | `PUT /items` | The same shape (server-owned fields are ignored) → the permanent menu as `GET` returns it |
 | `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly and permanent items; 404 `item_not_found` for an unknown id |
+| `PUT /items/:id/image` | Multipart, one file per rendition (`large`, `thumb`) → `{ item }` with its new `imageVersion`. Permanent items only (400 `fields.item: 'not_permanent'`); 404 `item_not_found`; 413 `payload_too_large` over the sum of the caps |
+| `DELETE /items/:id/image` | → `{ item }` without `imageVersion`. Removing an image that is not there is 200 and changes nothing |
 | `GET /default-week` | `{ isoYear, isoWeek }`: the week of `firstOrderableDay` now, so next week after this week's last cutoff. The weekly menu editor opens on it. No database query |
 | `GET /weeks/:year/:week` | `{ week: { isoYear, isoWeek, publishedAt }, days: { 1…6: { soups, mains } }, featured }`; an empty draft if the week has no row |
 | `PUT /weeks/:year/:week` | The same shape (server-owned fields are ignored) → the week as `GET` returns it |
@@ -117,6 +124,19 @@ the payload is set inactive, never deleted. Each `id` must be a stored permanent
 once: otherwise `unknown_item`, `weekly_item` or `duplicate`. `soldOut` is not part of the save; it
 has its own route. This replaced the per-item routes of the issue's first scope (decided by Dávid
 on 2026-10-08), matching the old `/etlap` page.
+
+**Item images.** A permanent item may have one image, in the renditions of core's
+`renditionSpecs` (`large`: at most 1200 px, 1.5 MB; `thumb`: 192 px square, 80 KB). The admin
+makes them in the browser; the API only checks each file's size and its first bytes (WebP or
+JPEG) with core's `checkImageUpload` and never trusts the declared type. The objects live in the
+`ITEM_IMAGES` R2 bucket under `<item id>/<version>/<rendition>`, and `menu_items.image_version`
+points at the current version. An upload writes a new version, then points the item at it under
+the row lock, purges the menu cache, and only then deletes the previous version; a failure before
+the pointer moves leaves the item on its old image. The whole-list `PUT /items` never touches the
+image. `GET /api/images/:id/:version/:rendition` serves the bytes with
+`Cache-Control: public, max-age=31536000, immutable` (a version never changes), `nosniff` and a
+sandbox CSP; an unknown object is 404 `image_not_found`, `no-store`. It reads neither the database
+nor the config. `itemImageUrl` in `@piccolo/api-client` builds that URL from an item.
 
 **Week upsert.** One transaction, holding the week's row lock so two saves in flight cannot
 interleave. A list fixes its items' category (soups `daily_soup`, mains `daily_main`, featured
@@ -135,7 +155,7 @@ is the list order.
 | publish a week | that week |
 | add or remove a closed date | the week of that date |
 | sold-out of a weekly item | every week it is scheduled on |
-| `PUT /items`, or sold-out of a permanent item | everything (`purgeAll`, once per request): permanent items are on every week's menu |
+| `PUT /items`, sold-out of a permanent item, or an image that changed | everything (`purgeAll`, once per request): permanent items are on every week's menu |
 
 Purges are idempotent and run on every such request, also when it changed nothing (publishing
 again, closing a date twice), so a retry after a failed purge heals the cache.
@@ -411,7 +431,7 @@ complete for the RPC client (`packages/api-client`).
 
 ### Error bodies
 
-Every response is JSON. The `error` code is machine-readable; the frontends map it to Hungarian copy
+Every response is JSON, except an image from `GET /api/images/*`. The `error` code is machine-readable; the frontends map it to Hungarian copy
 in their own `strings.ts`. `message` is for developers and never shown to users.
 
 | Cause | Status | Body |
@@ -421,6 +441,7 @@ in their own `strings.ts`. `message` is for developers and never shown to users.
 | `throw new HttpError(status, code, message)` | `status` | `{ error: code, message }` |
 | No such route | 404 | `{ error: 'not_found', message }` |
 | Anything else | 500 | `{ error: 'internal', eventId }`, reported to Sentry; `eventId` finds it there |
+| `PUT /api/admin/menu/items/:id/image` body over the cap | 413 | `{ error: 'payload_too_large', message }` |
 | `/api/admin/*` without a Clerk session | 401 | `{ error: 'unauthenticated' }` |
 | `/api/admin/*` session, not a member of `CLERK_ORG_ID` | 403 | `{ error: 'forbidden' }` |
 
@@ -496,6 +517,14 @@ binding its database routes fail with 500.
 and bind `HYPERDRIVE` and `MENU_CACHE`. Their Hyperdrive and KV ids and origin URLs are
 **placeholders** until manual issue #40 creates the resources and replaces them.
 
+`ITEM_IMAGES` is an R2 bucket per environment, and named environments do not inherit
+`r2_buckets`, so each has its own block: `piccolo-menu-images-development` (top level),
+`piccolo-menu-images-staging` and `piccolo-menu-images-production`. A missing bucket passes
+`wrangler deploy --dry-run` and fails the real deploy, so create it first
+(`wrangler r2 bucket create <name>`). Locally `wrangler dev` uses Miniflare's R2 under
+`.wrangler/state`, empty on every machine: an `image_version` in the shared development database
+then names an object this machine does not have, and its GET answers 404.
+
 `MENU_CACHE` is a KV namespace per environment. The top level binds
 `piccolo-menu-cache-development`. Create the others with
 `wrangler kv namespace create piccolo-menu-cache-<staging|production>` and put the printed id in
@@ -520,6 +549,7 @@ wrangler secret put SENTRY_DSN --env staging
 | `RESTAURANT` | var | `wrangler.toml`: the `RestaurantConfig` instance (`loadConfig`) |
 | `CORS_ORIGINS` | var | `wrangler.toml`: the web and admin origins for that environment |
 | `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
+| `ITEM_IMAGES` | R2 binding | `wrangler.toml`: the étlap images bucket for that environment, `piccolo-menu-images-<environment>`. Locally Miniflare's |
 | `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment, also holding the per-IP order limit (`order-rate:`). Locally Miniflare's |
 | `EMAIL_DRY_RUN` | var | `wrangler.toml`: `1` at the top level (local and development), unset in staging and production. `1` logs the confirmation e-mail instead of sending it |
 | `SES_REGION` | secret | `wrangler secret put` per environment that sends (P1, #39); `.dev.vars` locally only to send for real. The region of the SES identity |
