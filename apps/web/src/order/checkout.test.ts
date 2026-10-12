@@ -7,7 +7,6 @@ import {
   type Contact,
   contactMessage,
   customerStorageKey,
-  forgetCustomer,
   readCustomer,
   readRejection,
   rememberCustomer,
@@ -77,7 +76,7 @@ describe('buildSubmission', () => {
 });
 
 describe('the remembered customer', () => {
-  it('keeps name, phone, e-mail and address, never the note, and forgets them', () => {
+  it('keeps name, phone, e-mail and address, never the note', () => {
     const storage = memoryStorage();
     expect(readCustomer(storage)).toBeNull();
     rememberCustomer(storage, { ...contact, name: ' Kovács Anna ', note: 'titok' });
@@ -88,8 +87,6 @@ describe('the remembered customer', () => {
       email: contact.email,
       address: contact.address,
     });
-    forgetCustomer(storage);
-    expect(readCustomer(storage)).toBeNull();
   });
 
   it('reads nothing from a value it did not write', () => {

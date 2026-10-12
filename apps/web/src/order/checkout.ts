@@ -59,14 +59,6 @@ export function rememberCustomer(storage: Storage | null, contact: Contact): voi
   }
 }
 
-export function forgetCustomer(storage: Storage | null): void {
-  try {
-    storage?.removeItem(customerStorageKey);
-  } catch {
-    // Nothing was remembered where it cannot be read.
-  }
-}
-
 /** `localStorage`, or null where it does not exist or throws on access. */
 export function browserStorage(): Storage | null {
   try {
