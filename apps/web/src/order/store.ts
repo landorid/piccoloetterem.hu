@@ -73,7 +73,7 @@ export function createOrderStore(storage?: StateStorage): OrderStoreApi {
       }),
       {
         name: storageKey,
-        version: 1,
+        version: 2,
         // Without a `sessionStorage` (the server render) the store simply does not persist.
         storage: createJSONStorage(() => storage ?? sessionStorage),
         partialize: ({ activeDate, menusByDate, extrasByDate, formsByDate }): CartState => ({

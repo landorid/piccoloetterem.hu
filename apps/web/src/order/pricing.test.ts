@@ -99,7 +99,12 @@ describe('priceCart', () => {
     changeForm(state, date, (form) => choices.reduce(choose, form));
 
   it('prices each day with its own delivery fee and totals the submission', () => {
-    let state = answer(emptyCart, thu, { slot: 'soup', id: 'cs-gulyas' });
+    let state = answer(
+      emptyCart,
+      thu,
+      { slot: 'soup', id: 'cs-gulyas' },
+      { slot: 'main', item: null },
+    );
     state = changeForm(state, thu, (form) => stepExtra(form, 'doboz', 1));
     state = addMenu(state, thu, menu);
     state = addMenu(

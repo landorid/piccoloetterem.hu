@@ -10,14 +10,14 @@ import {
 import { strings } from '../strings';
 
 /**
- * The on-page form for the next menu of one day. The soup must be answered: `undefined` until the
- * guest picks a dish or declines it (`null`). Main, variation and side are `null` until chosen.
- * Pickle and dessert start declined (`null`). `extras` holds the Extra block's pending quantities
+ * The on-page form for the next menu of one day. The soup and the main must be answered, in that
+ * order: `undefined` until the guest picks a dish or declines it (`null`). Variation and side are
+ * `null` until chosen. Pickle and dessert start declined (`null`). `extras` holds the Extra block's pending quantities
  * (1..maxExtraQuantity; a missing key is 0).
  */
 export interface MenuForm {
   soupId: string | null | undefined;
-  mainId: string | null;
+  mainId: string | null | undefined;
   variation: string | null;
   sideId: string | null;
   pickleId: string | null;
@@ -30,7 +30,7 @@ export type ExtraQuantities = Record<string, number>;
 
 const pristineForm: MenuForm = Object.freeze({
   soupId: undefined,
-  mainId: null,
+  mainId: undefined,
   variation: null,
   sideId: null,
   pickleId: null,
@@ -46,7 +46,7 @@ export function emptyForm(): MenuForm {
 export function isPristine(form: MenuForm): boolean {
   return (
     form.soupId === undefined &&
-    form.mainId === null &&
+    form.mainId === undefined &&
     form.variation === null &&
     form.sideId === null &&
     form.pickleId === null &&
@@ -118,7 +118,7 @@ export function toComposedMenu(form: MenuForm): ComposedMenuDraft {
   return menu;
 }
 
-/** The form of a committed menu: its soup counts as answered, a dish or declined. */
+/** The form of a committed menu: its soup and main count as answered, a dish or declined. */
 export function fromComposedMenu(menu: ComposedMenuDraft): MenuForm {
   return {
     soupId: menu.soupId ?? null,
@@ -141,19 +141,34 @@ export interface FormStatus {
 const fieldOrder = ['variation', 'sideId', 'mainId', 'soupId', 'pickleId', 'dessertId'] as const;
 
 /**
- * Whether the form can be added to the day, and what to tell the guest otherwise. The soup must
- * be answered, unless the day has no soups (then the block is not shown and counts as declined),
- * and core's `validateMenu` must pass.
+ * Whether the soup and the main are answered: the rest of the form waits for both. A day without
+ * soups has no soup block, so its soup counts as declined.
+ */
+export function formSteps(
+  form: MenuForm,
+  publicMenu: PublicMenu,
+  date: string,
+): { soupAnswered: boolean; mainAnswered: boolean } {
+  const daySoups = Object.values(publicMenu.days).find((day) => day.date === date)?.soups ?? [];
+  return {
+    soupAnswered: form.soupId !== undefined || daySoups.length === 0,
+    mainAnswered: form.mainId !== undefined,
+  };
+}
+
+/**
+ * Whether the form can be added to the day, and what to tell the guest otherwise. The soup and
+ * the main must be answered (see `formSteps`), and core's `validateMenu` must pass.
  */
 export function formStatus(form: MenuForm, publicMenu: PublicMenu, date: string): FormStatus {
   const errors = validateMenu(toComposedMenu(form), publicMenu, date);
-  const daySoups = Object.values(publicMenu.days).find((day) => day.date === date)?.soups ?? [];
-  const soupAnswered = form.soupId !== undefined || daySoups.length === 0;
-  const canAdd = soupAnswered && Object.keys(errors).length === 0;
+  const { soupAnswered, mainAnswered } = formSteps(form, publicMenu, date);
+  const canAdd = soupAnswered && mainAnswered && Object.keys(errors).length === 0;
   if (canAdd) return { canAdd, message: null };
   const field = fieldOrder.find((key) => errors[key] !== undefined);
   const code: OrderErrorCode | undefined = field && errors[field];
   if (code) return { canAdd, message: orderMessagesHu[code] };
   if (!soupAnswered) return { canAdd, message: strings.composer.unanswered };
+  if (!mainAnswered) return { canAdd, message: strings.composer.mainUnanswered };
   return { canAdd, message: strings.composer.emptyMenu };
 }

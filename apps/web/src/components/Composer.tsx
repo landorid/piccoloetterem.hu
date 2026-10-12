@@ -5,12 +5,12 @@ import {
   type PricingConfig,
   type PublicMenu,
 } from '@piccolo/core';
-import { Check, ChevronRight, Minus, Plus } from 'lucide-react';
+import { Check, ChevronRight, Minus, Pencil, Plus, UtensilsCrossed } from 'lucide-react';
 import { type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { forint, signedForint } from '../format';
 import type { IsoDate } from '../order/cart';
 import { formFor } from '../order/cart';
-import { formStatus, isPristine } from '../order/form';
+import { formStatus, formSteps, isPristine } from '../order/form';
 import { type PriceLine, priceForm, priceLines, soupEffect, unitPrice } from '../order/pricing';
 import { useOrder } from '../order/store';
 import { strings } from '../strings';
@@ -61,6 +61,7 @@ export function Composer({
     ) ?? null;
   const priced = useMemo(() => priceForm(form, menu, date, pricing), [form, menu, date, pricing]);
   const status = formStatus(form, menu, date);
+  const { soupAnswered, mainAnswered } = formSteps(form, menu, date);
   const pristine = isPristine(form);
   const message = triedOn === date ? status.message : null;
   const lines = priceLines(priced.menu);
@@ -79,10 +80,13 @@ export function Composer({
     const effect = soupEffect(form, id, menu, date, pricing);
     return effect === null ? null : signedForint(effect);
   };
-  const mainName =
-    mainItem && form.variation
+  const mainName = mainItem
+    ? form.variation
       ? composer.withVariation(mainItem.name, form.variation)
-      : (mainItem?.name ?? null);
+      : mainItem.name
+    : form.mainId === null
+      ? composer.none
+      : null;
   const { pickles, desserts, sides, sideExtras } = menu.permanent;
 
   return (
@@ -113,11 +117,24 @@ export function Composer({
           />
         )}
 
-        <div>
+        <Step locked={!soupAnswered}>
           <p className="field-label">{composer.slots.main}</p>
-          <div className={cls('pickrow choicerow mainrow', mainItem && 'is-picked')}>
+          <div
+            className={cls(
+              'pickrow choicerow mainrow',
+              mainName && 'is-picked',
+              soupAnswered && !mainAnswered && 'is-current',
+            )}
+          >
+            {mainName ? (
+              <Tile name={mainItem ? mainName : null} />
+            ) : (
+              <span className="tile tile-prompt" aria-hidden="true">
+                <UtensilsCrossed size={22} />
+              </span>
+            )}
             <span className="pbody">
-              <span className={mainItem ? 'pname' : 'placeholder'}>
+              <span className="pname">
                 <button
                   ref={mainButton}
                   type="button"
@@ -126,10 +143,11 @@ export function Composer({
                   aria-label={mainName ? composer.mainChosen(mainName) : composer.mainPrompt}
                   onClick={() => setPickerOpen(true)}
                 >
-                  {mainName ?? composer.choose}
+                  {mainName ?? composer.mainPlaceholder}
                 </button>
                 {mainItem?.soldOut && <SoldOut />}
               </span>
+              {!mainName && <span className="psub">{composer.mainPlaceholderHint}</span>}
               {mainItem && (
                 <span className="pamt num">
                   {mainLine ? forint(mainLine.unitPrice) : priceOf(mainItem)}
@@ -141,70 +159,74 @@ export function Composer({
                 </span>
               )}
             </span>
-            {mainItem ? (
-              <span className="pmark" aria-hidden="true">
-                <Check size={15} strokeWidth={3} />
+            {mainName ? (
+              <span className="main-cta main-cta-change" aria-hidden="true">
+                <Pencil size={14} strokeWidth={2.25} />
+                <span className="main-cta-label">{composer.mainChange}</span>
               </span>
             ) : (
-              <span className="chev" aria-hidden="true">
-                <ChevronRight size={20} />
+              <span className="main-cta" aria-hidden="true">
+                {composer.mainPick}
+                <ChevronRight size={16} strokeWidth={2.5} />
               </span>
             )}
           </div>
-        </div>
+        </Step>
 
-        {mainItem?.requiresSide && (
-          <ChoiceBlock
-            name={`side-${date}`}
-            label={composer.slots.side}
-            tiles
-            selected={form.sideId ?? undefined}
-            options={dishes([...sides, ...sideExtras])}
-            onSelect={(id) => id && choose(date, { slot: 'side', id })}
-          />
-        )}
+        <Step locked={!soupAnswered || !mainAnswered}>
+          {mainItem?.requiresSide && (
+            <ChoiceBlock
+              name={`side-${date}`}
+              label={composer.slots.side}
+              tiles
+              selected={form.sideId ?? undefined}
+              options={dishes([...sides, ...sideExtras])}
+              onSelect={(id) => id && choose(date, { slot: 'side', id })}
+            />
+          )}
 
-        {pickles.length > 0 && (
-          <ChoiceBlock
-            name={`pickle-${date}`}
-            label={composer.slots.pickle}
-            tiles
-            selected={form.pickleId}
-            options={[...dishes(pickles), none(forint(0))]}
-            onSelect={(id) => choose(date, { slot: 'pickle', id })}
-          />
-        )}
+          {pickles.length > 0 && (
+            <ChoiceBlock
+              name={`pickle-${date}`}
+              label={composer.slots.pickle}
+              tiles
+              selected={form.pickleId}
+              options={[...dishes(pickles), none(forint(0))]}
+              onSelect={(id) => choose(date, { slot: 'pickle', id })}
+            />
+          )}
 
-        {desserts.length > 0 && (
-          <ChoiceBlock
-            name={`dessert-${date}`}
-            label={composer.slots.dessert}
-            tiles
-            selected={form.dessertId}
-            options={[...dishes(desserts), none(forint(0))]}
-            onSelect={(id) => choose(date, { slot: 'dessert', id })}
-          />
-        )}
+          {desserts.length > 0 && (
+            <ChoiceBlock
+              name={`dessert-${date}`}
+              label={composer.slots.dessert}
+              tiles
+              selected={form.dessertId}
+              options={[...dishes(desserts), none(forint(0))]}
+              onSelect={(id) => choose(date, { slot: 'dessert', id })}
+            />
+          )}
 
-        <ExtraBlock date={date} extras={extras} quantities={form.extras} />
+          <ExtraBlock date={date} extras={extras} quantities={form.extras} />
 
-        {(lines.length > 0 || priced.extrasSubtotal > 0) && (
-          <div className="pricebox">
-            {lines.map((line) => (
-              <PriceRow key={lineKey(line)} line={line} />
-            ))}
-            <div className="row total">
-              <span>{composer.priceTotal}</span>
-              <span className="amt num">{forint(priced.menu.price)}</span>
-            </div>
-            {priced.extrasSubtotal > 0 && (
-              <div className="row extras-row">
-                <span>{composer.extrasSubtotal}</span>
-                <span className="amt num">{forint(priced.extrasSubtotal)}</span>
+          {(lines.length > 0 || priced.extrasSubtotal > 0) && (
+            <div className="pricebox">
+              {lines.map((line) => (
+                <PriceRow key={lineKey(line)} line={line} />
+              ))}
+              <div className="row total">
+                <span>{composer.priceTotal}</span>
+                <span className="amt num">{forint(priced.menu.price)}</span>
               </div>
-            )}
-          </div>
-        )}
+              {priced.extrasSubtotal > 0 && (
+                <div className="row extras-row">
+                  <span>{composer.extrasSubtotal}</span>
+                  <span className="amt num">{forint(priced.extrasSubtotal)}</span>
+                </div>
+              )}
+            </div>
+          )}
+        </Step>
       </div>
 
       <div className="cf-foot">
@@ -267,6 +289,18 @@ export function Composer({
         }}
       />
     </section>
+  );
+}
+
+/**
+ * One step of the form. Until the steps before it are answered it is blurred and `inert`: out of
+ * the tab order, the accessibility tree and the pointer's reach.
+ */
+function Step({ locked, children }: { locked: boolean; children: React.ReactNode }) {
+  return (
+    <div className={cls('cf-step', locked && 'is-locked')} inert={locked}>
+      {children}
+    </div>
   );
 }
 

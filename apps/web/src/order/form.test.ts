@@ -7,6 +7,7 @@ import {
   choose,
   emptyForm,
   formStatus,
+  formSteps,
   fromComposedMenu,
   type MenuForm,
   stepExtra,
@@ -64,6 +65,32 @@ describe('toComposedMenu and fromComposedMenu', () => {
   });
 });
 
+describe('formSteps', () => {
+  const steps = (form: MenuForm, publicMenu = menu) => formSteps(form, publicMenu, wed);
+
+  it('opens the main once the soup is answered, and the rest once the main is', () => {
+    expect(steps(emptyForm())).toEqual({ soupAnswered: false, mainAnswered: false });
+    const declined = fill({ slot: 'soup', id: null });
+    expect(steps(declined)).toEqual({ soupAnswered: true, mainAnswered: false });
+    expect(steps(choose(declined, { slot: 'main', item: null }))).toEqual({
+      soupAnswered: true,
+      mainAnswered: true,
+    });
+  });
+
+  it('starts at the main on a day without soups', () => {
+    const noSoups = { ...menu, days: { ...menu.days, 3: { ...menu.days[3], soups: [] } } };
+    expect(steps(emptyForm(), noSoups).soupAnswered).toBe(true);
+  });
+
+  it('brings a committed menu back with both steps answered', () => {
+    expect(steps(fromComposedMenu({ soupId: 'sze-brokkoli' }))).toEqual({
+      soupAnswered: true,
+      mainAnswered: true,
+    });
+  });
+});
+
 describe('formStatus', () => {
   const status = (form: MenuForm, date = wed) => formStatus(form, menu, date);
 
@@ -100,8 +127,17 @@ describe('formStatus', () => {
     expect(status(form)).toEqual({ canAdd: false, message: orderMessagesHu.sold_out });
   });
 
-  it('asks for a dish when the soup is declined and nothing else is chosen', () => {
-    expect(status(fill({ slot: 'soup', id: null }))).toEqual({
+  it('wants the main answered after the soup, and "Nem kérek" is an answer', () => {
+    const form = fill({ slot: 'soup', id: 'sze-brokkoli' });
+    expect(status(form)).toEqual({ canAdd: false, message: strings.composer.mainUnanswered });
+    expect(status(choose(form, { slot: 'main', item: null }))).toEqual({
+      canAdd: true,
+      message: null,
+    });
+  });
+
+  it('asks for a dish when the soup and the main are declined and nothing else is chosen', () => {
+    expect(status(fill({ slot: 'soup', id: null }, { slot: 'main', item: null }))).toEqual({
       canAdd: false,
       message: strings.composer.emptyMenu,
     });
