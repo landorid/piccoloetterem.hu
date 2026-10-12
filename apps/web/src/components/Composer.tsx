@@ -5,7 +5,7 @@ import {
   type PricingConfig,
   type PublicMenu,
 } from '@piccolo/core';
-import { Check, ChevronRight, Minus, Plus } from 'lucide-react';
+import { Check, ChevronRight, Minus, Pencil, Plus, UtensilsCrossed } from 'lucide-react';
 import { type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { forint, signedForint } from '../format';
 import type { IsoDate } from '../order/cart';
@@ -119,9 +119,22 @@ export function Composer({
 
         <Step locked={!soupAnswered}>
           <p className="field-label">{composer.slots.main}</p>
-          <div className={cls('pickrow choicerow mainrow', mainName && 'is-picked')}>
+          <div
+            className={cls(
+              'pickrow choicerow mainrow',
+              mainName && 'is-picked',
+              soupAnswered && !mainAnswered && 'is-current',
+            )}
+          >
+            {mainName ? (
+              <Tile name={mainItem ? mainName : null} />
+            ) : (
+              <span className="tile tile-prompt" aria-hidden="true">
+                <UtensilsCrossed size={22} />
+              </span>
+            )}
             <span className="pbody">
-              <span className={mainName ? 'pname' : 'placeholder'}>
+              <span className="pname">
                 <button
                   ref={mainButton}
                   type="button"
@@ -130,10 +143,11 @@ export function Composer({
                   aria-label={mainName ? composer.mainChosen(mainName) : composer.mainPrompt}
                   onClick={() => setPickerOpen(true)}
                 >
-                  {mainName ?? composer.choose}
+                  {mainName ?? composer.mainPlaceholder}
                 </button>
                 {mainItem?.soldOut && <SoldOut />}
               </span>
+              {!mainName && <span className="psub">{composer.mainPlaceholderHint}</span>}
               {mainItem && (
                 <span className="pamt num">
                   {mainLine ? forint(mainLine.unitPrice) : priceOf(mainItem)}
@@ -146,12 +160,14 @@ export function Composer({
               )}
             </span>
             {mainName ? (
-              <span className="pmark" aria-hidden="true">
-                <Check size={15} strokeWidth={3} />
+              <span className="main-cta main-cta-change" aria-hidden="true">
+                <Pencil size={14} strokeWidth={2.25} />
+                <span className="main-cta-label">{composer.mainChange}</span>
               </span>
             ) : (
-              <span className="chev" aria-hidden="true">
-                <ChevronRight size={20} />
+              <span className="main-cta" aria-hidden="true">
+                {composer.mainPick}
+                <ChevronRight size={16} strokeWidth={2.5} />
               </span>
             )}
           </div>

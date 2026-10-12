@@ -888,16 +888,72 @@
   color: var(--ink-500);
 }
 
-/* Once a main is chosen the row shows the plate, drawn like any chosen course; only the prompt
-   carries a chevron, because this is the one row that opens a picker. */
-.mainrow .placeholder {
-  font-size: var(--t-base);
-  color: var(--ink-500);
+/* The main is the one row that opens a picker, so it says so: a button-like label on the right,
+   "Választás" while unanswered and "Módosítás" once a dish (or "Nem kérek") is chosen. While it
+   is the step to answer next, the row is drawn in the accent. */
+.tile-prompt {
+  background: var(--brand-50);
+  border-color: var(--brand-200);
+  color: var(--brand-600);
 }
-.mainrow .chev {
+.mainrow.is-current {
+  border-color: var(--brand-500);
+  box-shadow: 0 0 0 4px var(--brand-50);
+}
+.main-cta {
   flex: none;
-  display: grid;
-  color: var(--ink-400);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--brand-600);
+  border-radius: 999px;
+  background: var(--brand-600);
+  color: #fff;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+}
+.mainrow:hover .main-cta {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+}
+.main-cta-change {
+  background: var(--paper);
+  color: var(--brand-700);
+  border-color: var(--brand-200);
+}
+.mainrow:hover .main-cta-change {
+  background: var(--paper);
+  border-color: var(--brand-600);
+}
+/* A phone has no room beside a long dish name: the row drops its tile, "Módosítás" its word. */
+.mainrow .tile {
+  display: none;
+}
+.main-cta-change {
+  width: 36px;
+  padding: 0;
+  justify-content: center;
+}
+.main-cta-change .main-cta-label {
+  display: none;
+}
+@media (min-width: 480px) {
+  .mainrow .tile {
+    display: grid;
+  }
+  .main-cta-change {
+    width: auto;
+    padding: 0 var(--s-3);
+  }
+  .main-cta-change .main-cta-label {
+    display: inline;
+  }
 }
 
 /* --- pick rows --------------------------------------------------------------------------------
