@@ -835,6 +835,20 @@
   gap: var(--s-4);
   padding: var(--s-4);
 }
+/* A step of the form waits, blurred, until the steps before it are answered. */
+.cf-step {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  transition:
+    filter 0.2s ease,
+    opacity 0.2s ease;
+}
+.cf-step.is-locked {
+  filter: blur(3px);
+  opacity: 0.5;
+  user-select: none;
+}
 .cf-foot {
   display: flex;
   flex-direction: column;
@@ -1583,6 +1597,9 @@
 /* --- motion off -------------------------------------------------------------------------------- */
 /* State still changes colour; nothing moves, grows or slides. */
 @media (prefers-reduced-motion: reduce) {
+  .cf-step {
+    transition: none;
+  }
   .sheet[open],
   .sheet[open]::backdrop,
   .cart-menu,

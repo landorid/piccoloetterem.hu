@@ -12,7 +12,8 @@ interface MainPickerProps {
   open: boolean;
   date: IsoDate;
   menu: PublicMenu;
-  selectedId: string | null;
+  /** `undefined` while the main is unanswered; `null` is `composer.none`. */
+  selectedId: string | null | undefined;
   selectedVariation: string | null;
   /** `null` is `composer.none`; a dish with variations is picked with one of them. */
   onPick: (item: MenuItem | null, variation?: string) => void;
@@ -118,7 +119,7 @@ export function MainPicker({
                 item={null}
                 name={strings.composer.none}
                 amount={null}
-                picked={false}
+                picked={selectedId === null}
                 onPick={() => onPick(null)}
               />
             </div>

@@ -97,7 +97,7 @@ export function soupEffect(
   date: IsoDate,
   config: PricingConfig,
 ): number | null {
-  if (soupId !== null && form.mainId === null) {
+  if (soupId !== null && !form.mainId) {
     return null;
   }
   const { adjustments } = priceMenu(toComposedMenu({ ...form, soupId }), publicMenu, date, config);

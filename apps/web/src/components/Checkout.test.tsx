@@ -74,10 +74,12 @@ function addMenu({ soup, main, day }: { soup: string; main?: string; day?: RegEx
   if (day) fireEvent.click(screen.getByRole('tab', { name: day }));
   const soups = within(composer()).getByRole('group', { name: /^Leves/ });
   fireEvent.click(within(soups).getByRole('radio', { name: soup }));
-  if (main) {
-    fireEvent.click(within(composer()).getByRole('button', { name: /^Főétel: Válassz$/ }));
-    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: main }));
-  }
+  fireEvent.click(within(composer()).getByRole('button', { name: /^Főétel: Válassz$/ }));
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: main ?? strings.composer.none,
+    }),
+  );
   fireEvent.click(within(composer()).getByRole('button', { name: strings.composer.add }));
 }
 

@@ -77,6 +77,7 @@ describe('the order form', () => {
     await renderOrderPage();
 
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     expect(footerPrice()).toBe(forint(650));
     fireEvent.click(addButton());
     expect(grandTotal()).toBe(forint(650 + 150));
@@ -109,6 +110,13 @@ describe('the order form', () => {
     await renderOrderPage();
     const message = () => composer().querySelector('.cf-foot .error')?.textContent ?? null;
 
+    fireEvent.click(addButton());
+    expect(message()).toBe(strings.composer.unanswered);
+    expect(within(cart() as HTMLElement).getByText(strings.cart.empty)).toBeTruthy();
+
+    pickSoup(strings.composer.none);
+    expect(message()).toBe(strings.composer.mainUnanswered);
+
     pickMain('Rántott szelet — Csirkemell');
     expect(
       within(composer()).getByRole('button', {
@@ -117,21 +125,40 @@ describe('the order form', () => {
     ).toBeTruthy();
     expect(within(composer()).queryByText(/^Változat/)).toBeNull();
     expect(block(/^Köret$/)).toBeTruthy();
-    expect(block(/^Leves$/)).toBeTruthy();
-    expect(message()).toBeNull();
-
-    fireEvent.click(addButton());
     expect(message()).toBe(orderMessagesHu.side_required);
-    expect(within(cart() as HTMLElement).getByText(strings.cart.empty)).toBeTruthy();
 
     fireEvent.click(within(block(/^Köret$/)).getByRole('radio', { name: 'Párolt rizs' }));
-    expect(message()).toBe(strings.composer.unanswered);
-
-    pickSoup(strings.composer.none);
     expect(message()).toBeNull();
     fireEvent.click(addButton());
     expect(within(cart() as HTMLElement).queryByText(strings.cart.empty)).toBeNull();
     expect(message()).toBeNull();
+  });
+
+  it('keeps the main and then the rest blurred and inert until the steps before are answered', async () => {
+    await renderOrderPage();
+    const step = (label: RegExp) => (block(label) as HTMLElement).closest('.cf-step');
+    const main = () =>
+      within(composer()).getByText(strings.composer.slots.main).closest('.cf-step');
+    const locked = (el: Element | null) => el?.hasAttribute('inert') === true;
+
+    expect(locked(main())).toBe(true);
+    expect(locked(step(/^Savanyúság$/))).toBe(true);
+
+    pickSoup('Brokkolikrémleves');
+    expect(locked(main())).toBe(false);
+    expect(locked(step(/^Savanyúság$/))).toBe(true);
+
+    pickMain(strings.composer.none);
+    expect(
+      within(composer()).getByRole('button', {
+        name: strings.composer.mainChosen(strings.composer.none),
+      }),
+    ).toBeTruthy();
+    expect(locked(step(/^Savanyúság$/))).toBe(false);
+
+    fireEvent.click(within(composer()).getByRole('button', { name: strings.composer.reset }));
+    expect(locked(main())).toBe(true);
+    expect(locked(step(/^Savanyúság$/))).toBe(true);
   });
 
   it('lists each variation of a main as its own row in the picker', async () => {
@@ -171,6 +198,7 @@ describe('the day cart', () => {
   it('counts menus on the day tab, and removing the last menu drops the day with its extras', async () => {
     await renderOrderPage();
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(within(composer()).getByRole('button', { name: 'Több: Doboz' }));
     fireEvent.click(addButton());
 
@@ -191,6 +219,7 @@ describe('the day cart', () => {
   it('keeps the cart when the page is loaded again in the same tab', async () => {
     const first = await renderOrderPage();
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(addButton());
     first.unmount();
 
@@ -203,6 +232,7 @@ describe('the day cart', () => {
   it('drops a day that stopped being orderable when the tab comes back, and says why', async () => {
     await renderOrderPage();
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(addButton());
 
     answer = { ...openMenu, orderableDates: ['2026-09-10', '2026-09-11', '2026-09-12'] };
@@ -221,6 +251,7 @@ describe('the day cart', () => {
   it('ignores an older refetch that answers after a newer one', async () => {
     await renderOrderPage();
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(addButton());
     const replies: ((menu: unknown) => void)[] = [];
     vi.mocked(fetch).mockImplementation(
@@ -241,6 +272,7 @@ describe('the day cart', () => {
   it('keeps the screen and the cart when a refetch fails', async () => {
     await renderOrderPage();
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(addButton());
     vi.mocked(fetch).mockResolvedValue(Response.json({ error: 'internal' }, { status: 500 }));
 
@@ -256,6 +288,7 @@ describe('the day cart', () => {
   it('empties the cart and shows the message when a refetch finds nothing to order', async () => {
     const first = await renderOrderPage();
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(addButton());
 
     answer = { state: 'closed' };
@@ -297,8 +330,10 @@ describe('the day cart', () => {
     expect(extras().getByText(String(maxExtraQuantity))).toBeTruthy();
 
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(addButton());
     pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
     fireEvent.click(extras().getByRole('button', { name: 'Több: Kenyér' }));
     fireEvent.click(addButton());
     const day = within(cart() as HTMLElement);

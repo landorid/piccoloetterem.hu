@@ -29,7 +29,10 @@ const paprikas: Choice[] = [
   { slot: 'soup', id: null },
   { slot: 'main', item: dish('sze-paprikas-csirke') },
 ];
-const soupOnly: Choice[] = [{ slot: 'soup', id: 'sze-brokkoli' }];
+const soupOnly: Choice[] = [
+  { slot: 'soup', id: 'sze-brokkoli' },
+  { slot: 'main', item: null },
+];
 
 /** The invariants the cart promises after every transition. */
 function expectInvariants(state: CartState) {
@@ -61,6 +64,11 @@ describe('addMenu', () => {
 
   it('never commits a form whose soup is unanswered', () => {
     const unanswered = answer(emptyCart, wed, { slot: 'main', item: dish('sze-paprikas-csirke') });
+    expect(addMenu(unanswered, wed, menu)).toBe(unanswered);
+  });
+
+  it('never commits a form whose main is unanswered', () => {
+    const unanswered = answer(emptyCart, wed, { slot: 'soup', id: 'sze-brokkoli' });
     expect(addMenu(unanswered, wed, menu)).toBe(unanswered);
   });
 
@@ -134,7 +142,11 @@ describe('reconcile', () => {
   const cart = () => {
     let state: CartState = { ...emptyCart, activeDate: wed };
     state = addMenu(extra(answer(state, wed, ...paprikas), wed, 'doboz', 1), wed, menu);
-    state = addMenu(answer(state, thu, { slot: 'soup', id: 'cs-gulyas' }), thu, menu);
+    state = addMenu(
+      answer(state, thu, { slot: 'soup', id: 'cs-gulyas' }, { slot: 'main', item: null }),
+      thu,
+      menu,
+    );
     return answer(state, wed, { slot: 'soup', id: 'sze-husleves' });
   };
 

@@ -70,6 +70,7 @@ export const strings = {
     choose: 'Válassz',
     soupHint: 'A napi főételek ára tartalmazza a levest.',
     unanswered: 'Válassz levest — a „Nem kérek” is válasz.',
+    mainUnanswered: 'Válassz főételt — a „Nem kérek” is válasz.',
     formTitle: (n: number) => `${n}. menü összeállítása`,
     // TODO(O2): the handover's main row has no accessible name; these follow its words.
     mainPrompt: 'Főétel: Válassz',
