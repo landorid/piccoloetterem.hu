@@ -1,4 +1,5 @@
-import { ApiError, createApiClient, unwrap } from '@piccolo/api-client';
+import { ApiError, createApiClient, itemImageUrl, unwrap } from '@piccolo/api-client';
+import { isWeeklyCategory, type MenuItem } from '@piccolo/core';
 
 export { ApiError };
 
@@ -24,6 +25,16 @@ export function apiOrigin(): string | null {
     return 'http://localhost:8787';
   }
   return null;
+}
+
+/**
+ * The 192 px photo of a permanent dish, or `null`: no photo, no API, or a weekly dish, which never
+ * shows one even if the menu carried a version for it.
+ */
+export function thumbSrc(item: MenuItem): string | null {
+  return isWeeklyCategory(item.category)
+    ? null
+    : itemImageUrl(apiOrigin() ?? undefined, item, 'thumb');
 }
 
 /**

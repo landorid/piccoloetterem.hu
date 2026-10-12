@@ -8,6 +8,7 @@ import {
 import { Check, ChevronRight, Minus, Pencil, Plus, UtensilsCrossed } from 'lucide-react';
 import { type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { forint, signedForint } from '../format';
+import { thumbSrc } from '../lib/api';
 import type { IsoDate } from '../order/cart';
 import { formFor } from '../order/cart';
 import { formStatus, formSteps, isPristine } from '../order/form';
@@ -16,7 +17,7 @@ import { useOrder } from '../order/store';
 import { strings } from '../strings';
 import { AllergenChips } from './Allergens';
 import { MainPicker } from './MainPicker';
-import { adjustmentLabels, cls, SoldOut } from './parts';
+import { adjustmentLabels, cls, SoldOut, Tile } from './parts';
 
 const { composer } = strings;
 
@@ -132,9 +133,11 @@ export function Composer({
                 soupAnswered && !mainAnswered && 'is-current',
               )}
             >
-              <span className="tile tile-prompt" aria-hidden="true">
-                <UtensilsCrossed size={22} />
-              </span>
+              <Tile
+                item={mainItem}
+                className="tile-prompt"
+                fallback={<UtensilsCrossed size={22} />}
+              />
               <span className="pbody">
                 <span className="pname">
                   <button
@@ -336,6 +339,8 @@ function ChoiceBlock({
   onSelect: (id: string | null) => void;
 }) {
   const prefix = useId();
+  /** Rows of a course stay on one grid: all of them lead with a tile once one dish has a photo. */
+  const tiles = options.some((option) => option.item !== null && thumbSrc(option.item) !== null);
   return (
     <fieldset className="choice-block">
       <legend className="course-label">{label}</legend>
@@ -365,6 +370,7 @@ function ChoiceBlock({
                 aria-describedby={option.amount === null ? undefined : `${id}-amount`}
                 onChange={() => onSelect(option.id)}
               />
+              {tiles && <Tile item={option.item} />}
               <span className="pbody">
                 <label className="pname stretch" htmlFor={id}>
                   {option.name}

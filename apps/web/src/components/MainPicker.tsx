@@ -2,11 +2,12 @@ import type { MenuItem, PublicMenu } from '@piccolo/core';
 import { Check, X } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { dayFull, forint } from '../format';
+import { thumbSrc } from '../lib/api';
 import type { IsoDate } from '../order/cart';
 import { unitPrice } from '../order/pricing';
 import { strings } from '../strings';
 import { AllergenChips } from './Allergens';
-import { cls, SoldOut } from './parts';
+import { cls, SoldOut, Tile } from './parts';
 
 interface MainPickerProps {
   open: boolean;
@@ -55,7 +56,10 @@ export function MainPicker({
     { label: strings.sections.mains, items: day?.mains ?? [] },
     { label: strings.sections.featured, items: menu.featured },
     { label: strings.sections.allWeek, items: menu.permanent.allWeek },
-  ].filter((group) => group.items.length > 0);
+  ]
+    .filter((group) => group.items.length > 0)
+    // Rows of a group stay on one grid: all of them lead with a tile once one dish has a photo.
+    .map((group) => ({ ...group, tiles: group.items.some((item) => thumbSrc(item) !== null) }));
 
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: a click on the backdrop does what Escape does
@@ -95,6 +99,7 @@ export function MainPicker({
                         <PickerOption
                           key={item.id}
                           item={item}
+                          tile={group.tiles}
                           name={item.name}
                           amount={amount}
                           picked={item.id === selectedId}
@@ -106,6 +111,7 @@ export function MainPicker({
                       <PickerOption
                         key={`${item.id}:${variation}`}
                         item={item}
+                        tile={group.tiles}
                         name={strings.composer.withVariation(item.name, variation)}
                         amount={amount}
                         picked={item.id === selectedId && variation === selectedVariation}
@@ -117,6 +123,7 @@ export function MainPicker({
               ))}
               <PickerOption
                 item={null}
+                tile={groups.at(-1)?.tiles ?? false}
                 name={strings.composer.none}
                 amount={null}
                 picked={selectedId === null}
@@ -141,12 +148,15 @@ function PickerGroup({ label, children }: { label: string; children: React.React
 
 function PickerOption({
   item,
+  tile,
   name,
   amount,
   picked,
   onPick,
 }: {
   item: MenuItem | null;
+  /** Leads with a tile, so the row lines up with a group that has photos. */
+  tile: boolean;
   name: string;
   amount: string | null;
   picked: boolean;
@@ -156,6 +166,7 @@ function PickerOption({
   const soldOut = item?.soldOut === true;
   return (
     <div className={cls('pickrow option', picked && 'is-picked', soldOut && 'is-disabled')}>
+      {tile && <Tile item={item} />}
       <span className="pbody">
         <span className="pname">
           <button
