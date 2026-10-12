@@ -40,16 +40,16 @@ export class ImagePrepareError extends Error {
 /** Something the IO can draw from: a decoded file, or a picture it drew earlier. */
 export type Picture = Readonly<Size>;
 
-export interface DecodedPicture extends Picture {
-  /** Frees the decoded bitmap. Called once every rendition has been drawn. */
+/** A picture holding a bitmap or canvas until `release`, called once nothing draws or encodes it. */
+export interface HeldPicture extends Picture {
   release(): void;
 }
 
 export interface ImageIo {
   /** Decodes with the photo's EXIF orientation applied. Rejects when the browser cannot. */
-  decode(file: Blob): Promise<DecodedPicture>;
+  decode(file: Blob): Promise<HeldPicture>;
   /** A new picture of `size` on white, with `crop` of `source` (`null`: all of it) scaled into it. */
-  draw(source: Picture, crop: Rect | null, size: Size): Picture;
+  draw(source: Picture, crop: Rect | null, size: Size): HeldPicture;
   /**
    * The encoded picture, or `null`. A browser that cannot encode `mime` may answer with a PNG
    * instead (Safari and WebP), so callers compare the blob's type with what they asked for.
@@ -79,7 +79,7 @@ export async function prepareItemImage(
   const decoded = await io.decode(file).catch(() => {
     throw new ImagePrepareError('undecodable');
   });
-  let pictures: Record<ImageRendition, Picture>;
+  let pictures: Record<ImageRendition, HeldPicture>;
   try {
     const plans = planRenditions(decoded);
     if (!plans) {
@@ -92,41 +92,61 @@ export async function prepareItemImage(
     decoded.release();
   }
 
-  const smallest = imageRenditions
-    .map((rendition) => pictures[rendition])
-    .reduce((a, b) => (a.width * a.height <= b.width * b.height ? a : b));
-  const mime = await supportedMime(io, smallest);
-  const blobs = await Promise.all(
-    imageRenditions.map((rendition) =>
-      encodeWithin(io, pictures[rendition], mime, renditionSpecs[rendition].maxBytes),
-    ),
-  );
-  return byRendition((rendition) => {
-    const blob = blobs[imageRenditions.indexOf(rendition)] as Blob;
-    return new File([blob], `${rendition}.${extensions[mime]}`, { type: mime });
-  });
+  try {
+    const smallest = imageRenditions
+      .map((rendition) => pictures[rendition])
+      .reduce((a, b) => (a.width * a.height <= b.width * b.height ? a : b));
+    const probe = await supportedEncoding(io, smallest);
+    const blobs = await Promise.all(
+      imageRenditions.map((rendition) =>
+        encodeWithin(
+          io,
+          pictures[rendition],
+          probe.mime,
+          renditionSpecs[rendition].maxBytes,
+          pictures[rendition] === smallest ? probe.blob : null,
+        ),
+      ),
+    );
+    return byRendition((rendition) => {
+      const blob = blobs[imageRenditions.indexOf(rendition)] as Blob;
+      return new File([blob], `${rendition}.${extensions[probe.mime]}`, { type: probe.mime });
+    });
+  } finally {
+    for (const rendition of imageRenditions) {
+      pictures[rendition].release();
+    }
+  }
 }
 
-/** The first of `imageMimes` that `io` really encodes, probed on `probe`. */
-async function supportedMime(io: ImageIo, probe: Picture): Promise<ImageMime> {
+/** The first of `imageMimes` that `io` really encodes, probed on `probe` at the top quality. */
+async function supportedEncoding(
+  io: ImageIo,
+  probe: Picture,
+): Promise<{ mime: ImageMime; blob: Blob }> {
   for (const mime of imageMimes) {
     const blob = await io.encode(probe, mime, qualityLadder[0]);
     if (blob?.type === mime) {
-      return mime;
+      return { mime, blob };
     }
   }
   throw new ImagePrepareError('encode_failed');
 }
 
-/** `picture` at the highest quality of the ladder that fits `maxBytes`. */
+/**
+ * `picture` at the highest quality of the ladder that fits `maxBytes`. `top` is the picture
+ * already encoded at the ladder's first quality, when the format probe did that.
+ */
 async function encodeWithin(
   io: ImageIo,
   picture: Picture,
   mime: ImageMime,
   maxBytes: number,
+  top: Blob | null,
 ): Promise<Blob> {
   for (const quality of qualityLadder) {
-    const blob = await io.encode(picture, mime, quality);
+    const blob =
+      quality === qualityLadder[0] && top ? top : await io.encode(picture, mime, quality);
     if (blob?.type === mime && blob.size <= maxBytes) {
       return blob;
     }

@@ -28,7 +28,12 @@ function fakeIo(
     undecodable?: boolean;
   } = {},
 ) {
-  const calls = { released: 0, draws: [] as Drawn[], encodes: [] as [Size, string, number][] };
+  const calls = {
+    released: 0,
+    draws: [] as Drawn[],
+    drawsReleased: 0,
+    encodes: [] as [Size, string, number][],
+  };
   const io: ImageIo = {
     async decode() {
       if (options.undecodable) {
@@ -39,7 +44,7 @@ function fakeIo(
     draw(_from, crop, size) {
       const drawn = { ...size, crop };
       calls.draws.push(drawn);
-      return drawn;
+      return { ...drawn, release: () => (calls.drawsReleased += 1) };
     },
     async encode(picture, mime, quality) {
       calls.encodes.push([{ width: picture.width, height: picture.height }, mime, quality]);
@@ -74,6 +79,11 @@ describe('prepareItemImage', () => {
       { width: 192, height: 192, crop: { x: 500, y: 0, width: 3000, height: 3000 } },
     ]);
     expect(calls.released).toBe(1);
+    expect(calls.drawsReleased).toBe(2);
+    expect(calls.encodes).toEqual([
+      [{ width: 192, height: 192 }, 'image/webp', qualityLadder[0]],
+      [{ width: 1200, height: 900 }, 'image/webp', qualityLadder[0]],
+    ]);
     expect(Object.entries(prepared).map(([name, file]) => [name, file.name, file.type])).toEqual([
       ['large', 'large.webp', 'image/webp'],
       ['thumb', 'thumb.webp', 'image/webp'],
@@ -109,9 +119,10 @@ describe('prepareItemImage', () => {
     ).toEqual([0.85, 0.75]);
   });
 
-  it('gives up when even the lowest quality is over the cap', async () => {
-    const { io } = fakeIo({ width: 1200, height: 900 }, { bytesPerPixel: 10 });
+  it('gives up when even the lowest quality is over the cap, and still frees every canvas', async () => {
+    const { io, calls } = fakeIo({ width: 1200, height: 900 }, { bytesPerPixel: 10 });
     expect(await failure(prepareItemImage(photo, io))).toBe('result_too_big');
+    expect(calls.drawsReleased).toBe(2);
   });
 
   it('refuses a source over the limit before decoding it', async () => {

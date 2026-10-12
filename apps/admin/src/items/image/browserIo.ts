@@ -19,6 +19,12 @@ function canvasOf(width: number, height: number) {
   return { canvas, context };
 }
 
+/** Frees a canvas's backing store now: iOS Safari caps canvas memory and collects it late. */
+function free(canvas: HTMLCanvasElement) {
+  canvas.width = 0;
+  canvas.height = 0;
+}
+
 function picture<P extends Picture>(source: HTMLCanvasElement | ImageBitmap, result: P): P {
   sources.set(result, source);
   return result;
@@ -34,13 +40,16 @@ function sourceOf(picture: Picture): CanvasImageSource {
 
 export const browserImageIo: ImageIo = {
   async decode(file) {
-    const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+    // EXIF orientation applies by default; passing `imageOrientation: 'from-image'` would throw
+    // on browsers that predate that value.
+    const bitmap = await createImageBitmap(file);
     const { width, height } = bitmap;
     return picture(bitmap, { width, height, release: () => bitmap.close() });
   },
 
   draw(source, crop, size) {
     let from = sourceOf(source);
+    let halved: HTMLCanvasElement | null = null;
     let area = crop ?? { x: 0, y: 0, width: source.width, height: source.height };
     // One big downscale aliases; halving steps keep the detail smooth.
     while (area.width / 2 >= size.width && area.height / 2 >= size.height) {
@@ -56,6 +65,10 @@ export const browserImageIo: ImageIo = {
         half.canvas.width,
         half.canvas.height,
       );
+      if (halved) {
+        free(halved);
+      }
+      halved = half.canvas;
       from = half.canvas;
       area = { x: 0, y: 0, width: half.canvas.width, height: half.canvas.height };
     }
@@ -74,7 +87,14 @@ export const browserImageIo: ImageIo = {
       size.width,
       size.height,
     );
-    return picture(target.canvas, { width: size.width, height: size.height });
+    if (halved) {
+      free(halved);
+    }
+    return picture(target.canvas, {
+      width: size.width,
+      height: size.height,
+      release: () => free(target.canvas),
+    });
   },
 
   encode(picture, mime, quality) {

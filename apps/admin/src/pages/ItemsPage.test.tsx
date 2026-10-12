@@ -649,6 +649,37 @@ describe('/etlap images', () => {
     expect(screen.getByText(strings.items.unsaved)).toBeTruthy();
   });
 
+  it('keeps Save disabled until the menu refetched after an upload is back', async () => {
+    let release: (reply: Reply) => void = () => {};
+    let uploaded = false;
+    override = (request) => {
+      if (request.path.endsWith('/image')) {
+        uploaded = true;
+        return undefined;
+      }
+      return uploaded && request.method === 'GET' && request.path === '/api/admin/menu/items'
+        ? new Promise<Reply>((resolve) => {
+            release = resolve;
+          })
+        : undefined;
+    };
+    await renderLoaded();
+    type(row('Csemege uborka'), strings.items.columns.priceWeekday, '390');
+    const gets = () =>
+      requests.filter(
+        (request) => request.method === 'GET' && request.path === '/api/admin/menu/items',
+      );
+
+    pick('Túrós palacsinta');
+
+    await waitFor(() => expect(gets()).toHaveLength(2));
+    await waitFor(() => expect(thumbnail('Túrós palacsinta')).not.toBeNull());
+    expect(saveButton().hasAttribute('disabled')).toBe(true);
+
+    await act(async () => release(respond(gets()[1] as ApiRequest)));
+    await waitFor(() => expect(saveButton().hasAttribute('disabled')).toBe(false));
+  });
+
   it('locks every image while the list is being saved', async () => {
     let release: (reply: Reply) => void = () => {};
     override = (request) =>
