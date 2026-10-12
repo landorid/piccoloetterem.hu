@@ -1,6 +1,6 @@
 import { renditionSpecs } from '@piccolo/core';
 import { Hono } from 'hono';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { app, handleError } from '../app';
 import type { AppEnv } from '../env';
 import { adminMenuRoutes } from '../menu/admin.routes';
@@ -32,6 +32,20 @@ const form = (parts: Record<string, Blob | string>) => {
 const file = (bytes: Uint8Array, name = 'x.webp') =>
   new File([bytes], name, { type: 'image/webp' });
 
+const api = new Hono<AppEnv>().route(
+  '/',
+  adminMenuRoutes(() => noopMenuCache),
+);
+api.onError(handleError);
+const ctx = {
+  waitUntil: () => {},
+  passThroughOnException: () => {},
+} as unknown as ExecutionContext;
+const unreachableDb = {
+  DATABASE_URL: 'postgres://nobody@127.0.0.1:1/none',
+  RESTAURANT: 'piccolo',
+};
+
 describe('/api/admin/menu/items/:id/image without a Clerk session', () => {
   it.each(['PUT', 'DELETE'])('%s is 401', async (method) => {
     const res = await app.request(`/api/admin/menu/items/${id}/image`, { method }, {});
@@ -44,25 +58,12 @@ describe('/api/admin/menu/items/:id/image without a Clerk session', () => {
  * database would be a 500, and the bucket must stay empty.
  */
 describe('PUT /api/admin/menu/items/:id/image request validation', () => {
-  const api = new Hono<AppEnv>().route(
-    '/',
-    adminMenuRoutes(() => noopMenuCache),
-  );
-  api.onError(handleError);
-  const ctx = {
-    waitUntil: () => {},
-    passThroughOnException: () => {},
-  } as unknown as ExecutionContext;
   const put = async (body: FormData | string, path = `/items/${id}/image`) => {
     const bucket = memoryR2();
     const res = await api.request(
       path,
       { method: 'PUT', body },
-      {
-        DATABASE_URL: 'postgres://nobody@127.0.0.1:1/none',
-        RESTAURANT: 'piccolo',
-        ITEM_IMAGES: bucket,
-      },
+      { ...unreachableDb, ITEM_IMAGES: bucket },
       ctx,
     );
     expect(bucket.data.size).toBe(0);
@@ -109,5 +110,27 @@ describe('PUT /api/admin/menu/items/:id/image request validation', () => {
     );
     expect(res.status).toBe(413);
     expect(await res.json()).toMatchObject({ error: 'payload_too_large' });
+  });
+});
+
+/*
+ * The database is unreachable, so the swap throws. A COMMIT whose ack is lost throws the same way
+ * with the row already pointing at the new version, so the new version's objects must stay.
+ */
+describe('PUT /api/admin/menu/items/:id/image when the swap throws', () => {
+  it('keeps the new version when the swap throws, and answers 500', async () => {
+    const bucket = memoryR2();
+    const error = vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+    const res = await api.request(
+      `/items/${id}/image`,
+      { method: 'PUT', body: form({ large: file(webp()), thumb: file(webp()) }) },
+      { ...unreachableDb, ITEM_IMAGES: bucket },
+      ctx,
+    );
+
+    expect(res.status).toBe(500);
+    expect(bucket.data.size).toBe(2);
+    expect(bucket.log.filter((entry) => entry.startsWith('delete'))).toEqual([]);
+    expect(error).toHaveBeenCalled();
   });
 });

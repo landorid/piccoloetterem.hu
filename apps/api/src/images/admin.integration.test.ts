@@ -26,11 +26,18 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
   const soupId = randomUUID();
 
   let bucket = memoryR2();
+  let purgeFails = false;
+  /** The dessert's `image_version` in the database at each purge: purging before the swap is a bug. */
+  let versionsAtPurge: (string | null | undefined)[] = [];
   const cache: MenuCache = {
     async purgeWeek(year, week) {
       bucket.log.push(`purge ${year}/${week}`);
     },
     async purgeAll() {
+      if (purgeFails) {
+        throw new Error('KV purge failed');
+      }
+      versionsAtPurge.push(await versionOf(dessertId));
       bucket.log.push('purge all');
     },
   };
@@ -105,6 +112,8 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
 
   beforeEach(async () => {
     bucket = memoryR2();
+    purgeFails = false;
+    versionsAtPurge = [];
     await db.update(menuItems).set({ imageVersion: null }).where(eq(menuItems.id, dessertId));
   });
 
@@ -122,6 +131,7 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
     expect(await versionOf(dessertId)).toBe(version);
     expect(keys()).toEqual(keysOf(dessertId, version));
     expect(bucket.log.at(-1)).toBe('purge all');
+    expect(versionsAtPurge).toEqual([version]);
   });
 
   it('replaces: the new version is committed, purged, and only then the old one deleted', async () => {
@@ -139,6 +149,23 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
       `delete ${dessertId}/${old}/large`,
       `delete ${dessertId}/${old}/thumb`,
     ]);
+    expect(versionsAtPurge).toEqual([old, current]);
+  });
+
+  it('answers 200 when the purge fails after the swap, and keeps the old image a stale menu may name', async () => {
+    const [, first] = await upload(dessertId, 1);
+    const old = first.item.imageVersion;
+    purgeFails = true;
+    const error = vi.spyOn(console, 'error').mockImplementationOnce(() => {});
+
+    const [status, body] = await upload(dessertId, 2);
+    const current = body.item.imageVersion;
+
+    expect(status).toBe(200);
+    expect(await versionOf(dessertId)).toBe(current);
+    expect(keys()).toEqual([...keysOf(dessertId, current), ...keysOf(dessertId, old)].sort());
+    expect(bucket.log.filter((entry) => entry.startsWith('delete'))).toEqual([]);
+    expect(error).toHaveBeenCalledOnce();
   });
 
   it('refuses a weekly item under `item` and keeps nothing it stored', async () => {

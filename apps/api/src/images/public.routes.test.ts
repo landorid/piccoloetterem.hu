@@ -14,7 +14,7 @@ async function served() {
     thumb: { bytes: new Blob([jpeg]), mime: 'image/jpeg' },
   });
   const get = (path: string) => app.request(`/api/images/${path}`, {}, { ITEM_IMAGES: bucket });
-  return { version, get };
+  return { version, get, bucket };
 }
 
 describe('GET /api/images/:id/:version/:rendition', () => {
@@ -62,9 +62,10 @@ describe('GET /api/images/:id/:version/:rendition', () => {
       { rendition: 'invalid_value' },
     ],
   ])('refuses %s before it becomes an R2 key', async (_name, path, fields) => {
-    const { get } = await served();
+    const { get, bucket } = await served();
     const res = await get(path);
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'validation', fields });
+    expect(bucket.reads).toEqual([]);
   });
 });

@@ -3,16 +3,18 @@ import type { R2Store } from '../env';
 /**
  * An `R2Store` in memory, for tests, like `menu/memoryKv.ts`. `failPut(n)` makes the n-th put
  * from now (1 = the next one) throw once; `failDeletes()` makes every delete throw. `log` records
- * every successful write as `put <key>` or `delete <key>`.
+ * every successful write as `put <key>` or `delete <key>`; `reads` every key asked for.
  */
 export function memoryR2() {
   const data = new Map<string, { bytes: Blob; contentType: string | undefined }>();
   const log: string[] = [];
+  const reads: string[] = [];
   let putsUntilFailure = 0;
   let failingDeletes = false;
 
   const bucket: R2Store = {
     async get(key) {
+      reads.push(key);
       const object = data.get(key);
       if (!object) {
         return null;
@@ -46,6 +48,7 @@ export function memoryR2() {
     ...bucket,
     data,
     log,
+    reads,
     failPut(nth: number) {
       putsUntilFailure = nth;
     },

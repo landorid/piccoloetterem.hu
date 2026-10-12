@@ -1,4 +1,5 @@
 import { byRendition, checkImageUpload, imageRenditions, sniffBytes } from '@piccolo/core';
+import { captureException } from '@sentry/cloudflare';
 import { type Context, Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import type { AppEnv, Bindings } from '../env';
@@ -18,8 +19,10 @@ import { itemImagesFor } from './store';
  *
  * Both answer `{ item }`. The order of effects is the crash story:
  *   1. store.put      the new version's objects. A failure or crash leaves objects nobody reads.
- *   2. swapItemImage  the commit point, under the row lock.
+ *   2. swapItemImage  the commit point, under the row lock. A refusal discards the new version;
+ *                     a throw leaves it, since a lost COMMIT ack may mean the row points at it.
  *   3. purgeAll       before step 4, so no menu cached from now on names a deleted version.
+ *                     A failure is reported and skips step 4: a stale menu may still name it.
  *   4. store.discard  the previous version, best effort.
  */
 export function itemImageRoutes(cacheFor: (env: Bindings) => MenuCache) {
@@ -32,7 +35,13 @@ export function itemImageRoutes(cacheFor: (env: Bindings) => MenuCache) {
     }
     // Removing an image that is not there changes nothing guests see.
     if (swap.previous !== (swap.item.imageVersion ?? null)) {
-      await cacheFor(c.env).purgeAll();
+      try {
+        await cacheFor(c.env).purgeAll();
+      } catch (error) {
+        captureException(error, { extra: { itemId: id } });
+        console.error(`Item images: menu cache purge failed for ${id}`, error);
+        return c.json({ item: swap.item });
+      }
       if (swap.previous !== null) {
         await itemImagesFor(c.env).discard(id, swap.previous);
       }
@@ -84,13 +93,7 @@ export function itemImageRoutes(cacheFor: (env: Bindings) => MenuCache) {
           id,
           byRendition((rendition) => ({ bytes: form[rendition], mime: checked.mimes[rendition] })),
         );
-        let swap: ImageSwap;
-        try {
-          swap = await swapItemImage(c.get('db'), id, version);
-        } catch (error) {
-          await store.discard(id, version);
-          throw error;
-        }
+        const swap = await swapItemImage(c.get('db'), id, version);
         if (!swap.ok) {
           await store.discard(id, version);
         }
