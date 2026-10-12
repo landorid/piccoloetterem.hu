@@ -131,16 +131,17 @@ export function DayTabs({
               onClick={() => onSelect(day.date)}
             >
               <span className="dow">{dayStrings.short[day.index]}</span>
-              <span className="dnum num">{dayNumber(day.date)}</span>
-              <span className="dmark">
-                {count > 0 ? (
-                  <span className="dbadge num" title={dayStrings.badgeTitle(count)}>
+              <span className="dnum num">
+                {dayNumber(day.date)}
+                {count > 0 && (
+                  <span className="dbadge" title={dayStrings.badgeTitle(count)}>
                     {count}
                   </span>
-                ) : (
-                  day.state === 'closed' && <span className="dclosed">{dayStrings.closed}</span>
                 )}
               </span>
+              {count === 0 && day.state === 'closed' && (
+                <span className="dclosed">{dayStrings.closed}</span>
+              )}
             </button>
           );
         })}
