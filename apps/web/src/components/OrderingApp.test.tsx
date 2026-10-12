@@ -350,6 +350,45 @@ describe('the day cart', () => {
   });
 });
 
+describe("the phone's bar", () => {
+  const bar = () => document.querySelector<HTMLElement>('.sumbar.only-mobile');
+  const barButton = (name: string) => within(bar() as HTMLElement).getByRole('button', { name });
+
+  it('stays away until a menu can be added, adds it, then leads to checkout', async () => {
+    await renderOrderPage();
+    expect(bar()).toBeNull();
+    pickSoup('Brokkolikrémleves');
+    expect(bar()).toBeNull();
+
+    pickMain(strings.composer.none);
+    expect(within(bar() as HTMLElement).getByText(strings.cart.menuNumber(1))).toBeTruthy();
+    fireEvent.click(barButton(strings.summary.addToCart));
+
+    expect(tab(/^Szerda, szept\. 9\., 1 menü a kosárban/)).toBeTruthy();
+    expect(document.activeElement).toBe(
+      screen.getByRole('heading', { name: strings.composer.formTitle(2) }),
+    );
+    expect(barButton(strings.summary.continue)).toHaveProperty('disabled', false);
+
+    pickSoup('Brokkolikrémleves');
+    expect(barButton(strings.summary.continue)).toBeTruthy();
+    pickMain(strings.composer.none);
+    expect(within(bar() as HTMLElement).getByText(strings.summary.nextMenu(2, 1))).toBeTruthy();
+  });
+
+  it("drops the form's message about a menu the bar added", async () => {
+    await renderOrderPage();
+    const message = () => composer().querySelector('.cf-foot .error');
+    pickSoup('Brokkolikrémleves');
+    fireEvent.click(addButton());
+    expect(message()?.textContent).toBe(strings.composer.mainUnanswered);
+
+    pickMain(strings.composer.none);
+    fireEvent.click(barButton(strings.summary.addToCart));
+    expect(message()).toBeNull();
+  });
+});
+
 describe('the day rail', () => {
   it('lets a closed day be selected to say it cannot be ordered, and disables past days', async () => {
     answer = {

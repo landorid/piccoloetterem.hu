@@ -120,6 +120,8 @@ export const strings = {
     details: 'Részletek',
     hideDetails: 'Bezár',
     continue: 'Tovább a rendeléshez',
+    addToCart: 'Hozzáadás a kosárhoz',
+    nextMenu: (menu: number, inCart: number) => `${menu}. menü · a kosárban ${inCart} menü`,
   },
   checkout: {
     title: 'Rendelés véglegesítése',

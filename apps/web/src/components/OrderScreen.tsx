@@ -6,6 +6,7 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from 'react';
 import { dayFull, timeOfDay, weekdayName } from '../format';
 import type { OpenMenu, PublicConfig } from '../lib/api';
@@ -74,6 +75,7 @@ export function OrderScreen({
   const panelHeading = useRef<HTMLHeadingElement>(null);
   const cartHeading = useRef<HTMLHeadingElement>(null);
   const focusAfterRender = useFocusAfterRender();
+  const [formFoot, setFormFoot] = useState<HTMLDivElement | null>(null);
 
   const activeDay =
     days.find((day) => day.date === storedDate && day.state !== 'past') ??
@@ -152,6 +154,7 @@ export function OrderScreen({
             menuNumber={menuCount + 1}
             headingRef={panelHeading}
             focusHeading={focusPanel}
+            footRef={setFormFoot}
           />
         )}
         <div className="rail">
@@ -183,6 +186,9 @@ export function OrderScreen({
         pricing={pricing}
         deliveryFee={config.pricing.deliveryFee}
         onContinue={onContinue}
+        activeDate={activeDay?.state === 'closed' ? null : activeDate}
+        formFoot={formFoot}
+        onAdded={focusPanel}
       />
     </AllergenTipProvider>
   );

@@ -31,6 +31,8 @@ interface ComposerProps {
   headingRef: RefObject<HTMLHeadingElement | null>;
   /** Moves focus to the heading once the form re-renders (after adding or emptying it). */
   focusHeading: () => void;
+  /** Receives the form's foot, so the phone's bar can step aside while it is in view. */
+  footRef?: (el: HTMLDivElement | null) => void;
 }
 
 /** The on-page form for the day's next menu, in course order, with its live price. */
@@ -42,14 +44,18 @@ export function Composer({
   menuNumber,
   headingRef,
   focusHeading,
+  footRef,
 }: ComposerProps) {
   const form = useOrder((s) => formFor(s, date));
   const choose = useOrder((s) => s.choose);
   const resetForm = useOrder((s) => s.resetForm);
   const addMenu = useOrder((s) => s.addMenu);
   const [pickerOpen, setPickerOpen] = useState(false);
-  /** The day whose add button was clicked while the form could not be added. */
-  const [triedOn, setTriedOn] = useState<IsoDate | null>(null);
+  /**
+   * The menu whose add button was clicked while the form could not be added. Keyed by its number,
+   * so a menu added from the phone's bar moves the form past the message.
+   */
+  const [triedAt, setTriedAt] = useState<number | null>(null);
   const mainButton = useRef<HTMLButtonElement>(null);
   const headingId = useId();
   const messageId = useId();
@@ -64,7 +70,7 @@ export function Composer({
   const status = formStatus(form, menu, date);
   const { soupAnswered, mainAnswered } = formSteps(form, menu, date);
   const pristine = isPristine(form);
-  const message = triedOn === date ? status.message : null;
+  const message = triedAt === menuNumber ? status.message : null;
   const lines = priceLines(priced.menu);
   const mainLine = priced.menu.items.find((item) => item.slot === 'main');
 
@@ -226,7 +232,7 @@ export function Composer({
         </Step>
       </div>
 
-      <div className="cf-foot">
+      <div className="cf-foot" ref={footRef}>
         <div className="foot-top">
           <span className="foot-price num" aria-live="polite">
             {forint(priced.total)}
@@ -244,7 +250,7 @@ export function Composer({
               className="btn btn-ghost"
               onClick={() => {
                 resetForm(date);
-                setTriedOn(null);
+                setTriedAt(null);
                 focusHeading();
               }}
             >
@@ -257,10 +263,10 @@ export function Composer({
             aria-describedby={message ? messageId : undefined}
             onClick={() => {
               if (!status.canAdd) {
-                setTriedOn(date);
+                setTriedAt(menuNumber);
                 return;
               }
-              setTriedOn(null);
+              setTriedAt(null);
               addMenu(date, menu);
               focusHeading();
             }}

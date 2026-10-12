@@ -201,6 +201,10 @@
   text-decoration: underline;
   min-height: 36px;
 }
+.sumbar .add {
+  flex: none;
+  margin-left: auto;
+}
 .sumbar .detail {
   border-top: 1px dashed var(--line-strong);
   padding-top: var(--s-3);
