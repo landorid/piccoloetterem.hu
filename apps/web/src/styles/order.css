@@ -4,7 +4,7 @@
  * where the mockup keyed a style on a row's ARIA state, the row carries a class instead
  * (`is-picked`, `is-disabled`), because the control is now an input or a button inside the row.
  * The mockup's `.app :is(h1, h2, h3, p, ul, ol) { margin: 0 }` outranked the margins it gave
- * `.field-label`, `.block-hint` and `.week-terms`, and its `.app button { font: inherit }` outranked
+ * `.block-hint` and `.week-terms`, and its `.app button { font: inherit }` outranked
  * the font sizes and weights of `.btn`, `.btn-sm`, `.btn-quiet`, `.btn-danger`, `.stepper-add` and
  * `.sheet-close`. The approved look has neither, so those declarations are left out.
  */
@@ -256,17 +256,6 @@
     background-color var(--fast) var(--ease),
     border-color var(--fast) var(--ease),
     color var(--fast) var(--ease);
-}
-.pickrow.is-picked .tile:not(.tile-none) {
-  background: var(--brand-100);
-  border-color: var(--brand-200);
-  color: var(--brand-700);
-}
-/* Declining is not a dish: an empty square holds the column without inventing an initial. */
-.tile-none {
-  background: var(--paper);
-  border-style: dashed;
-  border-color: var(--line-strong);
 }
 .tag {
   display: inline-block;
@@ -835,14 +824,14 @@
 .cf-body {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
+  gap: var(--s-6);
   padding: var(--s-4);
 }
 /* A step of the form waits, blurred, until the steps before it are answered. */
 .cf-step {
   display: flex;
   flex-direction: column;
-  gap: var(--s-4);
+  gap: var(--s-6);
   transition:
     filter 0.2s ease,
     opacity 0.2s ease;
@@ -874,20 +863,22 @@
 .choice-block > legend {
   padding: 0;
 }
+/* A course is named like a heading, in the dish's own ink, not a small tracked caption. */
+.course-label {
+  margin-bottom: var(--s-2);
+  font-size: var(--t-base);
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--ink-900);
+}
 .block-hint {
+  margin: calc(var(--s-1) * -1) 0 var(--s-2);
   font-size: var(--t-sm);
   line-height: 1.4;
   color: var(--ink-500);
 }
 .extra-note {
   font-size: var(--t-sm);
-  color: var(--ink-500);
-}
-.field-label {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
   color: var(--ink-500);
 }
 
@@ -976,8 +967,8 @@
     box-shadow var(--fast) var(--ease),
     transform var(--fast) var(--ease);
 }
-/* A card shrinks when pressed; a picker row runs edge to edge, so it darkens instead (below). */
-.choicerow:not(.is-disabled):has(.stretch:active) {
+/* The main's card shrinks when pressed; a row of a list darkens instead (below). */
+.mainrow:has(.stretch:active) {
   transform: scale(var(--press));
 }
 .stretch {
@@ -1113,25 +1104,73 @@
   border-top: 0;
 }
 
-/* Every option is listed; the block never scrolls on its own. */
+/* A course is one card: its options are joined rows split by hairlines, the way a menu card lists
+   them, and every option is listed; the block never scrolls on its own. */
 .choicerows {
   display: flex;
   flex-direction: column;
-  gap: var(--s-3);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--paper);
+  overflow: hidden;
 }
-/* The chosen card gets a 2 px ring: the border plus an inset shadow, so nothing shifts. */
 .choicerow {
+  gap: var(--s-3);
+  min-height: 56px;
+  padding: var(--s-3) var(--s-4);
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+}
+.choicerow:first-child {
+  border-top: 0;
+}
+.choicerow .pname {
+  font-size: var(--t-base);
+}
+.choicerow .pbody {
+  gap: 2px;
+}
+/* The price and the allergens share the line under the name. */
+.choicerow .pmeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--s-1) var(--s-2);
+}
+.choicerow.is-picked {
+  background: var(--brand-50);
+}
+.choicerow:has(.stretch):not(.is-picked):not(.is-disabled):hover {
+  background: var(--hover);
+}
+.choicerow:has(.stretch):not(.is-picked):not(.is-disabled):has(.stretch:active) {
+  background: var(--fill);
+}
+/* The ring sits inside: the card clips anything outside it. */
+.choicerow:has(input:focus-visible) {
+  outline-offset: -3px;
+}
+/* Declining is not a dish: its name steps back. */
+.choicerow.is-none:not(.is-picked) .pname {
+  font-weight: 500;
+  color: var(--ink-500);
+}
+/* The main opens a picker, so it stays a card of its own. */
+.mainrow {
   padding: 14px var(--s-4);
   border: 1px solid var(--line-strong);
   border-radius: var(--radius);
   background: var(--paper);
 }
-.choicerow.is-picked {
+.mainrow .pname {
+  font-size: var(--t-lg);
+}
+.mainrow.is-picked {
   border-color: var(--brand-600);
   box-shadow: inset 0 0 0 1px var(--brand-600);
   background: var(--brand-50);
 }
-.choicerow:has(.stretch):not(.is-picked):not(.is-disabled):hover {
+.mainrow:not(.is-picked):hover {
   border-color: var(--ink-400);
 }
 .mainrow.is-picked:hover {
@@ -1611,11 +1650,6 @@
   .sheet[open] {
     animation-name: sheet-pop;
   }
-  .choicerows {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: var(--s-3);
-  }
   .message h1 {
     font-size: var(--t-2xl);
   }
@@ -1665,7 +1699,7 @@
   .stepper button:not([disabled]):not([aria-disabled='true']):active,
   .stepper-add:active,
   .sheet-close:active,
-  .choicerow:not(.is-disabled):has(.stretch:active),
+  .mainrow:has(.stretch:active),
   .atip {
     transform: none;
   }

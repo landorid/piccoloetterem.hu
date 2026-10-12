@@ -68,8 +68,14 @@ export function Composer({
   const mainLine = priced.menu.items.find((item) => item.slot === 'main');
 
   const priceOf = (item: MenuItem) => forint(unitPrice(item, date));
+  /** A dish that costs nothing extra shows no amount: `0 Ft` under every side says nothing. */
   const dishes = (items: readonly MenuItem[]): ChoiceOption[] =>
-    items.map((item) => ({ id: item.id, name: item.name, item, amount: priceOf(item) }));
+    items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      item,
+      amount: unitPrice(item, date) === 0 ? null : priceOf(item),
+    }));
   const none = (amount: string | null): ChoiceOption => ({
     id: null,
     name: composer.none,
@@ -78,7 +84,7 @@ export function Composer({
   });
   const soupAmount = (id: string | null) => {
     const effect = soupEffect(form, id, menu, date, pricing);
-    return effect === null ? null : signedForint(effect);
+    return effect === null || effect === 0 ? null : signedForint(effect);
   };
   const mainName = mainItem
     ? form.variation
@@ -102,7 +108,6 @@ export function Composer({
             name={`soup-${date}`}
             label={composer.slots.soup}
             hint={mainItem ? null : composer.soupHint}
-            tiles={false}
             selected={form.soupId}
             options={[
               ...soups.map((item) => ({
@@ -118,58 +123,56 @@ export function Composer({
         )}
 
         <Step locked={!soupAnswered}>
-          <p className="field-label">{composer.slots.main}</p>
-          <div
-            className={cls(
-              'pickrow choicerow mainrow',
-              mainName && 'is-picked',
-              soupAnswered && !mainAnswered && 'is-current',
-            )}
-          >
-            {mainName ? (
-              <Tile name={mainItem ? mainName : null} />
-            ) : (
+          <div>
+            <p className="course-label">{composer.slots.main}</p>
+            <div
+              className={cls(
+                'pickrow mainrow',
+                mainName && 'is-picked',
+                soupAnswered && !mainAnswered && 'is-current',
+              )}
+            >
               <span className="tile tile-prompt" aria-hidden="true">
                 <UtensilsCrossed size={22} />
               </span>
-            )}
-            <span className="pbody">
-              <span className="pname">
-                <button
-                  ref={mainButton}
-                  type="button"
-                  className="stretch"
-                  aria-haspopup="dialog"
-                  aria-label={mainName ? composer.mainChosen(mainName) : composer.mainPrompt}
-                  onClick={() => setPickerOpen(true)}
-                >
-                  {mainName ?? composer.mainPlaceholder}
-                </button>
-                {mainItem?.soldOut && <SoldOut />}
+              <span className="pbody">
+                <span className="pname">
+                  <button
+                    ref={mainButton}
+                    type="button"
+                    className="stretch"
+                    aria-haspopup="dialog"
+                    aria-label={mainName ? composer.mainChosen(mainName) : composer.mainPrompt}
+                    onClick={() => setPickerOpen(true)}
+                  >
+                    {mainName ?? composer.mainPlaceholder}
+                  </button>
+                  {mainItem?.soldOut && <SoldOut />}
+                </span>
+                {!mainName && <span className="psub">{composer.mainPlaceholderHint}</span>}
+                {mainItem && (
+                  <span className="pamt num">
+                    {mainLine ? forint(mainLine.unitPrice) : priceOf(mainItem)}
+                  </span>
+                )}
+                {mainItem && mainItem.allergens.length > 0 && (
+                  <span className="psub">
+                    <AllergenChips codes={mainItem.allergens} />
+                  </span>
+                )}
               </span>
-              {!mainName && <span className="psub">{composer.mainPlaceholderHint}</span>}
-              {mainItem && (
-                <span className="pamt num">
-                  {mainLine ? forint(mainLine.unitPrice) : priceOf(mainItem)}
+              {mainName ? (
+                <span className="main-cta main-cta-change" aria-hidden="true">
+                  <Pencil size={14} strokeWidth={2.25} />
+                  <span className="main-cta-label">{composer.mainChange}</span>
+                </span>
+              ) : (
+                <span className="main-cta" aria-hidden="true">
+                  {composer.mainPick}
+                  <ChevronRight size={16} strokeWidth={2.5} />
                 </span>
               )}
-              {mainItem && mainItem.allergens.length > 0 && (
-                <span className="psub">
-                  <AllergenChips codes={mainItem.allergens} />
-                </span>
-              )}
-            </span>
-            {mainName ? (
-              <span className="main-cta main-cta-change" aria-hidden="true">
-                <Pencil size={14} strokeWidth={2.25} />
-                <span className="main-cta-label">{composer.mainChange}</span>
-              </span>
-            ) : (
-              <span className="main-cta" aria-hidden="true">
-                {composer.mainPick}
-                <ChevronRight size={16} strokeWidth={2.5} />
-              </span>
-            )}
+            </div>
           </div>
         </Step>
 
@@ -178,7 +181,6 @@ export function Composer({
             <ChoiceBlock
               name={`side-${date}`}
               label={composer.slots.side}
-              tiles
               selected={form.sideId ?? undefined}
               options={dishes([...sides, ...sideExtras])}
               onSelect={(id) => id && choose(date, { slot: 'side', id })}
@@ -189,9 +191,8 @@ export function Composer({
             <ChoiceBlock
               name={`pickle-${date}`}
               label={composer.slots.pickle}
-              tiles
               selected={form.pickleId}
-              options={[...dishes(pickles), none(forint(0))]}
+              options={[...dishes(pickles), none(null)]}
               onSelect={(id) => choose(date, { slot: 'pickle', id })}
             />
           )}
@@ -200,9 +201,8 @@ export function Composer({
             <ChoiceBlock
               name={`dessert-${date}`}
               label={composer.slots.dessert}
-              tiles
               selected={form.dessertId}
-              options={[...dishes(desserts), none(forint(0))]}
+              options={[...dishes(desserts), none(null)]}
               onSelect={(id) => choose(date, { slot: 'dessert', id })}
             />
           )}
@@ -304,18 +304,6 @@ function Step({ locked, children }: { locked: boolean; children: React.ReactNode
   );
 }
 
-/** The leading square: the item's initial, or an empty dashed square for `composer.none`. */
-function Tile({ name }: { name: string | null }) {
-  return (
-    <span className={cls('tile', name === null && 'tile-none')} aria-hidden="true">
-      {name
-        ?.replace(/^[0-9. ]+/, '')
-        .charAt(0)
-        .toLocaleUpperCase('hu-HU')}
-    </span>
-  );
-}
-
 interface ChoiceOption {
   /** `null` is `composer.none`. */
   id: string | null;
@@ -328,13 +316,13 @@ interface ChoiceOption {
 /**
  * One block of inline choices as native radios: one tab stop, arrow keys and the checked state
  * come with them. The label is stretched over the row, so the whole row picks the option, and
- * the allergen chips sit above it as buttons of their own.
+ * the allergen chips sit above it as buttons of their own. A course's options are one grouped
+ * list, joined rows in a single card.
  */
 function ChoiceBlock({
   name,
   label,
   hint = null,
-  tiles,
   selected,
   options,
   onSelect,
@@ -342,7 +330,6 @@ function ChoiceBlock({
   name: string;
   label: string;
   hint?: string | null;
-  tiles: boolean;
   /** `undefined` while nothing is chosen. */
   selected: string | null | undefined;
   options: ChoiceOption[];
@@ -351,7 +338,7 @@ function ChoiceBlock({
   const prefix = useId();
   return (
     <fieldset className="choice-block">
-      <legend className="field-label">{label}</legend>
+      <legend className="course-label">{label}</legend>
       {hint && <p className="block-hint">{hint}</p>}
       <div className="choicerows">
         {options.map((option, index) => {
@@ -361,7 +348,12 @@ function ChoiceBlock({
           return (
             <div
               key={option.id ?? ''}
-              className={cls('pickrow choicerow', checked && 'is-picked', soldOut && 'is-disabled')}
+              className={cls(
+                'pickrow choicerow',
+                checked && 'is-picked',
+                soldOut && 'is-disabled',
+                option.id === null && 'is-none',
+              )}
             >
               <input
                 type="radio"
@@ -373,20 +365,21 @@ function ChoiceBlock({
                 aria-describedby={option.amount === null ? undefined : `${id}-amount`}
                 onChange={() => onSelect(option.id)}
               />
-              {tiles && <Tile name={option.item ? option.name : null} />}
               <span className="pbody">
                 <label className="pname stretch" htmlFor={id}>
                   {option.name}
                   {soldOut && <SoldOut />}
                 </label>
-                {option.amount !== null && (
-                  <span className="pamt num" id={`${id}-amount`}>
-                    {option.amount}
-                  </span>
-                )}
-                {option.item && option.item.allergens.length > 0 && (
-                  <span className="psub">
-                    <AllergenChips codes={option.item.allergens} />
+                {(option.amount !== null || (option.item?.allergens.length ?? 0) > 0) && (
+                  <span className="pmeta">
+                    {option.amount !== null && (
+                      <span className="pamt num" id={`${id}-amount`}>
+                        {option.amount}
+                      </span>
+                    )}
+                    {option.item && option.item.allergens.length > 0 && (
+                      <AllergenChips codes={option.item.allergens} />
+                    )}
                   </span>
                 )}
               </span>
@@ -416,7 +409,7 @@ function ExtraBlock({
 }) {
   return (
     <fieldset className="choice-block">
-      <legend className="field-label">{composer.mealExtras}</legend>
+      <legend className="course-label">{composer.mealExtras}</legend>
       <div className="choicerows">
         {extras.map((extra) => (
           <ExtraRow
@@ -453,7 +446,6 @@ function ExtraRow({ date, extra, quantity }: { date: IsoDate; extra: ExtraDef; q
 
   return (
     <div className="pickrow choicerow">
-      <Tile name={extra.name} />
       <span className="pbody">
         <span className="pname">{extra.name}</span>
         <span className="pamt num">{strings.extras.unitPrice(forint(extra.price))}</span>
