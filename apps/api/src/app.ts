@@ -8,6 +8,7 @@ import { requireStaff } from './auth';
 import { publicConfig } from './config/public';
 import type { AppEnv, Bindings } from './env';
 import { HttpError } from './errors';
+import { publicImageRoutes } from './images/public.routes';
 import { adminMenuRoutes } from './menu/admin.routes';
 import { menuCacheFor } from './menu/cache';
 import { publicMenuRoutes } from './menu/public.routes';
@@ -57,6 +58,8 @@ export const app = new Hono<AppEnv>()
   })
   // The published menu guests order from. Anonymous; cached in KV, purged by the admin routes.
   .route('/menu', publicMenuRoutes(menuCacheFor))
+  // An étlap item's image by the version in its URL. Anonymous; no database, no config.
+  .route('/images', publicImageRoutes())
   // The restaurant's name, contact, prices and extras for the public site. Anonymous; no database.
   .get('/config/public', withConfig, (c) => c.json(publicConfig(c.get('config'))))
   // Guests' submissions. Anonymous; decided from the database, never from the menu cache.

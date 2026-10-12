@@ -46,6 +46,13 @@ id = "7578b36062614eb78fbb76c441014493" # piccolo-development (manual issue #40)
 binding = "MENU_CACHE"
 id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
 
+# Étlap item images (src/images/store.ts). Private: served only through GET /api/images/*.
+# Named environments do not inherit `r2_buckets`, so each has its own block below. Locally
+# `wrangler dev` uses Miniflare's R2 instead of this bucket.
+[[r2_buckets]]
+binding = "ITEM_IMAGES"
+bucket_name = "piccolo-menu-images-development"
+
 # Secrets are never written in this file. Set them per environment with
 #   wrangler secret put SENTRY_DSN --env <staging|production>
 #   wrangler secret put CLERK_SECRET_KEY --env <staging|production>
@@ -84,6 +91,10 @@ binding = "MENU_CACHE"
 # `wrangler kv namespace create piccolo-menu-cache-staging` (manual issue #40).
 id = "22222222222222222222222222222222"
 
+[[env.staging.r2_buckets]]
+binding = "ITEM_IMAGES"
+bucket_name = "piccolo-menu-images-staging"
+
 [env.production]
 name = "piccolo-api-production"
 routes = [{ pattern = "api.piccoloetterem.hu", custom_domain = true }]
@@ -109,3 +120,7 @@ binding = "MENU_CACHE"
 # Placeholder. Replace with the id printed by
 # `wrangler kv namespace create piccolo-menu-cache-production` (manual issue #40).
 id = "33333333333333333333333333333333"
+
+[[env.production.r2_buckets]]
+binding = "ITEM_IMAGES"
+bucket_name = "piccolo-menu-images-production"

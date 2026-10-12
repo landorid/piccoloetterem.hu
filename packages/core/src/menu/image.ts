@@ -33,6 +33,13 @@ export type ImageRendition = keyof typeof renditionSpecs;
 
 export const imageRenditions = Object.keys(renditionSpecs) as [ImageRendition, ...ImageRendition[]];
 
+/** A record with one entry per rendition of the registry. */
+export function byRendition<T>(value: (rendition: ImageRendition) => T): Record<ImageRendition, T> {
+  return Object.fromEntries(
+    imageRenditions.map((rendition) => [rendition, value(rendition)]),
+  ) as Record<ImageRendition, T>;
+}
+
 /** What the browser's encoder is asked for and the server accepts, in order of preference. */
 export const imageMimes = ['image/webp', 'image/jpeg'] as const;
 export type ImageMime = (typeof imageMimes)[number];
@@ -93,9 +100,7 @@ export function planRenditions(source: Size): Record<ImageRendition, RenditionPl
       size: { width: edge, height: edge },
     };
   };
-  return Object.fromEntries(
-    imageRenditions.map((rendition) => [rendition, plan(renditionSpecs[rendition])]),
-  ) as Record<ImageRendition, RenditionPlan>;
+  return byRendition((rendition) => plan(renditionSpecs[rendition]));
 }
 
 const startsWith = (bytes: Uint8Array, at: number, magic: readonly number[]) =>

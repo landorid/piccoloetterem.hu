@@ -12,6 +12,28 @@ export interface KvStore {
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
 }
 
+/**
+ * The part of an R2 bucket the API uses, declared for the reason `KvStore` is;
+ * `src/images/store.test.ts` checks that a real `R2Bucket` fits it.
+ */
+export interface R2Store {
+  get(key: string): Promise<R2StoredObject | null>;
+  put(
+    key: string,
+    value: Blob,
+    options?: { httpMetadata?: { contentType?: string } },
+  ): Promise<unknown>;
+  /** Deleting a key that is not there is not an error. */
+  delete(keys: string[]): Promise<void>;
+}
+
+export interface R2StoredObject {
+  readonly body: ReadableStream;
+  readonly size: number;
+  readonly httpEtag: string;
+  readonly httpMetadata?: { contentType?: string };
+}
+
 /** Bindings, vars and secrets of the API Worker; see wrangler.toml and README.md. */
 export interface Bindings {
   /** Every environment. Under `wrangler dev`, a direct connection to `DATABASE_URL` (scripts/dev.mjs). */
@@ -21,6 +43,11 @@ export interface Bindings {
    * `order-rate:` prefix (`src/orders/rateLimit.ts`). Locally, Miniflare's KV.
    */
   MENU_CACHE: KvStore;
+  /**
+   * Étlap item images (`src/images/store.ts`): a private bucket per environment, served only
+   * through `GET /api/images/*`. Locally, Miniflare's R2.
+   */
+  ITEM_IMAGES: R2Store;
   /** Local only, from `.dev.vars`; `HYPERDRIVE` wins when both are set. The tests pass it alone. */
   DATABASE_URL?: string;
   SENTRY_DSN?: string;

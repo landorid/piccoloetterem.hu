@@ -1,6 +1,7 @@
 import {
   datesOfIsoWeek,
   isoDate,
+  isWeeklyCategory,
   type MenuDay,
   type MenuItem,
   type MenuItemContent,
@@ -27,6 +28,7 @@ import {
   or,
   sql,
 } from '@piccolo/db';
+import type { StoredImageVersion } from '../images/store';
 
 /*
  * The menu queries: the admin's, and the public menu's at the end. Thin: the rules (what a valid
@@ -62,6 +64,8 @@ export function toMenuItem(row: MenuItemRow): MenuItem {
     soldOut: row.soldOut,
     active: row.active,
     sortOrder: row.sortOrder,
+    // Absent rather than `null`, so an item without an image serialises as it did before.
+    ...(row.imageVersion === null ? {} : { imageVersion: row.imageVersion }),
   };
 }
 
@@ -108,7 +112,8 @@ export async function getMenuItems(db: Db, ids: readonly string[]): Promise<Menu
 /**
  * Makes the permanent menu match `plan` in one transaction, holding a lock that serialises these
  * saves: inserts new items, updates changed ones, and sets every other active permanent item
- * inactive (never deleted, so orders keep their reference). `soldOut` is left as it is.
+ * inactive (never deleted, so orders keep their reference). `soldOut` and `imageVersion` are
+ * left as they are.
  */
 export async function writePermanentItems(db: Db, plan: PermanentItemsPlan): Promise<void> {
   await db.transaction(async (tx) => {
@@ -164,6 +169,34 @@ export async function writePermanentItems(db: Db, plan: PermanentItemsPlan): Pro
 export async function setSoldOut(db: Db, id: string, soldOut: boolean): Promise<MenuItem | null> {
   const [row] = await db.update(menuItems).set({ soldOut }).where(eq(menuItems.id, id)).returning();
   return row ? toMenuItem(row) : null;
+}
+
+export type ImageSwap =
+  | { ok: true; item: MenuItem; previous: string | null }
+  | { ok: false; reason: 'item_not_found' | 'not_permanent' };
+
+/**
+ * Points item `id` at `imageVersion` (`null`: no image) and returns it with the version it
+ * pointed at before. Holds the row lock, so two uploads for one item are serialised and each sees
+ * the other's as `previous`. The only writer of `image_version`, and the one place that decides
+ * whether the item exists and may carry an image.
+ */
+export async function swapItemImage(
+  db: Db,
+  id: string,
+  imageVersion: StoredImageVersion | null,
+): Promise<ImageSwap> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx.select().from(menuItems).where(eq(menuItems.id, id)).for('update');
+    if (!row) {
+      return { ok: false, reason: 'item_not_found' };
+    }
+    if (isWeeklyCategory(row.category)) {
+      return { ok: false, reason: 'not_permanent' };
+    }
+    await tx.update(menuItems).set({ imageVersion }).where(eq(menuItems.id, id));
+    return { ok: true, item: toMenuItem({ ...row, imageVersion }), previous: row.imageVersion };
+  });
 }
 
 /** The weeks any of `ids` is scheduled on. */

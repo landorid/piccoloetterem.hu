@@ -63,6 +63,7 @@ export {
   weekDraftIds,
 } from './menu/edit';
 export {
+  byRendition,
   checkImageUpload,
   type ImageFileFacts,
   type ImageMime,

@@ -12,6 +12,7 @@ import {
 import { Hono } from 'hono';
 import type { AppEnv, Bindings } from '../env';
 import { HttpError } from '../errors';
+import { itemImageRoutes } from '../images/admin.routes';
 import { withConfig, withDb } from '../middleware';
 import { validate, validationFailed } from '../validation';
 import type { MenuCache } from './cache';
@@ -46,8 +47,8 @@ import {
  * Every write that changes what guests see purges the public menu cache after it commits:
  * - a week's items or schedule, publishing it, closing or reopening one of its dates → that week;
  * - a weekly item's sold-out flag → every week it is scheduled on;
- * - saving the permanent menu, or a permanent item's sold-out flag → every week (once per request),
- *   because permanent items appear on every week's menu.
+ * - saving the permanent menu, a permanent item's sold-out flag or its image → every week (once
+ *   per request), because permanent items appear on every week's menu.
  * Purging is idempotent, so a repeated request purges again even when it changed nothing.
  *
  * `now` is the request time; tests pass a fixed clock.
@@ -100,6 +101,9 @@ export function adminMenuRoutes(
           return c.json({ item });
         },
       )
+
+      // A permanent item's image: its own immediate routes, never part of the save above.
+      .route('/items', itemImageRoutes(cacheFor))
 
       // ---- Weeks ----
 

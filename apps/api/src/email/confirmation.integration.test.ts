@@ -11,6 +11,7 @@ import { datesOfIsoWeek, isoDate } from '@piccolo/core';
 import { asc, createDb, customers, eq, inArray, like, orders } from '@piccolo/db';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { Bindings } from '../env';
+import { memoryR2 } from '../images/memoryR2';
 import { memoryKv } from '../menu/memoryKv';
 import { writeSubmission } from '../orders/repo';
 import { snapshotOf } from '../orders/submission';
@@ -35,6 +36,7 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
     RESTAURANT: 'piccolo',
     ENVIRONMENT: 'development',
     MENU_CACHE: memoryKv(),
+    ITEM_IMAGES: memoryR2(),
     EMAIL_DRY_RUN: '1',
   };
 
