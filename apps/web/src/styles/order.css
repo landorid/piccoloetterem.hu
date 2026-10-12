@@ -918,27 +918,17 @@
     background-color var(--fast) var(--ease),
     border-color var(--fast) var(--ease);
 }
-.mainrow:hover .main-cta {
-  background: var(--brand-700);
-  border-color: var(--brand-700);
-}
-.main-cta-change {
-  background: var(--paper);
-  color: var(--brand-700);
-  border-color: var(--brand-200);
-}
-.mainrow:hover .main-cta-change {
-  background: var(--paper);
-  border-color: var(--brand-600);
-}
 /* A phone has no room beside a long dish name: the row drops its tile, "Módosítás" its word. */
 .mainrow .tile {
   display: none;
 }
-.main-cta-change {
+.mainrow .main-cta-change {
   width: 36px;
   padding: 0;
   justify-content: center;
+  background: var(--paper);
+  color: var(--brand-700);
+  border-color: var(--brand-200);
 }
 .main-cta-change .main-cta-label {
   display: none;
@@ -947,13 +937,21 @@
   .mainrow .tile {
     display: grid;
   }
-  .main-cta-change {
+  .mainrow .main-cta-change {
     width: auto;
     padding: 0 var(--s-3);
   }
   .main-cta-change .main-cta-label {
     display: inline;
   }
+}
+.mainrow:hover .main-cta {
+  background: var(--brand-700);
+  border-color: var(--brand-700);
+}
+.mainrow:hover .main-cta-change {
+  background: var(--paper);
+  border-color: var(--brand-600);
 }
 
 /* --- pick rows --------------------------------------------------------------------------------
