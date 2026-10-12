@@ -55,11 +55,13 @@ export function isPristine(form: MenuForm): boolean {
   );
 }
 
-/** One answer in the form. A main carries its item: whether the side stays depends on it. */
+/**
+ * One answer in the form. A main carries its item, because whether the side stays depends on it,
+ * and its variation, because the picker offers each variation as a dish of its own.
+ */
 export type Choice =
   | { slot: 'soup'; id: string | null }
-  | { slot: 'main'; item: MenuItem | null }
-  | { slot: 'variation'; value: string }
+  | { slot: 'main'; item: MenuItem | null; variation?: string }
   | { slot: 'side'; id: string }
   | { slot: 'pickle'; id: string | null }
   | { slot: 'dessert'; id: string | null };
@@ -72,11 +74,9 @@ export function choose(form: MenuForm, choice: Choice): MenuForm {
       return {
         ...form,
         mainId: choice.item?.id ?? null,
-        variation: null,
+        variation: choice.item ? (choice.variation ?? null) : null,
         sideId: choice.item?.requiresSide ? form.sideId : null,
       };
-    case 'variation':
-      return { ...form, variation: choice.value };
     case 'side':
       return { ...form, sideId: choice.id };
     case 'pickle':
@@ -133,7 +133,7 @@ export function fromComposedMenu(menu: ComposedMenuDraft): MenuForm {
 
 export interface FormStatus {
   canAdd: boolean;
-  /** Why the form cannot be added yet; `null` while it is untouched or when it can be added. */
+  /** Why the form cannot be added yet; `null` when it can be. The page shows it after a try. */
   message: string | null;
 }
 
@@ -150,9 +150,7 @@ export function formStatus(form: MenuForm, publicMenu: PublicMenu, date: string)
   const daySoups = Object.values(publicMenu.days).find((day) => day.date === date)?.soups ?? [];
   const soupAnswered = form.soupId !== undefined || daySoups.length === 0;
   const canAdd = soupAnswered && Object.keys(errors).length === 0;
-  if (canAdd || isPristine(form)) {
-    return { canAdd, message: null };
-  }
+  if (canAdd) return { canAdd, message: null };
   const field = fieldOrder.find((key) => errors[key] !== undefined);
   const code: OrderErrorCode | undefined = field && errors[field];
   if (code) return { canAdd, message: orderMessagesHu[code] };

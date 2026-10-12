@@ -5,6 +5,7 @@ import {
   type PricingConfig,
   type PublicMenu,
 } from '@piccolo/core';
+import { Check, ChevronRight, Minus, Plus } from 'lucide-react';
 import { type RefObject, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { forint, signedForint } from '../format';
 import type { IsoDate } from '../order/cart';
@@ -46,6 +47,8 @@ export function Composer({
   const resetForm = useOrder((s) => s.resetForm);
   const addMenu = useOrder((s) => s.addMenu);
   const [pickerOpen, setPickerOpen] = useState(false);
+  /** The day whose add button was clicked while the form could not be added. */
+  const [triedOn, setTriedOn] = useState<IsoDate | null>(null);
   const mainButton = useRef<HTMLButtonElement>(null);
   const headingId = useId();
   const messageId = useId();
@@ -59,6 +62,7 @@ export function Composer({
   const priced = useMemo(() => priceForm(form, menu, date, pricing), [form, menu, date, pricing]);
   const status = formStatus(form, menu, date);
   const pristine = isPristine(form);
+  const message = triedOn === date ? status.message : null;
   const lines = priceLines(priced.menu);
   const mainLine = priced.menu.items.find((item) => item.slot === 'main');
 
@@ -75,9 +79,10 @@ export function Composer({
     const effect = soupEffect(form, id, menu, date, pricing);
     return effect === null ? null : signedForint(effect);
   };
-  const soupAnswered = form.soupId !== undefined;
-  const variationChosen = form.variation !== null;
-  const sideChosen = form.sideId !== null;
+  const mainName =
+    mainItem && form.variation
+      ? composer.withVariation(mainItem.name, form.variation)
+      : (mainItem?.name ?? null);
   const { pickles, desserts, sides, sideExtras } = menu.permanent;
 
   return (
@@ -91,8 +96,7 @@ export function Composer({
         {soups.length > 0 && (
           <ChoiceBlock
             name={`soup-${date}`}
-            label={soupAnswered ? composer.slots.soup : composer.answer(composer.slots.soup)}
-            required={!soupAnswered}
+            label={composer.slots.soup}
             hint={mainItem ? null : composer.soupHint}
             tiles={false}
             selected={form.soupId}
@@ -119,10 +123,10 @@ export function Composer({
                   type="button"
                   className="stretch"
                   aria-haspopup="dialog"
-                  aria-label={mainItem ? composer.mainChosen(mainItem.name) : composer.mainPrompt}
+                  aria-label={mainName ? composer.mainChosen(mainName) : composer.mainPrompt}
                   onClick={() => setPickerOpen(true)}
                 >
-                  {mainItem ? mainItem.name : composer.choose}
+                  {mainName ?? composer.choose}
                 </button>
                 {mainItem?.soldOut && <SoldOut />}
               </span>
@@ -139,40 +143,20 @@ export function Composer({
             </span>
             {mainItem ? (
               <span className="pmark" aria-hidden="true">
-                ✓
+                <Check size={15} strokeWidth={3} />
               </span>
             ) : (
               <span className="chev" aria-hidden="true">
-                ›
+                <ChevronRight size={20} />
               </span>
             )}
           </div>
         </div>
 
-        {mainItem && mainItem.variations.length > 0 && (
-          <ChoiceBlock
-            name={`variation-${date}`}
-            label={
-              variationChosen ? composer.variationLabel : composer.required(composer.variationLabel)
-            }
-            required={!variationChosen}
-            tiles={false}
-            selected={form.variation ?? undefined}
-            options={mainItem.variations.map((value) => ({
-              id: value,
-              name: value,
-              item: null,
-              amount: priceOf(mainItem),
-            }))}
-            onSelect={(value) => value && choose(date, { slot: 'variation', value })}
-          />
-        )}
-
         {mainItem?.requiresSide && (
           <ChoiceBlock
             name={`side-${date}`}
-            label={sideChosen ? composer.slots.side : composer.required(composer.slots.side)}
-            required={!sideChosen}
+            label={composer.slots.side}
             tiles
             selected={form.sideId ?? undefined}
             options={dishes([...sides, ...sideExtras])}
@@ -229,9 +213,9 @@ export function Composer({
             {forint(priced.total)}
           </span>
         </div>
-        {status.message && (
-          <p className="error" id={messageId}>
-            {status.message}
+        {message && (
+          <p className="error" id={messageId} role="alert">
+            {message}
           </p>
         )}
         <div className="foot-actions">
@@ -241,6 +225,7 @@ export function Composer({
               className="btn btn-ghost"
               onClick={() => {
                 resetForm(date);
+                setTriedOn(null);
                 focusHeading();
               }}
             >
@@ -250,9 +235,13 @@ export function Composer({
           <button
             type="button"
             className="btn btn-primary"
-            disabled={!status.canAdd}
-            aria-describedby={status.message ? messageId : undefined}
+            aria-describedby={message ? messageId : undefined}
             onClick={() => {
+              if (!status.canAdd) {
+                setTriedOn(date);
+                return;
+              }
+              setTriedOn(null);
               addMenu(date, menu);
               focusHeading();
             }}
@@ -267,8 +256,9 @@ export function Composer({
         date={date}
         menu={menu}
         selectedId={form.mainId}
-        onPick={(item) => {
-          choose(date, { slot: 'main', item });
+        selectedVariation={form.variation}
+        onPick={(item, variation) => {
+          choose(date, { slot: 'main', item, variation });
           setPickerOpen(false);
         }}
         onClose={() => {
@@ -309,7 +299,6 @@ interface ChoiceOption {
 function ChoiceBlock({
   name,
   label,
-  required = false,
   hint = null,
   tiles,
   selected,
@@ -318,7 +307,6 @@ function ChoiceBlock({
 }: {
   name: string;
   label: string;
-  required?: boolean;
   hint?: string | null;
   tiles: boolean;
   /** `undefined` while nothing is chosen. */
@@ -329,7 +317,7 @@ function ChoiceBlock({
   const prefix = useId();
   return (
     <fieldset className="choice-block">
-      <legend className={cls('field-label', required && 'is-required')}>{label}</legend>
+      <legend className="field-label">{label}</legend>
       {hint && <p className="block-hint">{hint}</p>}
       <div className="choicerows">
         {options.map((option, index) => {
@@ -369,7 +357,7 @@ function ChoiceBlock({
                 )}
               </span>
               <span className="pmark" aria-hidden="true">
-                ✓
+                <Check size={15} strokeWidth={3} />
               </span>
             </div>
           );
@@ -444,7 +432,7 @@ function ExtraRow({ date, extra, quantity }: { date: IsoDate; extra: ExtraDef; q
           aria-label={strings.extras.moreOf(extra.name)}
           onClick={() => step(1)}
         >
-          +
+          <Plus size={18} strokeWidth={2.25} aria-hidden="true" />
         </button>
       ) : (
         <span className="stepper">
@@ -453,7 +441,7 @@ function ExtraRow({ date, extra, quantity }: { date: IsoDate; extra: ExtraDef; q
             aria-label={strings.extras.lessOf(extra.name)}
             onClick={() => step(-1)}
           >
-            −
+            <Minus size={18} strokeWidth={2.25} aria-hidden="true" />
           </button>
           <span className="qty num" aria-live="polite">
             {quantity}
@@ -466,7 +454,7 @@ function ExtraRow({ date, extra, quantity }: { date: IsoDate; extra: ExtraDef; q
             aria-disabled={atMax || undefined}
             onClick={() => step(1)}
           >
-            +
+            <Plus size={18} strokeWidth={2.25} aria-hidden="true" />
           </button>
         </span>
       )}

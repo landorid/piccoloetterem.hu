@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 import { dayFull, forint, telHref } from '../format';
 import type { PublicConfig } from '../lib/api';
@@ -31,7 +32,7 @@ export function Success({
     <div className="screen single">
       <div className="col-main success">
         <div className="success-mark" aria-hidden="true">
-          ✓
+          <Check size={32} strokeWidth={3} />
         </div>
         <h1 ref={heading} tabIndex={-1}>
           {success.title}

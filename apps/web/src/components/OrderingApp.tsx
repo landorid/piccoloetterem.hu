@@ -212,19 +212,35 @@ export function describeLoadError(error: unknown): { title: string; body: string
   return { title: strings.errors.loadFailedTitle, body: strings.errors.loadFailedBody };
 }
 
-/** What the server renders: the week's heading and grey bars where the form will be. */
+/**
+ * What the server renders: the loaded page's frame — week header, day strip, the form column and
+ * the rail — with grey bars in place of the content, so nothing changes width when it arrives.
+ */
 function WeekSkeleton() {
   return (
-    <div className="screen single">
-      <section className="week" aria-busy="true">
+    <>
+      <div className="weekbar">
         <h1>{strings.week.heading}</h1>
+        <span className="skeleton-line skeleton-pill" aria-hidden="true" />
+      </div>
+      <div className="daybar" aria-hidden="true">
+        <div className="daylist">
+          {[1, 2, 3, 4, 5, 6].map((day) => (
+            <span key={day} className="day">
+              <span className="dow skeleton-dow" />
+              <span className="dnum skeleton-dnum" />
+              <span className="dmark" />
+            </span>
+          ))}
+        </div>
+      </div>
+      <div className="screen screen-menu" aria-busy="true">
         <p className="visually-hidden" role="status">
           {strings.week.loading}
         </p>
         <div className="skeleton" aria-hidden="true">
-          <span className="skeleton-line skeleton-pill" />
-          {[1, 2, 3].map((day) => (
-            <div key={day} className="skeleton-card">
+          {[1, 2, 3].map((block) => (
+            <div key={block} className="skeleton-card">
               <span className="skeleton-line skeleton-title" />
               <span className="skeleton-line" />
               <span className="skeleton-line skeleton-short" />
@@ -232,8 +248,14 @@ function WeekSkeleton() {
             </div>
           ))}
         </div>
-      </section>
-    </div>
+        <div className="rail" aria-hidden="true">
+          <div className="skeleton-card only-desktop">
+            <span className="skeleton-line skeleton-title" />
+            <span className="skeleton-line skeleton-short" />
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 

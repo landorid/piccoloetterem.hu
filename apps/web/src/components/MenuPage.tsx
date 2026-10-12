@@ -192,13 +192,7 @@ function Week({
 
   return (
     <>
-      <WeekBar
-        isoWeek={menu.isoWeek}
-        days={days}
-        cutoff={null}
-        deliveryFee={config.pricing.deliveryFee}
-        minimumOrder={config.pricing.minimumOrder}
-      />
+      <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
       <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
       <Layout config={config} ordering={notice === null}>
         {notice && (

@@ -17,11 +17,16 @@ const menu = openMenu.menu;
 const wed = '2026-09-09';
 
 const fill = (...choices: Choice[]): MenuForm => choices.reduce(choose, emptyForm());
-const main = (id: string): Choice => ({ slot: 'main', item: dish(id) });
+const main = (id: string, variation?: string): Choice => ({
+  slot: 'main',
+  item: dish(id),
+  variation,
+});
 
 describe('choose', () => {
-  it('clears the variation when the main changes', () => {
-    const form = fill(main('sze-rantott-szelet'), { slot: 'variation', value: 'Csirkemell' });
+  it('takes the variation with the main, and drops it with the next main', () => {
+    const form = fill(main('sze-rantott-szelet', 'Csirkemell'));
+    expect(form).toMatchObject({ mainId: 'sze-rantott-szelet', variation: 'Csirkemell' });
     expect(choose(form, main('sze-sertessult')).variation).toBeNull();
   });
 
@@ -62,8 +67,11 @@ describe('toComposedMenu and fromComposedMenu', () => {
 describe('formStatus', () => {
   const status = (form: MenuForm, date = wed) => formStatus(form, menu, date);
 
-  it('says nothing about an untouched form, and does not let it be added', () => {
-    expect(status(emptyForm())).toEqual({ canAdd: false, message: null });
+  it('does not let an untouched form be added, and says what to answer first', () => {
+    expect(status(emptyForm())).toEqual({
+      canAdd: false,
+      message: strings.composer.unanswered,
+    });
   });
 
   it('wants the soup answered, and "Nem kérek" is an answer', () => {
@@ -78,7 +86,7 @@ describe('formStatus', () => {
   it('names a missing variation before a missing side, and both before the soup', () => {
     const form = fill(main('sze-rantott-szelet'));
     expect(status(form).message).toBe(orderMessagesHu.variation_required);
-    const varied = choose(form, { slot: 'variation', value: 'Csirkemell' });
+    const varied = choose(form, main('sze-rantott-szelet', 'Csirkemell'));
     expect(status(varied).message).toBe(orderMessagesHu.side_required);
     const sided = choose(varied, { slot: 'side', id: 'parolt-rizs' });
     expect(status(sided).message).toBe(strings.composer.unanswered);

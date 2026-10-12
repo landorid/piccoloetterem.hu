@@ -56,24 +56,18 @@ tinted background and a sentence under it; a sold-out dish is struck through as 
 
 ### Type
 
-| Role | Face | Where |
-|---|---|---|
-| Display | **Fraunces** 500 | dish names, headings, the grand total, the success headline |
-| UI | **Manrope** 400/600/700 | everything else: labels, prices, buttons, help text |
-
-The serif on dish names is the one piece of restaurant in the page — it makes a list of food read
-like a menu rather than like a table of SKUs. It never runs longer than a dish name, so it costs
-nothing in legibility at 07:40 on a phone.
+One face, the device's own: `ui-sans-serif, system-ui, sans-serif` (SF Pro on Apple, Segoe UI on
+Windows, Roboto on Android), the stack market.gasty.io uses. Headings, dish names and the grand
+total are weight 600; everything else is 400, 600 or 700 as before. This replaced the mockup's
+Fraunces + Manrope pair in October 2026, together with the white-and-grey repaint.
 
 Scale, in rem against a 16 px base: `12 · 13 · 15 · 16 · 18 · 20 · 24 · 30`. Body is 16, the
 smallest text that carries meaning is 13, and 12 is reserved for badges and the collapsed allergen
 chip. Every
 column of digits carries `font-variant-numeric: tabular-nums`.
 
-> **Production note.** Both faces must be **self-hosted** in the Astro build (`latin-ext` subset —
-> Hungarian needs ő and ű), not loaded from Google's CDN: an EU restaurant site that ships visitor
-> IP addresses to Google Fonts is a GDPR problem the old site did not have. The mockup links the
-> CDN copies only because it has to run as a single file. Fallback stack is declared either way.
+> **Production note.** No web font is loaded, so no visitor request goes to a font CDN and the
+> build ships no font files. Every system face above covers Hungarian (ő, ű).
 
 ### Spacing and shape
 
@@ -115,10 +109,10 @@ What O6/O7 need to build, in the order they appear:
 | `AllergenChip` + `AllergenTip` | a round tinted disc with a hand-drawn pictogram, one per EU allergen; hover, focus or tap names it in a bubble that gives the number too. Three chips per dish, then a `+N` chip that names the rest in its bubble. Used by `ChoiceRows`, the main-course row and `SlotPicker` |
 | `DayCart` | composed menus, numbered, with per-line breakdown, adjustments, edit/remove; the day's extras as plain priced lines, no heading and no stepper; food subtotal |
 | `ExtrasRow` | a priced line (`name × qty`, line total) in the day's order; the steppers live in the form's Extra block |
-| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main, its variation and side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — name, allergens, price. The head names which menu you are building; the foot carries the live price, "Ürítés" and "Hozzáadás" |
+| `ComposerForm` | **the primary screen, not a modal.** An empty form for the next menu, in course order: soup, main (with its variation), its side, then pickle, dessert and the Extra steppers, all open. Once the main is chosen its row shows the dish — name, allergens, price. The head names which menu you are building; the foot carries the live price, "Ürítés" and "Hozzáadás" |
 | `CheckoutSummary` | the cart value, the per-day recap and the totals as one column beside the form |
-| `ChoiceRows` | soup, variation, side, pickle and dessert: a stack of full-width rows — tile (none on soup and variation rows), name, the price effect and the dish's allergen chips under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
-| `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" last, sold-out disabled |
+| `ChoiceRows` | soup, side, pickle and dessert: a stack of full-width rows — tile (none on soup rows), name, the price effect and the dish's allergen chips under the name, and a mark on the right that fills with the accent and a ✓ when chosen |
+| `SlotPicker` | the one remaining sheet: the main course, 11 dishes across three labelled groups, "Nem kérek" last, sold-out disabled. A dish with variations is one row per variation (`Rántott szelet — Csirkemell`), so one tap picks both |
 | `PriceBox` | item lines, adjustment lines with their reason, dashed rule, total |
 | `Totals` | per day: food and delivery fee; then the grand total |
 | `SummaryBar` | sticky bar on mobile, card in the rail on desktop; collapsed/expanded; never blocked by the minimum |
@@ -137,7 +131,7 @@ Scope 2a–2h of the issue, one entry each. All 19 exist at both widths.
 | Menü — kosárral | 2a, 2c | three numbered menus, both price adjustments, day badges |
 | Extrák a nap rendelésében | 2c | the day's extras as plain lines under the menu; box, bread and sauces are steppers in the form |
 | Allergén — ikon és buborék | 2a | a bubble open on a milk chip in the main-course row |
-| Űrlap — kötelező mezők | 2b | missing variation and missing side, add disabled |
+| Űrlap — kötelező mezők | 2b | missing variation and missing side, add disabled (superseded 2026-10-11: see "Validation shows on Hozzáadás") |
 | Fogásválasztó — főétel | 2b | grouped options, sold-out disabled |
 | Űrlap — kész menü | 2b | full price breakdown with the soup surcharge explained |
 | Összeállító — csak leves | 2b | a soup in the soup slot, no main, the +650 Ft surcharge explained |
@@ -191,15 +185,20 @@ What we deliberately did **not** take:
 |---|---|---|
 | Leves | 2 + "Nem kérek" | **choice rows, first in the form** — and the row carries the adjustment, so "Nem kérek −100 Ft" and "Húsleves +650 Ft" are visible *before* the tap. This is the price the old system hid until afterwards, and undercharged by 200 Ft when it finally showed it. |
 | Főétel | 11, across three categories | **its own row + picker** — too many to inline. The row has two faces: a prompt before it is answered, and afterwards the dish itself, drawn exactly like any other chosen course — same border, tint and filled check. Only the prompt carries a chevron, since that is where it helps: this is the one row that opens a picker. |
-| Változat | 2–3 | **choice rows**, without tiles — a variation is a property of the main course above it, not a dish of its own, and `Csirkemell` / `Csirkecomb` would both draw a `C`. |
-| Köret | 7 | **choice rows** — it is the only required slot and the usual reason the add button is disabled, so it should be satisfiable without leaving the sheet. |
+| Változat | 2–3 | **rows in the main-course picker**, one per variation, named `Fogás — változat`. Revised 2026-10-11 (Dávid): the form's separate variation block cost a second tap and a red required state on every varied main; the dish itself still carries the variations (PLAN.md §2), only the choosing moved. |
+| Köret | 7 | **choice rows** — it is the only required slot and the usual reason a menu cannot be added yet, so it should be satisfiable without leaving the sheet. |
 | Savanyúság, Desszert | 3 + "Nem kérek" each | **choice rows**, open on the page like the rest, **starting on "Nem kérek"** — see decision 14. |
 
-A required block is labelled `KÖRET · KÖTELEZŐ` in red: the requirement is a word, not only a colour.
+**Validation shows on Hozzáadás** (revised 2026-10-11, Dávid). Block labels are plain — `LEVES`,
+`KÖRET` — never red and never marked required. "Hozzáadás" is always clickable; when the menu cannot
+be added, the click adds nothing and the footer, beside the button, says what is missing first. From
+then on that message follows the form until it can be added. Before the first click nothing on the
+form is marked as missing. This replaces the red `KÖRET · KÖTELEZŐ` / `LEVES · VÁLASSZ` labels and
+the disabled button.
 
 ### The soup comes first, and carries no price until a main decides it
 
-The form follows course order — soup, main, its variation and side, pickle, dessert — which is how a
+The form follows course order — soup, main (with its variation), side, pickle, dessert — which is how a
 Hungarian menu reads and how the old form was laid out. That ordering has one hazard, and the soup
 block is built around it: **the soup's price depends on the main.** Beside a daily main it is
 included; beside an all-week dish, or on its own, it is 650 Ft.
@@ -238,8 +237,8 @@ its Hungarian trailing dot inside the circle, as it does in every calendar grid.
 **All seven side options stack; the block does not scroll on its own.** The sheet body already
 scrolls, and a scroller nested inside it is the gesture people lose on a phone — you swipe to reach
 the price box and move the side list instead. It would also hide exactly the options that are the
-usual reason the add button is disabled. The cost is an honest one: the composer is a long sheet,
-and on a main course with a variation the chosen side can start below the fold. The price box at
+usual reason a menu cannot be added yet. The cost is an honest one: the composer is a long sheet,
+and on a main course that needs a side the chosen side can start below the fold. The price box at
 the bottom still names everything chosen, so nothing is hidden, only scrolled to.
 
 **The picker uses the same row, joined into a list.** One anatomy for choosing a dish, two chromes:
@@ -319,7 +318,7 @@ confirm or reject:
 
 1. The page opens on **an empty form for menu 1**, under the day tabs. No browsing, no modal.
 2. Fill it top down, in course order: soup, then the main (a row that opens the one remaining
-   sheet), its variation and side if that dish needs them, then pickle, dessert and the Extra
+   sheet, where each variation is its own row), its side if that dish needs one, then pickle, dessert and the Extra
    steppers — all open on the page. Before a main is chosen the soup quotes a rule, not a price.
 3. Every dish is in the form. The weekly menu as a browsable list is not on this page; it gets its
    own page (#58).
@@ -355,9 +354,9 @@ confirm or reject:
     is the last option in every list.
     On 2026-09-07 Dávid asked for no default on soup, dessert and pickle alike, so each had to be
     answered before "Hozzáadás" enabled. On 2026-09-13 he reversed it for **pickle and dessert**:
-    they now open with "Nem kérek" selected. The soup keeps the forced answer — its block reads
-    `LEVES · VÁLASSZ` in red until settled, and the footer says `Válassz levest — a „Nem kérek” is
-    válasz.`
+    they now open with "Nem kérek" selected. The soup keeps the forced answer: "Hozzáadás" with
+    the soup unanswered says `Válassz levest — a „Nem kérek” is válasz.` beside the button (since
+    2026-10-11 the block label no longer turns red).
     **Why the split is the right one.** The soup is the slot where an answer moves the price —
     included beside a daily main, −100 Ft if declined, +650 Ft beside an all-week dish — so a
     pre-checked answer there would decide money on the guest's behalf. Pickle (250 Ft) and dessert

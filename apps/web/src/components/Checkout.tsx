@@ -1,4 +1,5 @@
 import { type PricingConfig, type PublicMenu, validateContact } from '@piccolo/core';
+import { ChevronLeft } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { dayFull, forint, timeOfDay } from '../format';
 import { type PublicConfig, type SubmittedOrder, submitOrder, type WebApi } from '../lib/api';
@@ -22,7 +23,7 @@ import { cartDays, type PricedCart, priceCart } from '../order/pricing';
 import { useOrder } from '../order/store';
 import { strings } from '../strings';
 import { itemName, OrderRecap } from './OrderRecap';
-import { cls } from './parts';
+import { BannerIcon, cls } from './parts';
 import { Totals } from './Summary';
 
 const { checkout, errors: copy } = strings;
@@ -203,7 +204,7 @@ export function Checkout({
     <div className="screen screen-checkout">
       <form className="col-main" noValidate onSubmit={submit} aria-busy={submitting}>
         <button type="button" className="btn-quiet back" onClick={onBack}>
-          <span aria-hidden="true">‹ </span>
+          <ChevronLeft size={18} aria-hidden="true" />
           {checkout.back}
         </button>
         <h1 className="checkout-title" ref={heading} tabIndex={-1}>
@@ -451,9 +452,7 @@ export function Banner({
 }) {
   return (
     <div className={`banner banner-${kind}`} role={kind === 'danger' ? 'alert' : 'status'}>
-      <span className="icon" aria-hidden="true">
-        {kind === 'danger' ? '!' : kind === 'ok' ? '✓' : 'i'}
-      </span>
+      <BannerIcon kind={kind} />
       <div>
         <h3>{title}</h3>
         {children}
