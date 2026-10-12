@@ -24,6 +24,12 @@ the phone number. "Tovább a rendeléshez" opens checkout (O7, #35), a screen of
   blocks when the main needs them ("· KÖTELEZŐ"), pickle and dessert (start on "Nem kérek"), the
   Extra steppers ("Több: Doboz" / "Kevesebb: Doboz"), the price box, the live price, "Ürítés" and
   "Hozzáadás" (disabled until the menu can be added; the reason shows above it).
+- `etlap-thumbs`: an étlap dish's 192 px photo (`GET /api/images/<id>/<version>/thumb`) leads its
+  row in the side, pickle and dessert blocks and in the picker's "Egész héten rendelhető" group,
+  and the chosen main's tile (hidden on a phone). Once one dish of a block or group has a photo,
+  every row there gets a tile: the initial for a dish without one, an empty dashed square for
+  "Nem kérek". A block with no photo has no tiles. A photo that fails to load shows the initial.
+  Weekly dishes never show one, and `/` shows none.
 - `allergens`: chips under every dish, a bubble naming "7 · Tej és tejtermék (laktóz)" on hover,
   focus or tap. More than three collapse into "+N".
 - `day-cart`: "A rendelésed erre a napra", numbered menus with their lines, "Módosítás" (back into
@@ -101,6 +107,13 @@ Preconditions:
 - **Load failure.** Not drivable without stopping this run's API: `kill -TERM -- -$API_PID`, then
   reload. The page shows "Nem sikerült betölteni a menüt". Stopping the API ends the run, so do
   this last and then `down.sh`.
+- **Thumbnails.** Attach images with the authed multipart `PUT` (`admin-etlap.md`,
+  `etlap-image`) to a side, a pickle, a dessert and an all-week dish, reload, and screenshot the
+  blocks and the picker at desktop and 375 px. For the load-error fallback point an item's
+  `image_version` at a version with no object (only on a private Postgres), purge the cache with
+  the idempotent `POST /api/admin/menu/weeks/<y>/<w>/publish`, and scroll the row into view: the
+  photo is lazy, so the 404 and the initial come only then. `DELETE …/image` every image before
+  `down.sh`.
 - **Proof.** Browser-pane screenshots of the form, the day's order and the summary with their
   totals, the matching `api.sh --save` menu response, and the `GET /api/menu` lines from
   `$VERIFY_RUN/logs/api.log`.
