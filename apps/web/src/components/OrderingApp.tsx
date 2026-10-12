@@ -229,7 +229,6 @@ function WeekSkeleton() {
             <span key={day} className="day">
               <span className="dow skeleton-dow" />
               <span className="dnum skeleton-dnum" />
-              <span className="dmark" />
             </span>
           ))}
         </div>

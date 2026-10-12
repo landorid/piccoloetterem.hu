@@ -126,13 +126,7 @@ export function Composer({
         <Step locked={!soupAnswered}>
           <div>
             <p className="course-label">{composer.slots.main}</p>
-            <div
-              className={cls(
-                'pickrow mainrow',
-                mainName && 'is-picked',
-                soupAnswered && !mainAnswered && 'is-current',
-              )}
-            >
+            <div className={cls('pickrow mainrow', mainName && 'is-picked')}>
               <Tile
                 item={mainItem}
                 className="tile-prompt"
