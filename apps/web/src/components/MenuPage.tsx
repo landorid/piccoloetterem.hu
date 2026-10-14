@@ -1,7 +1,7 @@
 import type { MenuItem } from '@piccolo/core';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { dayFull, forint, signedForint, telHref, timeOfDay } from '../format';
-import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu } from '../lib/api';
+import { dayFull, forint, signedForint, telHref, timeOfDay, weekRange } from '../format';
+import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
 import {
   dayPrice,
   initialDate,
@@ -11,16 +11,18 @@ import {
   weekPrice,
 } from '../menu/week';
 import type { IsoDate } from '../order/cart';
-import { weekDays } from '../order/days';
+import { type WeekDay, weekDays } from '../order/days';
 import { strings } from '../strings';
 import { AllergenChips, AllergenTipProvider } from './Allergens';
 import { describeLoadError, Message, MessageCard } from './OrderingApp';
-import { cls, SoldOut } from './parts';
-import { DayTabs, tabId, WeekBar } from './WeekHeader';
+import { cls, SoldOut, Tile } from './parts';
+import { DayTabs, tabId } from './WeekHeader';
 
 const { menuPage: text } = strings;
 const orderHref = '/megrendeles';
 const panelId = 'menu-day';
+/** The `<main>` of `/`, which the hero's second button scrolls to. */
+export const menuSectionId = 'heti-menu';
 
 export type MenuPageProps = {
   /** Baked into the page when it is built. `config` is null only in a build without the API. */
@@ -129,11 +131,7 @@ function LoadedPage({
   // A message carries its own heading; the week's heading waits for the week.
   return (
     <>
-      {load.status === 'loading' && (
-        <div className="weekbar">
-          <h1>{strings.week.heading}</h1>
-        </div>
-      )}
+      {load.status === 'loading' && <WeekHead />}
       <Layout config={config} ordering={load.status !== 'loaded'}>
         {main}
       </Layout>
@@ -151,6 +149,7 @@ function Layout({
   ordering: boolean;
   children: ReactNode;
 }) {
+  const heroButtonShown = useHeroButtonShown();
   return (
     <>
       <div className="screen menu-screen">
@@ -160,7 +159,7 @@ function Layout({
         </aside>
       </div>
       {ordering && (
-        <div className="menu-orderbar only-mobile">
+        <div className="menu-orderbar only-mobile" data-hidden={heroButtonShown}>
           <a className="btn btn-primary btn-block" href={orderHref}>
             {text.order}
           </a>
@@ -168,6 +167,28 @@ function Layout({
       )}
     </>
   );
+}
+
+/**
+ * Whether the hero's order button is on screen, so the phone's order bar does not repeat it. It
+ * starts true, as the page opens on the hero, and turns false for good where the hero or
+ * IntersectionObserver is missing.
+ */
+function useHeroButtonShown(): boolean {
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    const button = document.querySelector('.hero-cta');
+    if (!button || typeof IntersectionObserver === 'undefined') {
+      setShown(false);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) =>
+      setShown(entry?.isIntersecting ?? false),
+    );
+    observer.observe(button);
+    return () => observer.disconnect();
+  }, []);
+  return shown;
 }
 
 function Week({
@@ -192,8 +213,10 @@ function Week({
 
   return (
     <>
-      <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
-      <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
+      <WeekHead isoWeek={menu.isoWeek} days={days} />
+      <div className="menu-days">
+        <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
+      </div>
       <Layout config={config} ordering={notice === null}>
         {notice && (
           <div className="banner banner-warn" role="status">
@@ -220,7 +243,7 @@ function Week({
           className="card menu-card"
         >
           <div className="card-head">
-            <h2>{dayFull(day.date)}</h2>
+            <h3>{dayFull(day.date)}</h3>
           </div>
           {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
           {day.soups.length === 0 && day.mains.length === 0 ? (
@@ -229,6 +252,7 @@ function Week({
             <>
               <DishList
                 title={text.soups}
+                hint={text.soupsHint(forint(soupPrice))}
                 items={day.soups}
                 price={(item) => dayPrice(item, day.date, soupPrice)}
               />
@@ -295,7 +319,7 @@ function DishList({
   if (items.length === 0) return null;
   return (
     <div className="dish-group">
-      {title && <h3 className="dish-group-title">{title}</h3>}
+      {title && <h4 className="dish-group-title">{title}</h4>}
       {hint && <p className="dish-group-hint">{hint}</p>}
       <ul className="dishes">
         {items.map((item) => (
@@ -311,44 +335,31 @@ function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
     item.variations.length > 0 && text.variations(item.variations),
     item.soupIncluded && item.category !== 'daily_main' && text.withSoup,
     item.requiresSide && text.withSide,
+    price.kind === 'price' && price.saturday !== null && text.saturday(forint(price.saturday)),
   ].filter((note): note is string => typeof note === 'string');
   return (
     <li className={cls('dish', item.soldOut && 'is-soldout')}>
+      {thumbSrc(item) !== null && <Tile item={item} fallback={null} className="dish-tile" />}
       <div className="dish-body">
-        <p className="dish-name">
-          <span className="dish-title">{item.name}</span>
-          {item.soldOut && <SoldOut />}
+        <p className="dish-line">
+          <span className="dish-title">
+            {item.name}
+            {item.soldOut && <SoldOut />}
+            {price.kind === 'price' && <Leader />}
+          </span>
+          {price.kind === 'price' && <span className="dish-amt num">{forint(price.amount)}</span>}
         </p>
         {item.description && <p className="dish-desc">{item.description}</p>}
         {notes.length > 0 && <p className="dish-note">{notes.join(' · ')}</p>}
         <AllergenChips codes={item.allergens} />
       </div>
-      <Price price={price} />
     </li>
   );
 }
 
-function Price({ price }: { price: ListedPrice }) {
-  switch (price.kind) {
-    case 'free':
-      return null;
-    case 'soup':
-      return (
-        <p className="dish-price">
-          <span className="dish-included">{text.soupIncluded}</span>
-          <span className="dish-sub num">{text.soupAlone(forint(price.alone))}</span>
-        </p>
-      );
-    case 'price':
-      return (
-        <p className="dish-price">
-          <span className="dish-amt num">{forint(price.amount)}</span>
-          {price.saturday !== null && (
-            <span className="dish-sub num">{text.saturday(forint(price.saturday))}</span>
-          )}
-        </p>
-      );
-  }
+/** The dotted line from a dish's name to its price. */
+function Leader() {
+  return <span className="dish-dots" aria-hidden="true" />;
 }
 
 /** The rules a composed menu is priced by, and the extras, all from the config. */
@@ -371,8 +382,11 @@ function PriceCard({ config }: { config: PublicConfig }) {
         {rows.map(([name, amount], index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: the rows are fixed for the page's life.
           <li key={index} className="dish">
-            <p className="dish-body dish-title">{name}</p>
-            <p className="dish-price">
+            <p className="dish-body dish-line">
+              <span className="dish-title">
+                {name}
+                <Leader />
+              </span>
               <span className="dish-amt num">{amount}</span>
             </p>
           </li>
@@ -422,6 +436,22 @@ function InfoCard({ config }: { config: PublicConfig }) {
         </a>
       </div>
     </section>
+  );
+}
+
+/** The week's title; the week number and dates join it once the menu has loaded. */
+function WeekHead({ isoWeek, days }: { isoWeek?: number; days?: readonly WeekDay[] }) {
+  const first = days?.[0]?.date;
+  const last = days?.[days.length - 1]?.date;
+  return (
+    <div className="menu-weekhead">
+      <h2 className="menu-week-title">{strings.week.heading}</h2>
+      {isoWeek !== undefined && first && last && (
+        <p className="menu-week-meta">
+          {text.weekOf(strings.week.number(isoWeek), weekRange(first, last))}
+        </p>
+      )}
+    </div>
   );
 }
 

@@ -55,8 +55,7 @@ describe('MenuPage', () => {
     );
     const soup = row('Húsleves cérnametélttel');
     expect(panel().contains(soup)).toBe(true);
-    expect(soup.textContent).toContain(text.soupIncluded);
-    expect(soup.textContent).toContain(text.soupAlone(forint(650)));
+    expect(panel().textContent).toContain(text.soupsHint(forint(650)));
     expect(soup.querySelector('.dish-amt')).toBeNull();
   });
 
@@ -88,12 +87,14 @@ describe('MenuPage', () => {
     for (const title of Object.values(text.sections)) {
       expect(screen.getByRole('region', { name: title })).toBeTruthy();
     }
-    expect(row('Cordon bleu').querySelector('.dish-price')?.textContent).toBe(
-      forint(1690) + text.saturday(forint(1790)),
-    );
-    expect(row('Somlói galuska').querySelector('.dish-price')?.textContent).toBe(forint(690));
-    // A plain side is free: no price at all.
-    expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();
+    const cordonBleu = row('Cordon bleu');
+    expect(cordonBleu.querySelector('.dish-amt')?.textContent).toBe(forint(1690));
+    expect(cordonBleu.textContent).toContain(text.saturday(forint(1790)));
+    const somloi = row('Somlói galuska');
+    expect(somloi.querySelector('.dish-amt')?.textContent).toBe(forint(690));
+    expect(somloi.textContent).not.toContain(text.saturday(forint(690)));
+    // A plain side is free: no price and no leader.
+    expect(row('Hasábburgonya').querySelector('.dish-amt, .dish-dots')).toBeNull();
   });
 
   it('prices the extras from the config and links every order button to /megrendeles', async () => {

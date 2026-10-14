@@ -1,0 +1,94 @@
+---
+import { Picture } from 'astro:assets';
+import { Clock, MapPin, Navigation, Phone } from 'lucide-react';
+import facade from '../assets/photos/facade.jpg';
+import corner from '../assets/photos/interior-corner.jpg';
+import hall from '../assets/photos/interior-hall.jpg';
+import windowSeat from '../assets/photos/interior-window.jpg';
+import { telHref } from '../format';
+import type { PublicConfig } from '../lib/api';
+import { strings } from '../strings';
+
+interface Props {
+  config: PublicConfig | null;
+}
+
+const { config } = Astro.props;
+const { restaurant: text } = strings.menuPage;
+const photos = [
+  { src: hall, alt: text.photos.hall },
+  { src: windowSeat, alt: text.photos.window },
+  { src: corner, alt: text.photos.corner },
+];
+const directions =
+  config &&
+  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${config.name}, ${config.contact.address}`)}`;
+---
+
+<section class="place" aria-labelledby="place-title">
+  <div class="place-head">
+    <h2 id="place-title" class="place-title">{text.title}</h2>
+    <p class="place-lede">{text.lede}</p>
+  </div>
+  <ul class="gallery">
+    {
+      photos.map((photo) => (
+        <li>
+          <Picture
+            src={photo.src}
+            alt={photo.alt}
+            widths={[400, 640, 960]}
+            sizes="(min-width: 900px) 33vw, 78vw"
+            formats={['avif', 'webp']}
+          />
+        </li>
+      ))
+    }
+  </ul>
+</section>
+{
+  config && directions && (
+    <footer class="visit">
+      <Picture
+        src={facade}
+        alt={text.photos.facade}
+        class="visit-photo"
+        widths={[480, 768, 1200]}
+        sizes="(min-width: 900px) 50vw, 100vw"
+        formats={['avif', 'webp']}
+      />
+      <div class="visit-body">
+        <h2 class="visit-title">{text.visitTitle}</h2>
+        <dl class="visit-list">
+          <div class="visit-item">
+            <dt>
+              <MapPin size={18} aria-hidden="true" />
+              <span class="visually-hidden">{text.address}</span>
+            </dt>
+            <dd>{config.contact.address}</dd>
+          </div>
+          <div class="visit-item">
+            <dt>
+              <Clock size={18} aria-hidden="true" />
+              <span class="visually-hidden">{text.opening}</span>
+            </dt>
+            <dd>{config.contact.openingHours}</dd>
+          </div>
+          <div class="visit-item">
+            <dt>
+              <Phone size={18} aria-hidden="true" />
+              <span class="visually-hidden">{text.phone}</span>
+            </dt>
+            <dd>
+              <a href={telHref(config.contact.phone)}>{config.contact.phone}</a>
+            </dd>
+          </div>
+        </dl>
+        <a class="btn visit-directions" href={directions} target="_blank" rel="noopener">
+          <Navigation size={18} aria-hidden="true" />
+          {text.directions}
+        </a>
+      </div>
+    </footer>
+  )
+}

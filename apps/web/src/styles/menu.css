@@ -1,11 +1,257 @@
 /*
- * The menu page (`/`), in the order page's language: its week bar, day strip, cards, tags,
- * allergen chips and buttons come from order.css. Only the dish list and the layout are new.
+ * The menu page (`/`). Its buttons, day strip, tiles and allergen chips come from order.css; this
+ * file gives the page its own look: a photo of the dining room on top, the week on cream paper set
+ * like a printed menu card (a serif face, dotted leaders to the price), and the restaurant's own
+ * photos at the bottom. Phone first; the 900 px breakpoint is the order page's.
  */
+.menu-site {
+  --cream: #f6efe4;
+  --card: #fffdf9;
+  --card-line: #e6d9c6;
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
 
-/* --- layout ------------------------------------------------------------------------------------ */
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  background: var(--cream);
+}
+
+/* --- hero ---------------------------------------------------------------------------------------- */
+.hero {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: min(78svh, 600px);
+  padding: var(--s-4) var(--s-4) var(--s-6);
+  color: #fff;
+  overflow: hidden;
+}
+.hero-photo,
+.hero picture {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+}
+.hero-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 62%;
+}
+/* Dark at the top for the logo and darker at the bottom for the text, the room left visible. */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(28, 18, 8, 0.55) 0%, rgba(28, 18, 8, 0) 26%),
+    linear-gradient(
+      0deg,
+      rgba(28, 18, 8, 0.92) 0%,
+      rgba(28, 18, 8, 0.6) 42%,
+      rgba(28, 18, 8, 0) 72%
+    );
+}
+.hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.hero-logo {
+  width: auto;
+  height: 46px;
+  fill: currentColor;
+}
+.hero-call {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-height: var(--tap);
+  padding: 0 var(--s-3);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  text-decoration: none;
+}
+.hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  max-width: 36rem;
+}
+.hero-eyebrow {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand-200);
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.125rem, 9vw, 3.5rem);
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+}
+.hero-lede {
+  font-size: var(--t-md);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.88);
+}
+.hero-cta {
+  background: var(--card);
+  color: var(--brand-800);
+}
+.hero-cta:hover {
+  background: #fff;
+}
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+  margin-top: var(--s-2);
+}
+.hero-actions .btn {
+  flex: 1 1 auto;
+  gap: var(--s-2);
+  min-height: 50px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.hero-actions .hero-cta {
+  flex-grow: 2;
+}
+.hero-ghost {
+  background: transparent;
+  color: #fff;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.6);
+}
+.hero-ghost:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Three facts under the photo, the brown band the old site opened with. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  background: var(--brand-800);
+  color: #fff;
+}
+.facts > div {
+  padding: var(--s-3) var(--s-2);
+  text-align: center;
+}
+.facts > div + div {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+}
+.facts dt {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--brand-200);
+}
+.facts dd {
+  margin: 2px 0 0;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* --- the week ------------------------------------------------------------------------------------ */
+.menu-page {
+  scroll-margin-top: 0;
+}
+.menu-weekhead {
+  padding: var(--s-8) var(--s-4) var(--s-3);
+  text-align: center;
+}
+.menu-week-title {
+  font-family: var(--font-display);
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--brand-800);
+}
+.menu-week-meta {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+
+/* The day strip: six equal blocks, the chosen one solid brown, pinned while the menu scrolls. */
+.menu-days {
+  position: sticky;
+  top: 0;
+  z-index: 7;
+  padding: var(--s-2) var(--s-3);
+  background: color-mix(in srgb, var(--cream) 92%, transparent);
+  backdrop-filter: saturate(1.4) blur(10px);
+}
+.menu-days .daybar {
+  background: none;
+  border: 0;
+}
+.menu-days .daylist {
+  gap: 4px;
+  padding: 0;
+}
+.menu-days .day {
+  justify-self: stretch;
+  gap: 0;
+  min-height: 54px;
+  padding: 6px 0;
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--card-line);
+  color: var(--ink-700);
+  transition:
+    background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.menu-days .day .dnum {
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  background: none;
+  font-size: var(--t-lg);
+  font-weight: 700;
+  color: var(--ink-900);
+}
+.menu-days .day[aria-selected='true'] {
+  background: var(--brand-600);
+  box-shadow: none;
+}
+.menu-days .day[aria-selected='true'] :is(.dow, .dnum) {
+  background: none;
+  color: #fff;
+}
+.menu-days .day[aria-disabled='true'][aria-selected='true'] {
+  background: var(--ink-400);
+}
+.menu-days .day:active {
+  transform: scale(var(--press));
+}
+.menu-days .day:active .dnum {
+  transform: none;
+}
+.menu-days .day:not([aria-selected='true']):hover {
+  background: var(--brand-50);
+}
+.menu-days .day:not([aria-selected='true']):hover .dnum {
+  background: none;
+}
+
 .menu-screen {
-  padding-bottom: var(--s-8);
+  padding: var(--s-3) var(--s-3) var(--s-8);
 }
 .menu-main,
 .menu-aside {
@@ -14,38 +260,89 @@
   gap: var(--s-4);
   min-width: 0;
 }
+/* The hero and the facts band say all of it on a phone. */
+.menu-aside {
+  display: none;
+}
+/* Out of sight while the hero's own button is on screen (`data-hidden`, set by MenuPage). */
 .menu-orderbar {
   position: sticky;
   bottom: 0;
   z-index: 8;
-  padding: var(--s-3) var(--s-4);
-  background: var(--paper);
-  border-top: 1px solid var(--line);
+  transition: transform var(--slow) var(--ease);
+  padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1px solid var(--card-line);
   box-shadow: var(--shadow-bar);
 }
 
-/* --- dishes ------------------------------------------------------------------------------------ */
+/* --- the menu card ------------------------------------------------------------------------------- */
+.menu-page .card {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 0 rgba(74, 48, 24, 0.04);
+}
+.menu-page .card > .card-head {
+  display: block;
+  padding: var(--s-5) var(--s-4) var(--s-2);
+  background: none;
+  border: 0;
+  text-align: center;
+}
+.menu-page .card-head :is(h2, h3) {
+  font-family: var(--font-display);
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--brand-800);
+}
+/* The day's card is the one to read first: its title stands on a short rule. */
+.menu-page .card-head h3::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 2px;
+  margin: var(--s-3) auto 0;
+  background: var(--brand-500);
+}
 .menu-card {
   overflow: hidden;
 }
-.dish-group + .dish-group {
-  border-top: 1px solid var(--line);
+.dish-group {
+  padding-top: var(--s-3);
 }
+.dish-group + .dish-group {
+  margin-top: var(--s-2);
+}
+/* A course is named between two hairlines, the way a printed menu card heads its parts. */
 .dish-group-title {
-  padding: var(--s-3) var(--s-4) 0;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 0 var(--s-4);
   font-size: var(--t-xs);
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--brand-700);
+  color: var(--brand-600);
+}
+.dish-group-title::before,
+.dish-group-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--card-line);
 }
 .dish-group-hint {
-  padding: var(--s-1) var(--s-4) 0;
+  padding: var(--s-2) var(--s-5) 0;
   font-size: var(--t-sm);
+  font-style: italic;
+  text-align: center;
   color: var(--ink-500);
 }
 .dishes {
-  padding: var(--s-1) 0;
+  padding: var(--s-1) 0 var(--s-2);
 }
 .dish {
   display: flex;
@@ -53,24 +350,56 @@
   gap: var(--s-3);
   padding: var(--s-3) var(--s-4);
 }
-.dish + .dish {
-  border-top: 1px solid var(--line);
-}
 .dish-body {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
+  gap: 3px;
+}
+/* The price sits level with the name's last line, and a dotted leader runs to it from that line's
+   last word: `.dish-dots` is an empty inline at the end of the name, its dots hang off it and are
+   clipped at the name's box. */
+.dish-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  column-gap: var(--s-2);
 }
 .dish-title {
-  font-weight: 600;
+  overflow: hidden;
+  font-family: var(--font-display);
+  font-size: 1.0625rem;
+  font-weight: 560;
+  line-height: 1.3;
+  color: var(--ink-900);
   overflow-wrap: anywhere;
+}
+.dish-dots {
+  position: relative;
+}
+.dish-dots::after {
+  content: '. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  padding-left: 0.45em;
+  font-family: var(--font-ui);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+  color: var(--ink-400);
+}
+.dish-amt {
+  font-weight: 700;
+  line-height: 1.3;
+  white-space: nowrap;
+  color: var(--brand-800);
 }
 .dish-desc,
 .dish-note {
   font-size: var(--t-sm);
+  line-height: 1.45;
   color: var(--ink-700);
 }
 .dish-note {
@@ -79,27 +408,15 @@
 .dish .achips {
   margin-top: var(--s-1);
 }
-.dish-price {
+.dish-tile {
   flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  text-align: right;
+  width: 56px;
+  height: 56px;
+  border-radius: var(--radius-sm);
 }
-.dish-amt {
-  font-weight: 700;
-  white-space: nowrap;
-}
-.dish-included {
-  white-space: nowrap;
-  font-size: var(--t-sm);
-  font-weight: 600;
-  color: var(--ok-700);
-}
-.dish-sub {
-  font-size: var(--t-xs);
-  color: var(--ink-500);
-  white-space: nowrap;
+/* A photo that failed to load leaves no empty frame behind. */
+.dish-tile.tile-none {
+  display: none;
 }
 /* Struck through as well as greyed: the state is not carried by colour alone. */
 .dish.is-soldout :is(.dish-title, .dish-desc, .dish-amt) {
@@ -113,20 +430,22 @@
   margin: var(--s-3) var(--s-4) 0;
   padding: var(--s-2) var(--s-3);
   border-radius: var(--radius-sm);
-  background: var(--ground);
+  background: var(--brand-50);
   font-size: var(--t-sm);
+  text-align: center;
   color: var(--ink-700);
 }
 .menu-empty {
-  margin-bottom: var(--s-3);
+  margin-bottom: var(--s-4);
 }
 .menu-footnote {
-  padding: 0 var(--s-4) var(--s-3);
+  padding: 0 var(--s-4) var(--s-4);
   font-size: var(--t-xs);
+  text-align: center;
   color: var(--ink-500);
 }
 
-/* --- the info card ----------------------------------------------------------------------------- */
+/* --- the info card (wide screens) ---------------------------------------------------------------- */
 .info-list {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -147,13 +466,213 @@
   color: var(--brand-700);
 }
 
+/* --- the restaurant ------------------------------------------------------------------------------ */
+.place {
+  padding: var(--s-10) 0 var(--s-8);
+}
+.place-head {
+  padding: 0 var(--s-4) var(--s-5);
+  text-align: center;
+}
+.place-title,
+.visit-title {
+  font-family: var(--font-display);
+  font-size: var(--t-3xl);
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--brand-800);
+}
+.place-lede {
+  margin-top: var(--s-2);
+  color: var(--ink-700);
+}
+/* A row to swipe on a phone, each photo snapping to the left edge with the next one peeking in. */
+.gallery {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 78%;
+  gap: var(--s-3);
+  margin: 0;
+  padding: 0 var(--s-4) var(--s-2);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: var(--s-4);
+  scrollbar-width: none;
+}
+.gallery::-webkit-scrollbar {
+  display: none;
+}
+.gallery li {
+  scroll-snap-align: start;
+}
+.gallery img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.visit {
+  display: flex;
+  flex-direction: column;
+  background: var(--brand-900);
+  color: var(--brand-100);
+}
+.visit picture {
+  display: block;
+}
+.visit-photo {
+  display: block;
+  width: 100%;
+  height: 260px;
+  object-fit: cover;
+  object-position: 35% 35%;
+}
+.visit-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+  padding: var(--s-8) var(--s-4) calc(var(--s-10) + env(safe-area-inset-bottom));
+}
+.visit-title {
+  color: #fff;
+}
+.visit-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  margin: 0;
+}
+.visit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+}
+.visit-list dt {
+  flex: none;
+  padding-top: 2px;
+  color: var(--brand-200);
+}
+.visit-list dd {
+  margin: 0;
+  font-size: var(--t-md);
+}
+.visit-list a {
+  color: #fff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.visit-directions {
+  align-self: flex-start;
+  gap: var(--s-2);
+  min-height: 48px;
+  background: var(--card);
+  color: var(--brand-800);
+  text-decoration: none;
+}
+
+.menu-orderbar[data-hidden='true'] {
+  transform: translateY(110%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-days .day,
+  .menu-orderbar {
+    transition: none;
+  }
+}
+
 @media (min-width: 900px) {
+  .hero {
+    min-height: 560px;
+    padding: var(--s-6) var(--page-gutter) var(--s-10);
+  }
+  .hero-photo {
+    object-position: 50% 58%;
+  }
+  .hero::after {
+    background:
+      linear-gradient(180deg, rgba(28, 18, 8, 0.5) 0%, rgba(28, 18, 8, 0) 22%),
+      linear-gradient(
+        90deg,
+        rgba(28, 18, 8, 0.85) 0%,
+        rgba(28, 18, 8, 0.45) 45%,
+        rgba(28, 18, 8, 0) 75%
+      );
+  }
+  .hero-logo {
+    height: 60px;
+  }
+  .hero-actions .btn {
+    flex: 0 0 auto;
+    padding-inline: var(--s-6);
+  }
+  .facts {
+    grid-template-columns: repeat(3, auto);
+    justify-content: center;
+  }
+  .facts > div {
+    padding: var(--s-4) var(--s-10);
+  }
+  .facts dd {
+    font-size: var(--t-base);
+  }
+  .menu-weekhead {
+    padding-top: var(--s-10);
+  }
+  .menu-week-title {
+    font-size: 2.5rem;
+  }
+  .menu-days {
+    padding-inline: var(--page-gutter);
+  }
+  .menu-days .daylist {
+    grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
+    max-width: 640px;
+    margin: 0 auto;
+  }
   .menu-screen {
     grid-template-columns: minmax(0, 1fr) 340px;
+    max-width: 1120px;
     padding-bottom: var(--s-10);
   }
   .menu-aside {
+    display: flex;
     position: sticky;
-    top: 120px;
+    top: 96px;
+  }
+  .menu-page .menu-info .card-head h2 {
+    font-size: var(--t-xl);
+  }
+  .place-head {
+    padding-bottom: var(--s-6);
+  }
+  .gallery {
+    grid-auto-flow: row;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 1120px;
+    margin: 0 auto;
+    padding-inline: var(--s-8);
+    overflow: visible;
+  }
+  /* The photo fills its half at whatever height the text needs; it never sets the height itself. */
+  .visit {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 440px;
+  }
+  .visit picture {
+    position: relative;
+  }
+  .visit-photo {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+  }
+  .visit-body {
+    justify-content: center;
+    padding: var(--s-10) var(--s-10);
   }
 }

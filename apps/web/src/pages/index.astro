@@ -1,6 +1,8 @@
 ---
-import Masthead from '../components/Masthead.astro';
-import { MenuPage } from '../components/MenuPage';
+import '@fontsource-variable/fraunces';
+import Hero from '../components/Hero.astro';
+import { MenuPage, menuSectionId } from '../components/MenuPage';
+import Restaurant from '../components/Restaurant.astro';
 import Layout from '../layouts/Layout.astro';
 import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
 import { strings } from '../strings';
@@ -27,8 +29,11 @@ if (baseUrl) {
   description={strings.menuPage.meta.description}
   apiOrigin={baseUrl}
 >
-  <Masthead config={config} />
-  <main class="page">
-    <MenuPage client:load initial={{ config }} />
-  </main>
+  <div class="menu-site">
+    <Hero config={config} menuId={menuSectionId} />
+    <main class="page menu-page" id={menuSectionId}>
+      <MenuPage client:load initial={{ config }} />
+    </main>
+    <Restaurant config={config} />
+  </div>
 </Layout>
