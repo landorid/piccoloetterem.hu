@@ -2,7 +2,14 @@ import type { MenuItem } from '@piccolo/core';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { dayFull, forint, signedForint, weekRange } from '../format';
-import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
+import {
+  apiOrigin,
+  createWebApi,
+  largeSrc,
+  type PublicConfig,
+  type PublicMenu,
+  thumbSrc,
+} from '../lib/api';
 import {
   dayPrice,
   initialDate,
@@ -16,7 +23,7 @@ import { type WeekDay, weekDays } from '../order/days';
 import { strings } from '../strings';
 import { AllergenChips, AllergenTipProvider } from './Allergens';
 import { describeLoadError, Message, MessageCard } from './OrderingApp';
-import { cls, SoldOut, Tile } from './parts';
+import { cls, SoldOut } from './parts';
 import { DayTabs, tabId } from './WeekHeader';
 
 const { menuPage: text } = strings;
@@ -444,7 +451,7 @@ function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
   ].filter((note): note is string => typeof note === 'string');
   return (
     <li className={cls('dish', item.soldOut && 'is-soldout')}>
-      {thumbSrc(item) !== null && <Tile item={item} fallback={null} className="dish-tile" />}
+      <DishPhoto item={item} />
       <div className="dish-body">
         <p className="dish-line">
           <span className="dish-title">
@@ -460,6 +467,24 @@ function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
         <AllergenChips codes={item.allergens} />
       </div>
     </li>
+  );
+}
+
+/**
+ * A permanent dish's photo: wide above the name on a phone (the 1200 px rendition), a small square
+ * beside it on a wide screen (the 192 px one). A photo that fails to load leaves nothing behind;
+ * the failed URL is remembered, so a new version is tried again.
+ */
+function DishPhoto({ item }: { item: MenuItem }) {
+  const large = largeSrc(item);
+  const thumb = thumbSrc(item);
+  const [failed, setFailed] = useState<string | null>(null);
+  if (large === null || thumb === null || failed === large) return null;
+  return (
+    <picture className="dish-photo">
+      <source media="(min-width: 900px)" srcSet={thumb} />
+      <img src={large} alt="" loading="lazy" decoding="async" onError={() => setFailed(large)} />
+    </picture>
   );
 }
 

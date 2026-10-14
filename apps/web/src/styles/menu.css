@@ -7,11 +7,12 @@
 .menu-site {
   /* Darker than the order page's grey: small print reaches 7:1 on the card. */
   --ink-500: #5e5750;
-  --paper-bg: #f3f0e8;
-  --card: #fbfaf5;
-  --rule: #d9d3c4;
-  --rule-soft: #e7e2d6;
-  --ink: #1d1a16;
+  --ink-700: #454545;
+  --paper-bg: #fbfaf7;
+  --card: #f8f7f2;
+  --rule: #dcd8cd;
+  --rule-soft: #e6e3da;
+  --ink: #141313;
   --font-page: 'Jost Variable', ui-sans-serif, system-ui, sans-serif;
   --head-h: 60px;
   /* A fine paper grain, generated here rather than shipped as a photo. */
@@ -33,7 +34,7 @@
   align-items: center;
   gap: var(--s-3);
   margin-bottom: var(--s-4);
-  font-size: clamp(1.125rem, 0.95rem + 1vw, 1.625rem);
+  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -100,39 +101,63 @@
 }
 
 .hero {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--s-4);
-  padding: var(--s-10) var(--s-5);
+  gap: var(--s-5);
+  padding: 56px var(--s-5) var(--s-10);
+  overflow: hidden;
   text-align: center;
 }
+/* On a phone one photo of the room runs the width under the words; on a wide screen two round
+   photos sit behind them, half off the page's edges, like plates at the table's corners. */
+.hero picture:has(.hero-plate-a) {
+  order: 1;
+  width: 100%;
+  margin-top: var(--s-2);
+}
+.hero-plate {
+  display: block;
+  border: 6px solid #fff;
+  box-shadow: 0 18px 40px rgba(20, 14, 6, 0.2);
+  object-fit: cover;
+}
+.hero-plate-a {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-lg);
+}
+.hero picture:has(.hero-plate-b) {
+  display: none;
+}
 .hero-eyebrow {
-  font-size: var(--t-xs);
+  font-size: 1rem;
   font-weight: 500;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.3em;
   text-transform: uppercase;
-  color: var(--ink-700);
+  color: var(--ink);
 }
 .hero-title {
-  max-width: 14ch;
-  font-size: clamp(2.25rem, 1.5rem + 4vw, 4rem);
+  max-width: 12ch;
+  font-size: clamp(2.625rem, 1.6rem + 4.6vw, 5rem);
   font-weight: 500;
-  line-height: 1.08;
-  letter-spacing: 0.01em;
+  line-height: 1.1;
   text-transform: uppercase;
 }
 .hero-lede {
-  max-width: 34rem;
-  font-size: var(--t-lg);
-  line-height: 1.55;
+  max-width: 38rem;
+  font-size: 1.375rem;
+  line-height: 1.4;
   color: var(--ink-700);
 }
 .hero-fact {
   display: inline-flex;
   align-items: center;
   gap: var(--s-2);
-  font-size: var(--t-md);
+  font-size: 1.125rem;
   color: var(--ink-700);
 }
 .hero-fact::before {
@@ -163,7 +188,7 @@
   text-align: center;
 }
 .mcard-head h2 {
-  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem);
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -210,7 +235,7 @@
   transform: scale(0.92);
 }
 .snav-current {
-  font-size: var(--t-base);
+  font-size: 1.125rem;
   font-weight: 500;
   text-align: center;
 }
@@ -297,7 +322,7 @@
 }
 .menu-day-title {
   margin-bottom: var(--s-2);
-  font-size: var(--t-lg);
+  font-size: 1.25rem;
   font-weight: 500;
   text-align: center;
   color: var(--brand-700);
@@ -308,7 +333,7 @@
 }
 .dish-group-title {
   padding-top: var(--s-2);
-  font-size: var(--t-xs);
+  font-size: var(--t-sm);
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -317,7 +342,7 @@
 }
 .dish-group-hint {
   padding-top: var(--s-1);
-  font-size: var(--t-sm);
+  font-size: 1rem;
   font-style: italic;
   text-align: center;
   color: var(--ink-500);
@@ -325,11 +350,12 @@
 .dishes {
   padding-top: var(--s-1);
 }
+/* On a phone a dish's photo runs the width above its name; on a wide screen it sits beside it. */
 .dish {
   display: flex;
-  align-items: flex-start;
-  gap: var(--s-3);
-  padding: var(--s-4) 0;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-6) 0;
 }
 .dish + .dish {
   border-top: 1px solid var(--rule-soft);
@@ -339,7 +365,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--s-2);
 }
 /* The price sits level with the name's last line, and a dotted leader runs to it from that line's
    last word: `.dish-dots` is an empty inline at the end of the name, its dots hang off it and are
@@ -352,12 +378,12 @@
 }
 .dish-title {
   overflow: hidden;
-  font-size: var(--t-base);
+  font-size: 1.25rem;
   font-weight: 500;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 .dish-dots {
   position: relative;
@@ -374,16 +400,16 @@
   color: var(--ink-400);
 }
 .dish-amt {
-  font-size: var(--t-base);
+  font-size: 1.25rem;
   font-weight: 500;
-  line-height: 1.3;
+  line-height: 1.2;
   white-space: nowrap;
 }
 /* A soup has no price of its own: the leader runs to the note that the menu's price includes it.
    On a phone the note wraps onto a second line rather than squeezing the soup's name. */
 .dish-included {
-  max-width: 9.75rem;
-  font-size: var(--t-sm);
+  max-width: 8.25rem;
+  font-size: 0.875rem;
   font-style: italic;
   line-height: 1.35;
   text-align: right;
@@ -392,26 +418,23 @@
 }
 .dish-desc,
 .dish-note {
-  font-size: var(--t-md);
-  line-height: 1.45;
+  font-size: 1.125rem;
+  line-height: 1.4;
   color: var(--ink-700);
 }
 .dish-note {
-  font-size: var(--t-sm);
+  font-size: 1rem;
   color: var(--ink-500);
 }
 .dish .achips {
   margin-top: var(--s-1);
 }
-.dish-tile {
-  flex: none;
-  width: 72px;
-  height: 72px;
-  border-radius: var(--radius-sm);
-}
-/* A photo that failed to load leaves no empty frame behind. */
-.dish-tile.tile-none {
-  display: none;
+.dish-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius);
+  object-fit: cover;
 }
 /* Struck through as well as greyed: the state is not carried by colour alone. */
 .dish.is-soldout :is(.dish-title, .dish-desc, .dish-amt) {
@@ -492,7 +515,7 @@
 }
 .block-title {
   margin-bottom: var(--s-3);
-  font-size: clamp(1.75rem, 1.4rem + 1.6vw, 2.25rem);
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -502,7 +525,7 @@
 .about-body {
   max-width: 38rem;
   margin: 0 auto;
-  font-size: var(--t-lg);
+  font-size: 1.25rem;
   line-height: 1.6;
   text-align: center;
   color: var(--ink-700);
@@ -518,7 +541,7 @@
   display: flex;
   align-items: center;
   gap: var(--s-3);
-  font-size: var(--t-md);
+  font-size: 1.125rem;
 }
 .about-points svg {
   flex: none;
@@ -611,7 +634,7 @@
   border-right-width: 2px;
 }
 .order-lede {
-  font-size: var(--t-md);
+  font-size: 1.125rem;
   line-height: 1.55;
   color: var(--ink-700);
 }
@@ -798,11 +821,47 @@
     color: var(--brand-600);
   }
   .hero {
-    padding: 112px var(--s-8) 96px;
+    min-height: calc(100svh - var(--head-h) - 120px);
+    justify-content: center;
+    padding: 96px var(--s-8) 160px;
   }
   .hero-eyebrow {
-    font-size: var(--t-sm);
-    letter-spacing: 0.28em;
+    font-size: 1.125rem;
+  }
+  .hero picture:has(.hero-plate-a),
+  .hero picture:has(.hero-plate-b) {
+    display: block;
+    position: absolute;
+    z-index: -1;
+    width: auto;
+    margin: 0;
+  }
+  .hero picture:has(.hero-plate-a) {
+    top: -60px;
+    left: -110px;
+  }
+  .hero picture:has(.hero-plate-b) {
+    right: -120px;
+    bottom: 40px;
+  }
+  .hero-plate,
+  .hero-plate-a {
+    width: 360px;
+    height: 360px;
+    aspect-ratio: auto;
+    border-width: 8px;
+    border-radius: 50%;
+  }
+  .dish {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--s-5);
+  }
+  .dish-photo img {
+    width: 112px;
+    height: 84px;
+    aspect-ratio: auto;
+    border-radius: var(--radius-sm);
   }
   .menu-page {
     padding-inline: var(--s-8);

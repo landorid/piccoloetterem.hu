@@ -1,5 +1,8 @@
 ---
+import { Picture } from 'astro:assets';
 import { Phone } from 'lucide-react';
+import bench from '../assets/photos/interior-bench.jpg';
+import corner from '../assets/photos/interior-corner.jpg';
 import { telHref, timeOfDay } from '../format';
 import type { PublicConfig } from '../lib/api';
 import { strings } from '../strings';
@@ -51,6 +54,25 @@ const links = [
   }
 </header>
 <section class="hero" aria-labelledby="hero-title">
+  {/* One wide photo on a phone; on a wide screen two round ones at the corners (menu.css). */}
+  <Picture
+    src={bench}
+    alt=""
+    class="hero-plate hero-plate-a"
+    widths={[480, 720, 1080]}
+    sizes="(min-width: 900px) 360px, 100vw"
+    formats={['avif', 'webp']}
+    loading="eager"
+    fetchpriority="high"
+  />
+  <Picture
+    src={corner}
+    alt=""
+    class="hero-plate hero-plate-b"
+    widths={[480, 720]}
+    sizes="360px"
+    formats={['avif', 'webp']}
+  />
   <p class="hero-eyebrow">{name} · {hero.place}</p>
   <h1 id="hero-title" class="hero-title">{hero.title}</h1>
   {intake && <p class="hero-lede">{hero.lede(intake.until)}</p>}

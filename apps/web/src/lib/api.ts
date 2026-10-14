@@ -37,6 +37,13 @@ export function thumbSrc(item: MenuItem): string | null {
     : itemImageUrl(apiOrigin() ?? undefined, item, 'thumb');
 }
 
+/** The 1200 px photo of a permanent dish, under the same rules as `thumbSrc`. */
+export function largeSrc(item: MenuItem): string | null {
+  return isWeeklyCategory(item.category)
+    ? null
+    : itemImageUrl(apiOrigin() ?? undefined, item, 'large');
+}
+
 /**
  * The public site's client of `apps/api`. Requests carry no headers of their own, so a browser
  * `GET` stays a simple CORS request (no preflight), and the default cache mode lets the browser
