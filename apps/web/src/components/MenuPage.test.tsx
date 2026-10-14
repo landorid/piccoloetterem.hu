@@ -70,6 +70,21 @@ describe('MenuPage', () => {
     expect(row('Marhapörkölt').querySelector('.dish-amt')?.textContent).toBe(forint(1320));
   });
 
+  it('brings a newly picked day’s title into view only when the guest has scrolled past it', async () => {
+    await renderPage();
+    const scrollIntoView = vi.fn();
+    const section = panel();
+    section.scrollIntoView = scrollIntoView;
+
+    fireEvent.click(screen.getByRole('tab', { name: /^Csütörtök/ }));
+    expect(scrollIntoView).not.toHaveBeenCalled();
+
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect);
+    fireEvent.click(screen.getByRole('tab', { name: /^Péntek/ }));
+    expect(scrollIntoView).toHaveBeenCalledOnce();
+    expect(scrollIntoView.mock.calls[0]?.[0]).toMatchObject({ block: 'start' });
+  });
+
   it('shows allergens per dish and marks sold-out dishes', async () => {
     await renderPage();
     expect(

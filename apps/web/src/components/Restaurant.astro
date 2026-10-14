@@ -26,14 +26,14 @@ const directions =
 ---
 
 <section class="place" aria-labelledby="place-title">
-  <div class="place-head">
+  <div class="place-head" data-reveal>
     <h2 id="place-title" class="place-title">{text.title}</h2>
     <p class="place-lede">{text.lede}</p>
   </div>
   <ul class="gallery">
     {
-      photos.map((photo) => (
-        <li>
+      photos.map((photo, index) => (
+        <li data-reveal style={`--i: ${index}`}>
           <Picture
             src={photo.src}
             alt={photo.alt}
@@ -57,7 +57,7 @@ const directions =
         sizes="(min-width: 900px) 50vw, 100vw"
         formats={['avif', 'webp']}
       />
-      <div class="visit-body">
+      <div class="visit-body" data-reveal>
         <h2 class="visit-title">{text.visitTitle}</h2>
         <dl class="visit-list">
           <div class="visit-item">
@@ -92,3 +92,24 @@ const directions =
     </footer>
   )
 }
+
+<script>
+  // The restaurant's photos and address rise in once as they scroll into view. Where
+  // IntersectionObserver is missing or the guest asked for less motion, they are simply there:
+  // nothing is hidden until this script has said it can show it again.
+  const items = document.querySelectorAll('[data-reveal]');
+  if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('reveal-ready');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add('is-revealed');
+          observer.unobserve(entry.target);
+        }
+      },
+      { rootMargin: '0px 0px -8% 0px' },
+    );
+    for (const item of items) observer.observe(item);
+  }
+</script>

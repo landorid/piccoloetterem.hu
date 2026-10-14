@@ -1,5 +1,5 @@
 import type { MenuItem } from '@piccolo/core';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
 import { dayFull, forint, signedForint, telHref, timeOfDay, weekRange } from '../format';
 import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
 import {
@@ -206,6 +206,15 @@ function Week({
     [menu, orderableDates, closedDates],
   );
   const [active, setActive] = useState<IsoDate>(() => initialDate(menu, orderableDates, now()));
+  const panel = useRef<HTMLElement>(null);
+  // A guest deep in one day's list who picks another day lands on that day's title, not mid-list.
+  const select = (date: IsoDate) => {
+    setActive(date);
+    const el = panel.current;
+    if (!el || el.getBoundingClientRect().top >= 0) return;
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
+    el.scrollIntoView?.({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+  };
   const day = Object.values(menu.days).find((d) => d.date === active) ?? menu.days[1];
   const closed = closedDates.includes(day.date);
   const { soupPrice } = config.pricing;
@@ -215,7 +224,7 @@ function Week({
     <>
       <WeekHead isoWeek={menu.isoWeek} days={days} />
       <div className="menu-days">
-        <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
+        <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={select} browse />
       </div>
       <Layout config={config} ordering={notice === null}>
         {notice && (
@@ -237,32 +246,36 @@ function Week({
           </div>
         )}
         <section
+          ref={panel}
           id={panelId}
           role="tabpanel"
           aria-labelledby={tabId(day.date)}
           className="card menu-card"
         >
-          <div className="card-head">
-            <h3>{dayFull(day.date)}</h3>
+          {/* Keyed by the day, so a newly picked day fades in and the switch is seen. */}
+          <div key={day.date} className="menu-day-body">
+            <div className="card-head">
+              <h3>{dayFull(day.date)}</h3>
+            </div>
+            {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
+            {day.soups.length === 0 && day.mains.length === 0 ? (
+              <p className="menu-empty">{text.emptyDay}</p>
+            ) : (
+              <>
+                <DishList
+                  title={text.soups}
+                  items={day.soups}
+                  price={(item) => dayPrice(item, day.date, soupPrice)}
+                />
+                <DishList
+                  title={text.mains}
+                  hint={text.mainsHint}
+                  items={day.mains}
+                  price={(item) => dayPrice(item, day.date, soupPrice)}
+                />
+              </>
+            )}
           </div>
-          {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
-          {day.soups.length === 0 && day.mains.length === 0 ? (
-            <p className="menu-empty">{text.emptyDay}</p>
-          ) : (
-            <>
-              <DishList
-                title={text.soups}
-                items={day.soups}
-                price={(item) => dayPrice(item, day.date, soupPrice)}
-              />
-              <DishList
-                title={text.mains}
-                hint={text.mainsHint}
-                items={day.mains}
-                price={(item) => dayPrice(item, day.date, soupPrice)}
-              />
-            </>
-          )}
         </section>
         <Section title={text.sections.featured} items={menu.featured} menu={menu} />
         <Section title={text.sections.allWeek} items={permanent.allWeek} menu={menu} />

@@ -23,6 +23,7 @@ const { title, description, apiOrigin } = Astro.props;
     <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {apiOrigin && <link rel="preconnect" href={apiOrigin} crossorigin="anonymous" />}
+    <slot name="head" />
   </head>
   <body>
     <slot />

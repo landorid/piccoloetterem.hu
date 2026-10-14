@@ -5,6 +5,8 @@
  * photos at the bottom. Phone first; the 900 px breakpoint is the order page's.
  */
 .menu-site {
+  /* A darker grey than the order page's: small print on cream reaches 6.2:1, 7:1 on the card. */
+  --ink-500: #5e5750;
   --cream: #f6efe4;
   --card: #fffdf9;
   --card-line: #e6d9c6;
@@ -25,6 +27,8 @@
   justify-content: space-between;
   min-height: min(78svh, 600px);
   padding: var(--s-4) var(--s-4) var(--s-6);
+  /* The photo's own dark tone, shown until it arrives, so the white title is never on white. */
+  background: var(--brand-900);
   color: #fff;
   overflow: hidden;
 }
@@ -176,7 +180,7 @@
 }
 .menu-week-title {
   font-family: var(--font-display);
-  font-size: var(--t-3xl);
+  font-size: clamp(1.875rem, 1.4rem + 2vw, 2.5rem);
   font-weight: 600;
   line-height: 1.1;
   color: var(--brand-800);
@@ -283,7 +287,7 @@
   border-radius: var(--radius);
   box-shadow: 0 1px 0 rgba(74, 48, 24, 0.04);
 }
-.menu-page .card > .card-head {
+.menu-page .card .card-head {
   display: block;
   padding: var(--s-5) var(--s-4) var(--s-2);
   background: none;
@@ -308,6 +312,16 @@
 }
 .menu-card {
   overflow: hidden;
+  scroll-margin-top: 84px;
+}
+.menu-day-body {
+  animation: menu-day-in var(--slow) var(--ease);
+}
+@keyframes menu-day-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
 }
 .dish-group {
   padding-top: var(--s-3);
@@ -488,7 +502,7 @@
 .place-title,
 .visit-title {
   font-family: var(--font-display);
-  font-size: var(--t-3xl);
+  font-size: clamp(1.875rem, 1.4rem + 2vw, 2.5rem);
   font-weight: 600;
   line-height: 1.1;
   color: var(--brand-800);
@@ -588,10 +602,40 @@
   transform: translateY(110%);
 }
 
+/* Set only by Restaurant.astro's script, so without it nothing starts hidden. */
+.reveal-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 600ms var(--ease),
+    transform 600ms var(--ease);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.reveal-ready [data-reveal].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+@media (hover: hover) {
+  .gallery li {
+    overflow: hidden;
+    border-radius: var(--radius);
+  }
+  .gallery img {
+    transition: transform 500ms var(--ease);
+  }
+  .gallery li:hover img {
+    transform: scale(1.04);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu-days .day,
   .menu-orderbar {
     transition: none;
+  }
+  .menu-day-body {
+    animation: none;
   }
 }
 
@@ -632,9 +676,6 @@
   }
   .menu-weekhead {
     padding-top: var(--s-10);
-  }
-  .menu-week-title {
-    font-size: 2.5rem;
   }
   .menu-days {
     padding-inline: var(--page-gutter);

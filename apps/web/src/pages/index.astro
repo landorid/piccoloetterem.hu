@@ -1,5 +1,7 @@
 ---
 import '@fontsource-variable/fraunces';
+import frauncesLatinExt from '@fontsource-variable/fraunces/files/fraunces-latin-ext-wght-normal.woff2?url';
+import frauncesLatin from '@fontsource-variable/fraunces/files/fraunces-latin-wght-normal.woff2?url';
 import Hero from '../components/Hero.astro';
 import { MenuPage, menuSectionId } from '../components/MenuPage';
 import Restaurant from '../components/Restaurant.astro';
@@ -29,6 +31,12 @@ if (baseUrl) {
   description={strings.menuPage.meta.description}
   apiOrigin={baseUrl}
 >
+  {/* The hero's title is set in Fraunces and needs both subsets (the Hungarian long accents are latin-ext). */}
+  {
+    [frauncesLatin, frauncesLatinExt].map((href) => (
+      <link slot="head" rel="preload" href={href} as="font" type="font/woff2" crossorigin="anonymous" />
+    ))
+  }
   <div class="menu-site">
     <Hero config={config} menuId={menuSectionId} />
     <main class="page menu-page" id={menuSectionId}>
