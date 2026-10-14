@@ -111,6 +111,25 @@
   overflow: hidden;
   text-align: center;
 }
+/* An abstract ground behind the hero: two soft fields of the brand's warm browns, a set of fine
+   rings off one corner and the paper grain over all of it. Nothing figurative, and light enough
+   that the words stay at full contrast. */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    var(--grain),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600' fill='none' stroke='%2396693f' stroke-opacity='.26'%3E%3Ccircle cx='300' cy='300' r='120'/%3E%3Ccircle cx='300' cy='300' r='180'/%3E%3Ccircle cx='300' cy='300' r='240'/%3E%3Ccircle cx='300' cy='300' r='298'/%3E%3C/svg%3E")
+    right -180px top -160px / 520px 520px no-repeat,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600' fill='none' stroke='%2396693f' stroke-opacity='.26'%3E%3Ccircle cx='300' cy='300' r='120'/%3E%3Ccircle cx='300' cy='300' r='180'/%3E%3Ccircle cx='300' cy='300' r='240'/%3E%3Ccircle cx='300' cy='300' r='298'/%3E%3C/svg%3E")
+    left -220px bottom -260px / 560px 560px no-repeat,
+    radial-gradient(65% 50% at 10% 6%, rgba(226, 196, 160, 0.8), transparent 72%),
+    radial-gradient(60% 45% at 94% 72%, rgba(200, 146, 96, 0.38), transparent 72%),
+    radial-gradient(80% 60% at 50% 110%, rgba(243, 231, 215, 0.9), transparent 70%),
+    var(--paper-bg);
+}
 /* On a phone one photo of the room runs the width under the words; on a wide screen two round
    photos sit behind them, half off the page's edges, like plates at the table's corners. */
 .hero picture:has(.hero-plate-a) {
