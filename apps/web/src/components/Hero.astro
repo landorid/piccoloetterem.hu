@@ -1,79 +1,58 @@
 ---
-import { Picture } from 'astro:assets';
-import { ArrowDown, Phone } from 'lucide-react';
-import bench from '../assets/photos/interior-bench.jpg';
-import { forint, telHref, timeOfDay } from '../format';
+import { Phone } from 'lucide-react';
+import { telHref, timeOfDay } from '../format';
 import type { PublicConfig } from '../lib/api';
 import { strings } from '../strings';
 import Logo from './Logo.astro';
 
 interface Props {
   config: PublicConfig | null;
-  /** The id of the week's section, which the second button scrolls to. */
-  menuId: string;
 }
 
-const { config, menuId } = Astro.props;
-const { hero } = strings.menuPage;
+const { config } = Astro.props;
+const { hero, nav } = strings.menuPage;
 const name = config?.name ?? strings.siteName;
 const intake = config && {
   from: timeOfDay(config.contact.intakeWindow.from),
   until: timeOfDay(config.contact.intakeWindow.until),
 };
+const links = [
+  { href: '#heti-menu', label: nav.menu },
+  { href: '#rolunk', label: nav.about },
+  { href: '#rendeles', label: nav.order },
+  { href: '#elerhetoseg', label: nav.contact },
+];
 ---
 
-<header class="hero">
-  <Picture
-    src={bench}
-    alt=""
-    class="hero-photo"
-    widths={[480, 768, 1200, 1800]}
-    sizes="100vw"
-    formats={['avif', 'webp']}
-    loading="eager"
-    fetchpriority="high"
-  />
-  <div class="hero-top">
-    <Logo label={name} class="hero-logo" />
-    {
-      config && (
-        <a class="hero-call" href={telHref(config.contact.phone)}>
-          <Phone size={16} aria-hidden="true" />
-          <span class="num">{config.contact.phone}</span>
-        </a>
-      )
-    }
-  </div>
-  <div class="hero-body">
-    <p class="hero-eyebrow">{name} · {hero.place}</p>
-    <h1 class="hero-title">{hero.title}</h1>
-    {intake && <p class="hero-lede">{hero.lede(intake.until)}</p>}
-    <div class="hero-actions">
-      <a class="btn hero-cta" href="/megrendeles">{strings.menuPage.order}</a>
-      <a class="btn hero-ghost" href={`#${menuId}`}>
-        {hero.seeMenu}
-        <ArrowDown size={18} aria-hidden="true" />
+<header class="site-head">
+  <a class="site-logo" href="/"><Logo label={name} /></a>
+  <nav class="site-nav" aria-label={nav.label}>
+    <ul>
+      {
+        links.map((link) => (
+          <li>
+            <a href={link.href}>{link.label}</a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  {
+    config && (
+      <a
+        class="site-call"
+        href={telHref(config.contact.phone)}
+        aria-label={nav.call(config.contact.phone)}
+      >
+        <Phone size={18} aria-hidden="true" />
+        <span class="num">{config.contact.phone}</span>
       </a>
-    </div>
-  </div>
+    )
+  }
 </header>
-{
-  config && intake && (
-    <dl class="facts">
-      <div>
-        <dt>{hero.facts.intake}</dt>
-        <dd class="num">
-          {intake.from}–{intake.until}
-        </dd>
-      </div>
-      <div>
-        <dt>{hero.facts.delivery}</dt>
-        <dd class="num">{hero.facts.deliveryValue(forint(config.pricing.deliveryFee))}</dd>
-      </div>
-      <div>
-        <dt>{hero.facts.minimum}</dt>
-        <dd class="num">{hero.facts.minimumValue(forint(config.pricing.minimumOrder))}</dd>
-      </div>
-    </dl>
-  )
-}
+<section class="hero" aria-labelledby="hero-title">
+  <p class="hero-eyebrow">{name} · {hero.place}</p>
+  <h1 id="hero-title" class="hero-title">{hero.title}</h1>
+  {intake && <p class="hero-lede">{hero.lede(intake.until)}</p>}
+  {intake && <p class="hero-fact num">{hero.intake(intake.from, intake.until)}</p>}
+</section>

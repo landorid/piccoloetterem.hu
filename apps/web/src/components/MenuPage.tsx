@@ -1,6 +1,7 @@
 import type { MenuItem } from '@piccolo/core';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { dayFull, forint, signedForint, telHref, timeOfDay, weekRange } from '../format';
+import { dayFull, forint, signedForint, weekRange } from '../format';
 import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
 import {
   dayPrice,
@@ -128,67 +129,186 @@ function LoadedPage({
     );
   }
 
-  // A message carries its own heading; the week's heading waits for the week.
   return (
     <>
-      {load.status === 'loading' && <WeekHead />}
-      <Layout config={config} ordering={load.status !== 'loaded'}>
-        {main}
-      </Layout>
+      <MenuCard>{main}</MenuCard>
+      {load.status === 'loading' && <OrderPill />}
     </>
   );
 }
 
-/** The main column, the info card beside it, and on a phone the order bar below. */
-function Layout({
-  config,
-  ordering,
+/** The framed card the whole menu sits in, like a printed menu on the table. */
+function MenuCard({
+  week,
+  nav,
   children,
 }: {
-  config: PublicConfig;
-  ordering: boolean;
+  week?: { isoWeek: number; days: readonly WeekDay[] };
+  nav?: ReactNode;
   children: ReactNode;
 }) {
-  const heroButtonShown = useHeroButtonShown();
+  const first = week?.days[0]?.date;
+  const last = week?.days[week.days.length - 1]?.date;
   return (
-    <>
-      <div className="screen menu-screen">
-        <div className="menu-main">{children}</div>
-        <aside className="menu-aside">
-          <InfoCard config={config} />
-        </aside>
-      </div>
-      {ordering && (
-        <div className="menu-orderbar only-mobile" data-hidden={heroButtonShown}>
-          <a className="btn btn-primary btn-block" href={orderHref}>
-            {text.order}
-          </a>
-        </div>
-      )}
-    </>
+    <section className="mcard" aria-labelledby="mcard-title">
+      <header className="mcard-head">
+        <h2 id="mcard-title">{strings.week.heading}</h2>
+        {week && first && last && (
+          <p className="mcard-meta">
+            {text.weekOf(strings.week.number(week.isoWeek), weekRange(first, last))}
+          </p>
+        )}
+      </header>
+      {nav}
+      <div className="mcard-body">{children}</div>
+    </section>
   );
 }
 
 /**
- * Whether the hero's order button is on screen, so the phone's order bar does not repeat it. It
- * starts true, as the page opens on the hero, and turns false for good where the hero or
- * IntersectionObserver is missing.
+ * The order button that floats at the bottom of the screen. It steps aside while the order
+ * section's own button is on screen, so the two never show at once.
  */
-function useHeroButtonShown(): boolean {
-  const [shown, setShown] = useState(true);
+function OrderPill() {
+  const [covered, setCovered] = useState(false);
   useEffect(() => {
-    const button = document.querySelector('.hero-cta');
-    if (!button || typeof IntersectionObserver === 'undefined') {
-      setShown(false);
-      return;
-    }
+    const button = document.querySelector('.cta-order');
+    if (!button || typeof IntersectionObserver === 'undefined') return;
     const observer = new IntersectionObserver(([entry]) =>
-      setShown(entry?.isIntersecting ?? false),
+      setCovered(entry?.isIntersecting ?? false),
     );
     observer.observe(button);
     return () => observer.disconnect();
   }, []);
-  return shown;
+  return (
+    <div className="order-pill" data-hidden={covered}>
+      <a className="order-pill-link" href={orderHref}>
+        {text.order}
+      </a>
+    </div>
+  );
+}
+
+type SectionKey = 'daily' | keyof typeof text.sections | 'prices';
+const sectionId = (key: SectionKey) => `menu-${key}`;
+
+/**
+ * The card's sticky switcher. On a phone it names the section being read, with arrows to the one
+ * before and after; on a wide screen every section is listed. It follows the scroll: the section
+ * across the middle of the screen is the current one.
+ */
+function SectionNav({ sections }: { sections: ReadonlyArray<{ key: SectionKey; title: string }> }) {
+  const [current, setCurrent] = useState(sections[0]?.key);
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') return;
+    const byId = new Map(sections.map(({ key }) => [sectionId(key), key]));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          const key = byId.get(entry.target.id);
+          if (entry.isIntersecting && key) setCurrent(key);
+        }
+      },
+      { rootMargin: '-40% 0px -55% 0px' },
+    );
+    for (const id of byId.keys()) {
+      const el = document.getElementById(id);
+      if (el) observer.observe(el);
+    }
+    return () => observer.disconnect();
+  }, [sections]);
+
+  const index = Math.max(
+    0,
+    sections.findIndex((section) => section.key === current),
+  );
+  const jump = (key: SectionKey) => {
+    setCurrent(key);
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
+    document
+      .getElementById(sectionId(key))
+      ?.scrollIntoView?.({ block: 'start', behavior: still ? 'auto' : 'smooth' });
+  };
+  const step = (by: number) => {
+    const target = sections[(index + by + sections.length) % sections.length];
+    if (target) jump(target.key);
+  };
+
+  return (
+    <nav className="snav" aria-label={text.sectionNav.label}>
+      <div className="snav-step">
+        <button
+          type="button"
+          className="snav-arrow"
+          aria-label={text.sectionNav.previous}
+          onClick={() => step(-1)}
+        >
+          <ChevronLeft size={18} aria-hidden="true" />
+        </button>
+        <span className="snav-current" aria-live="polite">
+          {sections[index]?.title}
+        </span>
+        <button
+          type="button"
+          className="snav-arrow"
+          aria-label={text.sectionNav.next}
+          onClick={() => step(1)}
+        >
+          <ChevronRight size={18} aria-hidden="true" />
+        </button>
+      </div>
+      <ul className="snav-list">
+        {sections.map(({ key, title }) => (
+          <li key={key}>
+            <a
+              href={`#${sectionId(key)}`}
+              aria-current={key === current || undefined}
+              onClick={(event) => {
+                event.preventDefault();
+                jump(key);
+              }}
+            >
+              {title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+/** One part of the menu card, under a heading set between two flourishes. */
+function MenuSection({
+  sectionKey,
+  title,
+  children,
+}: {
+  sectionKey: SectionKey;
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section id={sectionId(sectionKey)} className="msection" aria-label={title}>
+      <h3 className="orn">{title}</h3>
+      {children}
+    </section>
+  );
+}
+
+type Listed = { key: keyof typeof text.sections; items: readonly MenuItem[]; hint?: string };
+
+/** The week's featured and permanent sections, in menu order, without the empty ones. */
+function listedSections(menu: PublicMenu): Listed[] {
+  const { permanent } = menu;
+  const all: Listed[] = [
+    { key: 'featured', items: menu.featured },
+    { key: 'allWeek', items: permanent.allWeek },
+    { key: 'desserts', items: permanent.desserts },
+    { key: 'pickles', items: permanent.pickles },
+    { key: 'sides', items: permanent.sides, hint: text.sidesHint },
+    { key: 'sideExtras', items: permanent.sideExtras },
+  ];
+  return all.filter((section) => section.items.length > 0);
 }
 
 function Week({
@@ -206,7 +326,7 @@ function Week({
     [menu, orderableDates, closedDates],
   );
   const [active, setActive] = useState<IsoDate>(() => initialDate(menu, orderableDates, now()));
-  const panel = useRef<HTMLElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
   // A guest deep in one day's list who picks another day lands on that day's title, not mid-list.
   const select = (date: IsoDate) => {
     setActive(date);
@@ -218,15 +338,19 @@ function Week({
   const day = Object.values(menu.days).find((d) => d.date === active) ?? menu.days[1];
   const closed = closedDates.includes(day.date);
   const { soupPrice } = config.pricing;
-  const { permanent } = menu;
+  const listed = useMemo(() => listedSections(menu), [menu]);
+  const sections = useMemo(
+    () => [
+      { key: 'daily' as const, title: text.daily },
+      ...listed.map(({ key }) => ({ key, title: text.sections[key] })),
+      { key: 'prices' as const, title: text.prices.title },
+    ],
+    [listed],
+  );
 
   return (
     <>
-      <WeekHead isoWeek={menu.isoWeek} days={days} />
-      <div className="menu-days">
-        <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={select} browse />
-      </div>
-      <Layout config={config} ordering={notice === null}>
+      <MenuCard week={{ isoWeek: menu.isoWeek, days }} nav={<SectionNav sections={sections} />}>
         {notice && (
           <div className="banner banner-warn" role="status">
             <div>
@@ -245,75 +369,44 @@ function Week({
             </div>
           </div>
         )}
-        <section
-          ref={panel}
-          id={panelId}
-          role="tabpanel"
-          aria-labelledby={tabId(day.date)}
-          className="card menu-card"
-        >
-          {/* Keyed by the day, so a newly picked day fades in and the switch is seen. */}
-          <div key={day.date} className="menu-day-body">
-            <div className="card-head">
-              <h3>{dayFull(day.date)}</h3>
-            </div>
-            {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
-            {day.soups.length === 0 && day.mains.length === 0 ? (
-              <p className="menu-empty">{text.emptyDay}</p>
-            ) : (
-              <>
-                <DishList
-                  title={text.soups}
-                  items={day.soups}
-                  price={(item) => dayPrice(item, day.date, soupPrice)}
-                />
-                <DishList
-                  title={text.mains}
-                  hint={text.mainsHint}
-                  items={day.mains}
-                  price={(item) => dayPrice(item, day.date, soupPrice)}
-                />
-              </>
-            )}
+        <MenuSection sectionKey="daily" title={text.daily}>
+          <div className="menu-days">
+            <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={select} browse />
           </div>
-        </section>
-        <Section title={text.sections.featured} items={menu.featured} menu={menu} />
-        <Section title={text.sections.allWeek} items={permanent.allWeek} menu={menu} />
-        <Section title={text.sections.desserts} items={permanent.desserts} menu={menu} />
-        <Section title={text.sections.pickles} items={permanent.pickles} menu={menu} />
-        <Section
-          title={text.sections.sides}
-          hint={text.sidesHint}
-          items={permanent.sides}
-          menu={menu}
-        />
-        <Section title={text.sections.sideExtras} items={permanent.sideExtras} menu={menu} />
-        <PriceCard config={config} />
-      </Layout>
+          <div ref={panel} id={panelId} role="tabpanel" aria-labelledby={tabId(day.date)}>
+            {/* Keyed by the day, so a newly picked day fades in and the switch is seen. */}
+            <div key={day.date} className="menu-day-body">
+              <h4 className="menu-day-title">{dayFull(day.date)}</h4>
+              {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
+              {day.soups.length === 0 && day.mains.length === 0 ? (
+                <p className="menu-empty">{text.emptyDay}</p>
+              ) : (
+                <>
+                  <DishList
+                    title={text.soups}
+                    items={day.soups}
+                    price={(item) => dayPrice(item, day.date, soupPrice)}
+                  />
+                  <DishList
+                    title={text.mains}
+                    hint={text.mainsHint}
+                    items={day.mains}
+                    price={(item) => dayPrice(item, day.date, soupPrice)}
+                  />
+                </>
+              )}
+            </div>
+          </div>
+        </MenuSection>
+        {listed.map(({ key, items, hint }) => (
+          <MenuSection key={key} sectionKey={key} title={text.sections[key]}>
+            <DishList items={items} hint={hint} price={(item) => weekPrice(item, menu)} />
+          </MenuSection>
+        ))}
+        <PriceList config={config} />
+      </MenuCard>
+      {notice === null && <OrderPill />}
     </>
-  );
-}
-
-/** A featured or permanent section; left out when staff listed nothing in it. */
-function Section({
-  title,
-  hint,
-  items,
-  menu,
-}: {
-  title: string;
-  hint?: string;
-  items: readonly MenuItem[];
-  menu: PublicMenu;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <section className="card menu-card" aria-label={title}>
-      <div className="card-head">
-        <h2>{title}</h2>
-      </div>
-      <DishList items={items} hint={hint} price={(item) => weekPrice(item, menu)} />
-    </section>
   );
 }
 
@@ -376,7 +469,7 @@ function Leader() {
 }
 
 /** The rules a composed menu is priced by, and the extras, all from the config. */
-function PriceCard({ config }: { config: PublicConfig }) {
+function PriceList({ config }: { config: PublicConfig }) {
   const { pricing, extras } = config;
   const rows: Array<[string, string]> = [
     [text.prices.soupAlone, forint(pricing.soupPrice)],
@@ -387,10 +480,7 @@ function PriceCard({ config }: { config: PublicConfig }) {
     ]),
   ];
   return (
-    <section className="card menu-card" aria-label={text.prices.title}>
-      <div className="card-head">
-        <h2>{text.prices.title}</h2>
-      </div>
+    <MenuSection sectionKey="prices" title={text.prices.title}>
       <ul className="dishes">
         {rows.map(([name, amount], index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: the rows are fixed for the page's life.
@@ -406,65 +496,7 @@ function PriceCard({ config }: { config: PublicConfig }) {
         ))}
       </ul>
       <p className="menu-footnote">{text.prices.vat}</p>
-    </section>
-  );
-}
-
-function InfoCard({ config }: { config: PublicConfig }) {
-  const { contact, pricing } = config;
-  const { info } = text;
-  return (
-    <section className="card menu-info" aria-label={info.title}>
-      <div className="card-head">
-        <h2>{info.title}</h2>
-      </div>
-      <div className="card-body">
-        <dl className="info-list">
-          <dt>{info.deliveryFee}</dt>
-          <dd>
-            {info.deliveryFeeValue(forint(pricing.deliveryFee))}
-            <br />
-            {info.deliveryDays}
-          </dd>
-          <dt>{info.minimum}</dt>
-          <dd>{info.minimumValue(forint(pricing.minimumOrder))}</dd>
-          <dt>{info.intake}</dt>
-          <dd className="num">
-            {info.intakeValue(
-              timeOfDay(contact.intakeWindow.from),
-              timeOfDay(contact.intakeWindow.until),
-            )}
-          </dd>
-          <dt>{info.phone}</dt>
-          <dd>
-            <a href={telHref(contact.phone)}>{contact.phone}</a>
-          </dd>
-          <dt>{info.opening}</dt>
-          <dd>{contact.openingHours}</dd>
-          <dt>{info.address}</dt>
-          <dd>{contact.address}</dd>
-        </dl>
-        <a className="btn btn-primary btn-block" href={orderHref}>
-          {text.order}
-        </a>
-      </div>
-    </section>
-  );
-}
-
-/** The week's title; the week number and dates join it once the menu has loaded. */
-function WeekHead({ isoWeek, days }: { isoWeek?: number; days?: readonly WeekDay[] }) {
-  const first = days?.[0]?.date;
-  const last = days?.[days.length - 1]?.date;
-  return (
-    <div className="menu-weekhead">
-      <h2 className="menu-week-title">{strings.week.heading}</h2>
-      {isoWeek !== undefined && first && last && (
-        <p className="menu-week-meta">
-          {text.weekOf(strings.week.number(isoWeek), weekRange(first, last))}
-        </p>
-      )}
-    </div>
+    </MenuSection>
   );
 }
 
