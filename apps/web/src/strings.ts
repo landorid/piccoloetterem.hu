@@ -253,8 +253,8 @@ export const strings = {
     weekOf: (week: string, range: string) => `${week} · ${range}`,
     today: 'Ma',
     soups: 'Levesek',
-    soupsHint: (price: string) =>
-      `Bármelyik napi főételhez jár egy leves, a menü ára tartalmazza. Külön ${price}.`,
+    /** In place of a daily soup's price, which the menu's price includes. */
+    soupIncluded: 'egy választott levest a menü ára tartalmaz',
     mains: 'Főételek',
     mainsHint: 'A napi főételek ára tartalmaz egy választott levest.',
     restaurant: {

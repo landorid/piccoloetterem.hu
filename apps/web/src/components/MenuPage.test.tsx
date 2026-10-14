@@ -55,7 +55,7 @@ describe('MenuPage', () => {
     );
     const soup = row('Húsleves cérnametélttel');
     expect(panel().contains(soup)).toBe(true);
-    expect(panel().textContent).toContain(text.soupsHint(forint(650)));
+    expect(soup.querySelector('.dish-included')?.textContent).toBe(text.soupIncluded);
     expect(soup.querySelector('.dish-amt')).toBeNull();
   });
 

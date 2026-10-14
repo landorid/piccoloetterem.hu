@@ -252,7 +252,6 @@ function Week({
             <>
               <DishList
                 title={text.soups}
-                hint={text.soupsHint(forint(soupPrice))}
                 items={day.soups}
                 price={(item) => dayPrice(item, day.date, soupPrice)}
               />
@@ -345,9 +344,10 @@ function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
           <span className="dish-title">
             {item.name}
             {item.soldOut && <SoldOut />}
-            {price.kind === 'price' && <Leader />}
+            {price.kind !== 'free' && <Leader />}
           </span>
           {price.kind === 'price' && <span className="dish-amt num">{forint(price.amount)}</span>}
+          {price.kind === 'soup' && <span className="dish-included">{text.soupIncluded}</span>}
         </p>
         {item.description && <p className="dish-desc">{item.description}</p>}
         {notes.length > 0 && <p className="dish-note">{notes.join(' · ')}</p>}

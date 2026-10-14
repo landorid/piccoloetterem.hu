@@ -396,6 +396,17 @@
   white-space: nowrap;
   color: var(--brand-800);
 }
+/* A soup has no price of its own: the leader runs to the note that the menu's price includes it.
+   On a phone the note wraps onto a second line rather than squeezing the soup's name. */
+.dish-included {
+  max-width: 9.75rem;
+  text-wrap: balance;
+  font-size: var(--t-sm);
+  font-style: italic;
+  line-height: 1.35;
+  text-align: right;
+  color: var(--ink-700);
+}
 .dish-desc,
 .dish-note {
   font-size: var(--t-sm);
@@ -642,6 +653,10 @@
     display: flex;
     position: sticky;
     top: 96px;
+  }
+  .dish-included {
+    max-width: none;
+    white-space: nowrap;
   }
   .menu-page .menu-info .card-head h2 {
     font-size: var(--t-xl);
