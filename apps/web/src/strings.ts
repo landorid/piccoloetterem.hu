@@ -245,8 +245,7 @@ export const strings = {
     mainsHint: 'A napi főételek ára tartalmaz egy választott levest.',
     emptyDay: 'Erre a napra nincs feltöltve menü.',
     /** In place of a daily soup's price, which the menu's price includes. */
-    soupIncluded: 'Benne van a menü árában',
-    soupAlone: (price: string) => `külön ${price}`,
+    soupIncluded: 'egy választott levest a menü ára tartalmaz',
     saturday: (price: string) => `szombaton ${price}`,
     withSoup: '+ választott leves',
     withSide: '+ választott köret',

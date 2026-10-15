@@ -29,7 +29,7 @@ the phone number. "Tovább a rendeléshez" opens checkout (O7, #35), a screen of
   and the chosen main's tile (hidden on a phone). Once one dish of a block or group has a photo,
   every row there gets a tile: the initial for a dish without one, an empty dashed square for
   "Nem kérek". A block with no photo has no tiles. A photo that fails to load shows the initial.
-  Weekly dishes never show one, and `/` shows none.
+  Weekly dishes never show one. `/` follows the same rule in its étlap cards (#112).
 - `allergens`: chips under every dish, a bubble naming "7 · Tej és tejtermék (laktóz)" on hover,
   focus or tap. More than three collapse into "+N".
 - `day-cart`: "A rendelésed erre a napra", numbered menus with their lines, "Módosítás" (back into

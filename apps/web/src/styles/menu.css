@@ -75,9 +75,12 @@
   color: var(--ink-500);
   white-space: nowrap;
 }
+/* The soup line is a phrase, not an amount: it wraps, balanced, in a narrow column. */
 .dish-included {
-  white-space: nowrap;
-  font-size: var(--t-sm);
+  max-width: 10.5em;
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  text-wrap: balance;
   font-weight: 600;
   color: var(--ok-700);
 }

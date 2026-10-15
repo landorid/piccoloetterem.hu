@@ -14,7 +14,7 @@ no orders: "Rendeld meg online" links to `/megrendeles`.
   first orderable day, else Monday. Every day can be selected, past days included; a day staff
   closed shows "ZÁRVA" and, in its panel, "Erre a napra nem lehet rendelni." above the dishes.
 - `day-panel`: the day's name ("Hétfő, okt. 12."), then "LEVESEK" and "FŐÉTELEK". A soup shows
-  "Benne van a menü árában" and "külön 650 Ft" instead of a price. A main shows core's price for
+  "egy választott levest a menü ára tartalmaz" instead of a price. A main shows core's price for
   that day, so Saturday's mains show Saturday's price.
 - `dishes`: each row has the name, the description, a note line ("Választható: …", "+ választott
   leves", "+ választott köret"), the allergen chips and the price. A sold-out dish is struck

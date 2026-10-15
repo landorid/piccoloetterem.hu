@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type { MenuItem } from '@piccolo/core';
 import { allergenLabelsHu } from '@piccolo/core';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -54,8 +55,8 @@ describe('MenuPage', () => {
     );
     const soup = row('Húsleves cérnametélttel');
     expect(panel().contains(soup)).toBe(true);
-    expect(soup.textContent).toContain(text.soupIncluded);
-    expect(soup.textContent).toContain(text.soupAlone(forint(650)));
+    // As on the old site: the menu's price covers the soup, so the soup names no price of its own.
+    expect(soup.querySelector('.dish-price')?.textContent).toBe(text.soupIncluded);
     expect(soup.querySelector('.dish-amt')).toBeNull();
   });
 
@@ -124,6 +125,37 @@ describe('MenuPage', () => {
       'prices',
     ]);
     expect(container.querySelector('[data-area="day"]')?.id).toBe('heti-menu');
+  });
+
+  it('leads an étlap list with tiles once one of its dishes has a photo, never a weekly list', async () => {
+    const withPhoto = (item: MenuItem) =>
+      item.id === 'somloi' || item.id === 'sze-husleves' ? { ...item, imageVersion: 'v1' } : item;
+    const { menu } = openMenu;
+    answers['/api/menu'] = () =>
+      Response.json({
+        ...openMenu,
+        menu: {
+          ...menu,
+          days: Object.fromEntries(
+            Object.entries(menu.days).map(([n, d]) => [n, { ...d, soups: d.soups.map(withPhoto) }]),
+          ),
+          permanent: { ...menu.permanent, desserts: menu.permanent.desserts.map(withPhoto) },
+        },
+      });
+    await renderPage();
+    const desserts = screen.getByRole('region', { name: text.sections.desserts });
+    const tiles = [...desserts.querySelectorAll('.dish')].map((dish) =>
+      dish.querySelector('.tile'),
+    );
+    expect(tiles.every((tile) => tile !== null)).toBe(true);
+    expect(row('Somlói galuska').querySelector('.tile img')?.getAttribute('src')).toBe(
+      'http://localhost:8787/api/images/somloi/v1/thumb',
+    );
+    expect(row('Túrógombóc').querySelector('.tile img')).toBeNull();
+    expect(panel().querySelector('.tile')).toBeNull();
+    expect(
+      screen.getByRole('region', { name: text.sections.pickles }).querySelector('.tile'),
+    ).toBeNull();
   });
 
   it('prices the extras from the config', async () => {
