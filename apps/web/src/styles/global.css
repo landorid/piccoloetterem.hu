@@ -88,6 +88,8 @@
   /* One centred column for every band and screen; the gutter lines their content up. */
   --page-max: 1180px;
   --page-gutter: var(--s-4);
+  /* The sticky header's height; sticky blocks and scroll targets stop below it. */
+  --header-h: 68px;
 }
 
 *,
@@ -163,7 +165,7 @@ button {
   display: flex;
   align-items: center;
   gap: var(--s-4);
-  height: var(--header-h, 68px);
+  height: var(--header-h);
   padding: 0 var(--page-gutter);
   background: color-mix(in srgb, var(--sage) 90%, transparent);
   backdrop-filter: saturate(1.2) blur(12px);

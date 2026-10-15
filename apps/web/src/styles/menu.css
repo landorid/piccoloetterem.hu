@@ -9,7 +9,7 @@
   flex-direction: column;
   gap: var(--s-4);
   min-width: 0;
-  scroll-margin-top: 84px;
+  scroll-margin-top: calc(var(--header-h) + var(--s-4));
 }
 
 /* --- dishes ------------------------------------------------------------------------------------ */
