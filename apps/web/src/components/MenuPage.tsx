@@ -1,7 +1,7 @@
 import type { MenuItem } from '@piccolo/core';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { dayFull, forint, signedForint } from '../format';
-import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu } from '../lib/api';
+import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
 import {
   dayPrice,
   initialDate,
@@ -15,7 +15,7 @@ import { weekDays } from '../order/days';
 import { strings } from '../strings';
 import { AllergenChips, AllergenTipProvider } from './Allergens';
 import { describeLoadError, Message, MessageCard } from './OrderingApp';
-import { cls, SoldOut } from './parts';
+import { cls, SoldOut, Tile } from './parts';
 import { DayTabs, tabId, WeekBar } from './WeekHeader';
 
 const { menuPage: text } = strings;
@@ -278,20 +278,22 @@ function DishList({
   price: (item: MenuItem) => ListedPrice;
 }) {
   if (items.length === 0) return null;
+  // As on the order page: once one dish of a list has a photo, every row leads with a tile.
+  const tiles = items.some((item) => thumbSrc(item) !== null);
   return (
     <div className="dish-group">
       {title && <h3 className="dish-group-title">{title}</h3>}
       {hint && <p className="dish-group-hint">{hint}</p>}
       <ul className="dishes">
         {items.map((item) => (
-          <Dish key={item.id} item={item} price={price(item)} />
+          <Dish key={item.id} item={item} price={price(item)} tile={tiles} />
         ))}
       </ul>
     </div>
   );
 }
 
-function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
+function Dish({ item, price, tile }: { item: MenuItem; price: ListedPrice; tile: boolean }) {
   const notes = [
     item.variations.length > 0 && text.variations(item.variations),
     item.soupIncluded && item.category !== 'daily_main' && text.withSoup,
@@ -299,6 +301,7 @@ function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
   ].filter((note): note is string => typeof note === 'string');
   return (
     <li className={cls('dish', item.soldOut && 'is-soldout')}>
+      {tile && <Tile item={item} />}
       <div className="dish-body">
         <p className="dish-name">
           <span className="dish-title">{item.name}</span>
@@ -321,7 +324,6 @@ function Price({ price }: { price: ListedPrice }) {
       return (
         <p className="dish-price">
           <span className="dish-included">{text.soupIncluded}</span>
-          <span className="dish-sub num">{text.soupAlone(forint(price.alone))}</span>
         </p>
       );
     case 'price':
