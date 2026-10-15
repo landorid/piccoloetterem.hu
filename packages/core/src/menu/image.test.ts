@@ -3,6 +3,7 @@ import {
   checkImageUpload,
   type ImageFileFacts,
   imageRenditions,
+  itemImageUrl,
   planRenditions,
   renditionSpecs,
   sniffImageMime,
@@ -117,5 +118,27 @@ describe('checkImageUpload', () => {
       ]),
     ) as Record<(typeof imageRenditions)[number], ImageFileFacts>;
     expect(checkImageUpload(atCap).ok).toBe(true);
+  });
+});
+
+describe('itemImageUrl', () => {
+  const item = {
+    id: '00000000-0000-4000-8000-000000000107',
+    imageVersion: '7d3f0c52-58a1-4b1e-9a43-0d9a1c3e2b10',
+  };
+
+  it('is the object key under the images origin', () => {
+    expect(itemImageUrl('https://img-dev.piccoloetterem.hu', item, 'thumb')).toBe(
+      `https://img-dev.piccoloetterem.hu/${item.id}/${item.imageVersion}/thumb`,
+    );
+    expect(itemImageUrl('https://img.piccoloetterem.hu/', item, 'large')).toBe(
+      `https://img.piccoloetterem.hu/${item.id}/${item.imageVersion}/large`,
+    );
+  });
+
+  it('is null for an item without an image, or without an images origin', () => {
+    expect(itemImageUrl('https://img.piccoloetterem.hu', { id: item.id }, 'thumb')).toBeNull();
+    expect(itemImageUrl(undefined, item, 'thumb')).toBeNull();
+    expect(itemImageUrl('', item, 'thumb')).toBeNull();
   });
 });

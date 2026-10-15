@@ -614,7 +614,9 @@ describe('/etlap images', () => {
 
     await waitFor(() =>
       expect(thumbnail('Túrós palacsinta')?.getAttribute('src')).toMatch(
-        new RegExp(`/api/images/${ids.palacsinta}/7d3f0c52-58a1-4b1e-9a43-\\d{12}/thumb$`),
+        new RegExp(
+          `^https://img-dev\\.piccoloetterem\\.hu/${ids.palacsinta}/7d3f0c52-58a1-4b1e-9a43-\\d{12}/thumb$`,
+        ),
       ),
     );
     expect(imageRequests()[0]).toEqual({

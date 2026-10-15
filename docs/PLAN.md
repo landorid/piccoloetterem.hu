@@ -149,6 +149,11 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   and a square thumbnail (192 px), both made in the admin browser before the upload. The image is
   uploaded, replaced and removed at once, outside the permanent menu's save. Guests see it only on
   `/megrendeles`, not on `/`. Decided by Dávid.
+  Revised 2026-10-15: the images bucket is public on its own custom domain (`img.<domain>`,
+  `img-dev.<domain>` for development) and served by Cloudflare's CDN; `GET /api/images/*` is
+  removed. A Transform Rule sets the safety and cache headers the route used to send. Signed URLs
+  were rejected: the photos are public, and expiring URLs would break the menu cache and the
+  year-long image cache. Decided by Dávid.
 
 **Staff**
 

@@ -46,12 +46,15 @@ id = "7578b36062614eb78fbb76c441014493" # piccolo-development (manual issue #40)
 binding = "MENU_CACHE"
 id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
 
-# Étlap item images (src/images/store.ts). Private: served only through GET /api/images/*.
-# Named environments do not inherit `r2_buckets`, so each has its own block below. Locally
-# `wrangler dev` uses Miniflare's R2 instead of this bucket.
+# Étlap item images (src/images/store.ts). Public, from the bucket's own custom domain
+# (img-dev.piccoloetterem.hu here); this Worker only writes it. Named environments do not inherit
+# `r2_buckets`, so each has its own block below. `remote`: `wrangler dev` writes the real
+# development bucket, like the shared development database it points items at, so a photo
+# uploaded locally shows on img-dev for everyone. It needs `wrangler login`.
 [[r2_buckets]]
 binding = "ITEM_IMAGES"
 bucket_name = "piccolo-menu-images-development"
+remote = true
 
 # Secrets are never written in this file. Set them per environment with
 #   wrangler secret put SENTRY_DSN --env <staging|production>

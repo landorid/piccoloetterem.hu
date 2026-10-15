@@ -149,7 +149,7 @@ describe('MenuPage', () => {
     );
     expect(tiles.every((tile) => tile !== null)).toBe(true);
     expect(row('Somlói galuska').querySelector('.tile img')?.getAttribute('src')).toBe(
-      'http://localhost:8787/api/images/somloi/v1/thumb',
+      'https://img-dev.piccoloetterem.hu/somloi/v1/thumb',
     );
     expect(row('Túrógombóc').querySelector('.tile img')).toBeNull();
     expect(panel().querySelector('.tile')).toBeNull();

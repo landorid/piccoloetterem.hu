@@ -1,11 +1,12 @@
-import { type ImageMime, type ImageRendition, imageRenditions } from '@piccolo/core';
+import { type ImageMime, type ImageRendition, imageKey, imageRenditions } from '@piccolo/core';
 import type { Bindings, R2Store } from '../env';
 
 /*
- * The only module that knows the R2 key layout, `<itemId>/<version>/<rendition>`, and the only
- * one that mints a version. A version is immutable: its objects are never overwritten, so an
- * image URL can be cached for a year. A replace writes a new version, points the item at it,
- * then discards the old one; the database pointer is the commit point.
+ * The only module that writes the bucket, and the only one that mints a version. The bucket is
+ * served publicly from its own domain (`https://img.<domain>`), keys being core's `imageKey`. A
+ * version is immutable: its objects are never overwritten, so an image URL can be cached for a
+ * year. A replace writes a new version, points the item at it, then discards the old one; the
+ * database pointer is the commit point.
  */
 
 declare const stored: unique symbol;
@@ -22,13 +23,6 @@ export interface ImagePart {
   mime: ImageMime;
 }
 
-export interface StoredImage {
-  body: ReadableStream;
-  size: number;
-  contentType: string;
-  etag: string;
-}
-
 export interface ItemImageStore {
   /**
    * Writes every rendition under a new version and returns it. All or nothing: when a write
@@ -38,8 +32,6 @@ export interface ItemImageStore {
     itemId: string,
     parts: Readonly<Record<ImageRendition, ImagePart>>,
   ): Promise<StoredImageVersion>;
-  /** `null` when the object is not in this bucket. */
-  get(itemId: string, version: string, rendition: ImageRendition): Promise<StoredImage | null>;
   /**
    * Deletes every rendition of exactly this version; never "everything but", which would delete
    * an upload of the same item still in flight. Idempotent, and never throws: it runs once
@@ -48,13 +40,16 @@ export interface ItemImageStore {
   discard(itemId: string, version: string): Promise<void>;
 }
 
-const keyOf = (itemId: string, version: string, rendition: ImageRendition) =>
-  `${itemId}/${version}/${rendition}`;
+/**
+ * Stored with every object and served as-is by the bucket's public domain; the domain's
+ * Transform Rule sets the same value (apps/api/README.md, "Item images").
+ */
+const immutableCacheControl = 'public, max-age=31536000, immutable';
 
 export function r2ItemImages(bucket: R2Store): ItemImageStore {
   const discard: ItemImageStore['discard'] = async (itemId, version) => {
     try {
-      await bucket.delete(imageRenditions.map((rendition) => keyOf(itemId, version, rendition)));
+      await bucket.delete(imageRenditions.map((rendition) => imageKey(itemId, version, rendition)));
     } catch (error) {
       console.warn(`Item images: could not discard ${itemId}/${version}`, error);
     }
@@ -65,8 +60,11 @@ export function r2ItemImages(bucket: R2Store): ItemImageStore {
       const version = crypto.randomUUID();
       const writes = await Promise.allSettled(
         imageRenditions.map((rendition) =>
-          bucket.put(keyOf(itemId, version, rendition), parts[rendition].bytes, {
-            httpMetadata: { contentType: parts[rendition].mime },
+          bucket.put(imageKey(itemId, version, rendition), parts[rendition].bytes, {
+            httpMetadata: {
+              contentType: parts[rendition].mime,
+              cacheControl: immutableCacheControl,
+            },
           }),
         ),
       );
@@ -76,19 +74,6 @@ export function r2ItemImages(bucket: R2Store): ItemImageStore {
         throw failed.reason;
       }
       return version as StoredImageVersion;
-    },
-
-    async get(itemId, version, rendition) {
-      const object = await bucket.get(keyOf(itemId, version, rendition));
-      if (!object) {
-        return null;
-      }
-      return {
-        body: object.body,
-        size: object.size,
-        etag: object.httpEtag,
-        contentType: object.httpMetadata?.contentType ?? 'application/octet-stream',
-      };
     },
 
     discard,

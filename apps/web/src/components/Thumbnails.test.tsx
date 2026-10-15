@@ -35,7 +35,7 @@ function withImages(versions: Record<string, string>): OpenMenu {
 }
 
 const thumb = (id: string, version: string) =>
-  `http://localhost:8787/api/images/${id}/${version}/thumb`;
+  `https://img-dev.piccoloetterem.hu/${id}/${version}/thumb`;
 
 let answer: unknown;
 

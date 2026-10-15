@@ -16,7 +16,7 @@ describe('r2ItemImages', () => {
     expect(fits).toBeTypeOf('function');
   });
 
-  it('writes every rendition under <item>/<version>/<rendition> with its content type', async () => {
+  it('writes every rendition under <item>/<version>/<rendition>, served as immutable', async () => {
     const bucket = memoryR2();
     const version = await r2ItemImages(bucket).put(itemId, parts);
 
@@ -24,30 +24,21 @@ describe('r2ItemImages', () => {
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
     );
     expect(
-      [...bucket.data].map(([key, object]) => [key, object.contentType, object.bytes.size]),
+      [...bucket.data].map(([key, object]) => [
+        key,
+        object.contentType,
+        object.cacheControl,
+        object.bytes.size,
+      ]),
     ).toEqual([
-      [`${itemId}/${version}/large`, 'image/webp', 11],
-      [`${itemId}/${version}/thumb`, 'image/jpeg', 5],
+      [`${itemId}/${version}/large`, 'image/webp', 'public, max-age=31536000, immutable', 11],
+      [`${itemId}/${version}/thumb`, 'image/jpeg', 'public, max-age=31536000, immutable', 5],
     ]);
   });
 
   it('mints a new version for every put', async () => {
     const images = r2ItemImages(memoryR2());
     expect(await images.put(itemId, parts)).not.toBe(await images.put(itemId, parts));
-  });
-
-  it('serves a stored rendition with its type, size and ETag, and null for anything else', async () => {
-    const images = r2ItemImages(memoryR2());
-    const version = await images.put(itemId, parts);
-
-    const thumb = await images.get(itemId, version, 'thumb');
-    expect(thumb && { ...thumb, body: await new Response(thumb.body).text() }).toEqual({
-      body: 'thumb',
-      size: 5,
-      contentType: 'image/jpeg',
-      etag: `"${itemId}/${version}/thumb"`,
-    });
-    expect(await images.get(itemId, '9b1f6d8e-0000-4000-8000-000000000000', 'thumb')).toBeNull();
   });
 
   it('is all or nothing: a failed write leaves no object behind and throws', async () => {

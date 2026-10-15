@@ -29,8 +29,7 @@ export interface MenuItem {
   active: boolean;
   sortOrder: number;
   /**
-   * The version of the item's current image (`itemImageUrl` in `@piccolo/api-client` builds its
-   * URL); it changes with every upload. Absent: no image. Never set on a weekly item. Not
+   * The version of the item's current image (`itemImageUrl` builds its URL); it changes with every upload. Absent: no image. Never set on a weekly item. Not
    * content: only the image routes set it, never a draft (`MenuItemContent` has no image).
    */
   imageVersion?: string;
