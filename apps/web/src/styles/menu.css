@@ -40,6 +40,9 @@
   padding: var(--s-3) 0;
   border-bottom: 1px solid var(--line);
 }
+.dish:last-child {
+  border-bottom: 0;
+}
 .dish-body {
   flex: 1;
   min-width: 0;
@@ -83,11 +86,6 @@
   text-wrap: balance;
   font-weight: 600;
   color: var(--ok-700);
-}
-.dish-sub {
-  font-size: var(--t-xs);
-  color: var(--ink-500);
-  white-space: nowrap;
 }
 /* Struck through as well as greyed: the state is not carried by colour alone. */
 .dish.is-soldout :is(.dish-title, .dish-desc, .dish-amt) {

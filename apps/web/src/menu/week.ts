@@ -68,24 +68,21 @@ export function initialDate(
 
 /**
  * The price a dish is listed at. A daily soup has none of its own: the menu's price includes it,
- * and alone it costs `alone`. A plain side is free. Everything else is core's unit price, with a
- * Saturday price when Saturday's differs.
+ * and alone it costs `alone`. A plain side is free. Everything else is core's unit price.
  */
 export type ListedPrice =
   | { kind: 'soup'; alone: number }
   | { kind: 'free' }
-  | { kind: 'price'; amount: number; saturday: number | null };
+  | { kind: 'price'; amount: number };
 
 /** A daily soup or main, delivered on `date`. */
 export function dayPrice(item: MenuItem, date: IsoDate, soupPrice: number): ListedPrice {
   if (item.category === 'daily_soup') return { kind: 'soup', alone: soupPrice };
-  return { kind: 'price', amount: unitPrice(item, date), saturday: null };
+  return { kind: 'price', amount: unitPrice(item, date) };
 }
 
 /** A featured or permanent item, orderable on every day of `menu`'s week. */
 export function weekPrice(item: MenuItem, menu: PublicMenu): ListedPrice {
   if (item.category === 'side') return { kind: 'free' };
-  const amount = unitPrice(item, menu.days[1].date);
-  const saturday = unitPrice(item, menu.days[6].date);
-  return { kind: 'price', amount, saturday: saturday === amount ? null : saturday };
+  return { kind: 'price', amount: unitPrice(item, menu.days[1].date) };
 }

@@ -1,6 +1,6 @@
 import type { CSSProperties, KeyboardEvent } from 'react';
 import { useRef } from 'react';
-import { dayFull, dayNumber, forint, weekRange } from '../format';
+import { dayFull, dayNumber, weekRange } from '../format';
 import type { IsoDate } from '../order/cart';
 import type { WeekDay } from '../order/days';
 import { useOrder } from '../order/store';
@@ -13,11 +13,9 @@ interface WeekBarProps {
   days: readonly WeekDay[];
   /** The cutoff sentence, already chosen; `null` shows none. */
   cutoff: string | null;
-  /** The delivery fee and the daily minimum; the order page leaves them out. */
-  terms?: { deliveryFee: number; minimumOrder: number };
 }
 
-export function WeekBar({ isoWeek, days, cutoff, terms }: WeekBarProps) {
+export function WeekBar({ isoWeek, days, cutoff }: WeekBarProps) {
   const first = days[0]?.date;
   const last = days[days.length - 1]?.date;
   return (
@@ -28,11 +26,6 @@ export function WeekBar({ isoWeek, days, cutoff, terms }: WeekBarProps) {
         {first && last && <span>{weekRange(first, last)}</span>}
         {cutoff && <span>{cutoff}</span>}
       </div>
-      {terms && (
-        <p className="week-terms">
-          {strings.order.terms(forint(terms.deliveryFee), forint(terms.minimumOrder))}
-        </p>
-      )}
     </div>
   );
 }
