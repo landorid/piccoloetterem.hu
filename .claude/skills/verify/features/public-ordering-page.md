@@ -64,9 +64,11 @@ the phone number. "Tovább a rendeléshez" opens checkout (O7, #35), a screen of
   "Erre a hétre még nincs feltöltve menü".
 - `menu-load-failed`: the API is unreachable. The page shows "Nem sikerült betölteni a menüt"
   with an "Újrapróbálom" button.
-- `chrome`: the masthead (logo `aria-label` = restaurant name, "Rendelésfelvétel …" intake
-  window, phone) and the footer ("Nyitvatartás", "Kiszállítás", "Elérhetőség"). Both come from
-  `GET /api/config/public` when the page is rendered.
+- `chrome`: the site header shared with `/` (logo `aria-label` = restaurant name, links "Heti
+  menü", "Az étterem", "Elérhetőség" to the sections of `/`, here the "Rendelésfelvétel …" intake
+  window and the phone instead of the "Rendelés" button; the links show from 900 px) and the
+  footer ("Nyitvatartás", "Kiszállítás", "Elérhetőség"). Both come from `GET /api/config/public`
+  when the page is rendered.
 
 ## How to get to it (user POV)
 

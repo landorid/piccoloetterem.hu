@@ -54,7 +54,8 @@ describe('MenuPage', () => {
     );
     const soup = row('Húsleves cérnametélttel');
     expect(panel().contains(soup)).toBe(true);
-    expect(soup.querySelector('.dish-included')?.textContent).toBe(text.soupIncluded);
+    expect(soup.textContent).toContain(text.soupIncluded);
+    expect(soup.textContent).toContain(text.soupAlone(forint(650)));
     expect(soup.querySelector('.dish-amt')).toBeNull();
   });
 
@@ -67,21 +68,6 @@ describe('MenuPage', () => {
 
     fireEvent.click(screen.getByRole('tab', { name: /^Szombat/ }));
     expect(row('Marhapörkölt').querySelector('.dish-amt')?.textContent).toBe(forint(1320));
-  });
-
-  it('brings a newly picked day’s title into view only when the guest has scrolled past it', async () => {
-    await renderPage();
-    const scrollIntoView = vi.fn();
-    const section = panel();
-    section.scrollIntoView = scrollIntoView;
-
-    fireEvent.click(screen.getByRole('tab', { name: /^Csütörtök/ }));
-    expect(scrollIntoView).not.toHaveBeenCalled();
-
-    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({ top: -400 } as DOMRect);
-    fireEvent.click(screen.getByRole('tab', { name: /^Péntek/ }));
-    expect(scrollIntoView).toHaveBeenCalledOnce();
-    expect(scrollIntoView.mock.calls[0]?.[0]).toMatchObject({ block: 'start' });
   });
 
   it('shows allergens per dish and marks sold-out dishes', async () => {
@@ -101,17 +87,46 @@ describe('MenuPage', () => {
     for (const title of Object.values(text.sections)) {
       expect(screen.getByRole('region', { name: title })).toBeTruthy();
     }
-    const cordonBleu = row('Cordon bleu');
-    expect(cordonBleu.querySelector('.dish-amt')?.textContent).toBe(forint(1690));
-    expect(cordonBleu.textContent).toContain(text.saturday(forint(1790)));
-    const somloi = row('Somlói galuska');
-    expect(somloi.querySelector('.dish-amt')?.textContent).toBe(forint(690));
-    expect(somloi.textContent).not.toContain(text.saturday(forint(690)));
-    // A plain side is free: no price and no leader.
-    expect(row('Hasábburgonya').querySelector('.dish-amt, .dish-dots')).toBeNull();
+    expect(row('Cordon bleu').querySelector('.dish-price')?.textContent).toBe(
+      forint(1690) + text.saturday(forint(1790)),
+    );
+    expect(row('Somlói galuska').querySelector('.dish-price')?.textContent).toBe(forint(690));
+    // A plain side is free: no price at all.
+    expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();
   });
 
-  it('prices the extras from the config and links every order button to /megrendeles', async () => {
+  it('lists the paid sides with their price in the sides card, after the free ones', async () => {
+    await renderPage();
+    const sides = screen.getByRole('region', { name: text.sections.sides });
+    const names = [...sides.querySelectorAll('.dish-title')].map((title) => title.textContent);
+    expect(names.slice(-3)).toEqual(['Steak burgonya', 'Édesburgonya-hasáb', 'Rizi-bizi']);
+    expect(within(sides).getByText('Rizi-bizi').closest('li')?.textContent).toContain(forint(250));
+    expect(
+      within(sides).getByText('Párolt rizs').closest('li')?.querySelector('.dish-price'),
+    ).toBeNull();
+  });
+
+  it('renders the day and each section as sibling blocks the page grid can place', async () => {
+    const { container } = render(
+      <MenuPage initial={{ config: publicConfig }} now={wednesdayAfternoon} />,
+    );
+    await waitFor(() => expect(screen.queryByText(strings.week.loading)).toBeNull());
+    const areas = [...container.querySelectorAll(':scope > [data-area]')].map(
+      (block) => (block as HTMLElement).dataset.area,
+    );
+    expect(areas).toEqual([
+      'day',
+      'featured',
+      'all-week',
+      'desserts',
+      'pickles',
+      'sides',
+      'prices',
+    ]);
+    expect(container.querySelector('[data-area="day"]')?.id).toBe('heti-menu');
+  });
+
+  it('prices the extras from the config', async () => {
     await renderPage();
     const prices = screen.getByRole('region', { name: text.prices.title });
     const amounts = [...prices.querySelectorAll('.dish')].map((li) => li.textContent);
@@ -120,33 +135,6 @@ describe('MenuPage', () => {
       text.prices.noSoup + strings.common.minus(forint(100)),
       ...publicConfig.extras.map((extra) => extra.name + text.prices.perPiece(forint(extra.price))),
     ]);
-    const links = screen.getAllByRole('link', { name: text.order });
-    expect(links.length).toBe(1);
-    for (const link of links) expect(link.getAttribute('href')).toBe('/megrendeles');
-  });
-
-  it('lists the card’s sections in the switcher and steps through them with the arrows', async () => {
-    await renderPage();
-    const nav = screen.getByRole('navigation', { name: text.sectionNav.label });
-    const titles = [text.daily, ...Object.values(text.sections), text.prices.title];
-    expect(
-      within(nav)
-        .getAllByRole('link')
-        .map((link) => link.textContent),
-    ).toEqual(titles);
-    for (const title of titles) {
-      const link = within(nav).getByRole('link', { name: title });
-      const target = document.getElementById(link.getAttribute('href')?.slice(1) ?? '');
-      expect(target?.getAttribute('aria-label')).toBe(title);
-    }
-
-    const current = () => nav.querySelector('.snav-current')?.textContent;
-    expect(current()).toBe(text.daily);
-    fireEvent.click(within(nav).getByRole('button', { name: text.sectionNav.next }));
-    expect(current()).toBe(text.sections.featured);
-    fireEvent.click(within(nav).getByRole('button', { name: text.sectionNav.previous }));
-    fireEvent.click(within(nav).getByRole('button', { name: text.sectionNav.previous }));
-    expect(current()).toBe(text.prices.title);
   });
 
   it('shows the current week to read when next week is not published', async () => {
@@ -160,8 +148,6 @@ describe('MenuPage', () => {
     expect(screen.getByRole('tab', { selected: true }).getAttribute('aria-label')).toMatch(
       /^Hétfő/,
     );
-    // No floating order button for a week that cannot be ordered.
-    expect(screen.queryAllByRole('link', { name: text.order })).toEqual([]);
   });
 
   it('shows the current week to read when the order window is closed', async () => {

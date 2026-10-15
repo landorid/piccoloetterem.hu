@@ -16,7 +16,13 @@ export const strings = {
     description:
       'Rendeld meg online a Piccolo Club Étterem heti menüjét: napi levesek és főételek, kiszállítással Szombathelyen.',
   },
-  masthead: {
+  /** The header of every page: the links lead to the sections of `/`. */
+  header: {
+    label: 'Navigáció',
+    menu: 'Heti menü',
+    restaurant: 'Az étterem',
+    contact: 'Elérhetőség',
+    order: 'Rendelés',
     intake: (from: string, until: string) => `Rendelésfelvétel ${from}–${until}`,
   },
   order: {
@@ -234,65 +240,13 @@ export const strings = {
       description:
         'A Piccolo Club Étterem heti menüje és étlapja: napi levesek és főételek, desszertek, savanyúságok. Rendeld meg online, kiszállítással Szombathelyen.',
     },
-    order: 'Rendeld meg online',
-    nav: {
-      label: 'Az oldal részei',
-      menu: 'Heti menü',
-      about: 'Rólunk',
-      order: 'Rendelés',
-      contact: 'Elérhetőség',
-      call: (phone: string) => `Hívás: ${phone}`,
-    },
-    hero: {
-      place: 'Szombathely',
-      title: 'Házias ebéd hétfőtől szombatig',
-      lede: (until: string) =>
-        `Válassz a heti menüből, és rendeld meg online vagy telefonon aznap reggel ${until}\u2011ig. Hétfőtől szombatig házhoz visszük.`,
-      intake: (from: string, until: string) => `Rendelésfelvétel ${from}–${until}`,
-    },
-    /** The sticky switcher of the menu card's sections. */
-    sectionNav: {
-      label: 'A menü részei',
-      previous: 'Előző rész',
-      next: 'Következő rész',
-    },
-    daily: 'Napi menü',
-    weekOf: (week: string, range: string) => `${week} · ${range}`,
-    today: 'Ma',
     soups: 'Levesek',
-    /** In place of a daily soup's price, which the menu's price includes. */
-    soupIncluded: 'egy választott levest a menü ára tartalmaz',
     mains: 'Főételek',
     mainsHint: 'A napi főételek ára tartalmaz egy választott levest.',
-    about: {
-      title: 'Rólunk',
-      body: 'A Piccolo Club Étterem Szombathelyen főz napi menüt hétfőtől szombatig. Minden nap levesek és főételek közül választhatsz, mellé egész héten rendelhető ételek, desszertek és savanyúságok kerülnek az étlapra.',
-      daily: 'Napi menü hétfőtől szombatig',
-      delivery: (fee: string) => `Házhoz szállítás Szombathelyen, ${fee} / nap`,
-      dineIn: (hours: string) => `Helyben is megebédelhetsz: ${hours}`,
-      photos: {
-        hall: 'A hosszú ebédlő, a fal mentén párnázott padokkal',
-        window: 'Asztalok a függönyös ablakok mellett',
-        corner: 'Sarokasztalok, fölöttük falióra',
-        bench: 'Terített asztal a narancssárga padnál, az ablakok előtt',
-      },
-    },
-    orderBlock: {
-      title: 'Rendelj online',
-      lede: (until: string) =>
-        `Válaszd ki a napokat és a fogásokat, mi pedig házhoz visszük. Aznapra reggel ${until}\u2011ig rendelhetsz.`,
-      call: 'vagy hívj minket:',
-    },
-    contact: {
-      title: 'Elérhetőség',
-      facade: 'Az étterem bejárata az utcáról, a Piccolo felirattal',
-      directions: 'Útvonaltervezés',
-      address: 'Cím',
-      opening: 'Nyitvatartás',
-      phone: 'Telefon',
-    },
-    footer: (year: number, name: string) => `© ${year} ${name} · Szombathely`,
     emptyDay: 'Erre a napra nincs feltöltve menü.',
+    /** In place of a daily soup's price, which the menu's price includes. */
+    soupIncluded: 'Benne van a menü árában',
+    soupAlone: (price: string) => `külön ${price}`,
     saturday: (price: string) => `szombaton ${price}`,
     withSoup: '+ választott leves',
     withSide: '+ választott köret',
@@ -303,7 +257,6 @@ export const strings = {
       desserts: 'Desszertek',
       pickles: 'Savanyúságok',
       sides: 'Köretek',
-      sideExtras: 'Feláras köretek',
     },
     sidesHint: 'A köretes főételekhez egy köret felár nélkül jár.',
     /** The page shows this week because the API has no orderable week now. */
@@ -321,18 +274,44 @@ export const strings = {
       perPiece: (price: string) => `${price} / db`,
       vat: 'Az árak forintban értendők, és tartalmazzák az áfát.',
     },
-    info: {
-      title: 'Rendelj házhoz!',
-      deliveryFee: 'Kiszállítás',
-      deliveryFeeValue: (fee: string) => `${fee} / cím / nap`,
-      deliveryDays: 'Hétfőtől szombatig szállítunk.',
-      minimum: 'Minimum rendelés',
-      minimumValue: (minimum: string) => `${minimum} ételérték címenként, naponta`,
+  },
+  /** The shell of `/` around the menu: header, photos, the restaurant, hours, delivery, contact. */
+  landing: {
+    // TODO(copy): Dávid to confirm the lede and the restaurant's paragraph.
+    lede: 'Friss, házias ebéd hétfőtől szombatig, nálunk vagy házhoz szállítva',
+    about: {
+      title: 'Az étterem',
+      body: 'A Piccolo Club Étterem Szombathelyen várja a vendégeket. Minden héten új menüt főzünk: naponta több leves és főétel közül választhatsz, mellettük egész héten rendelhető ételek, desszertek és savanyúságok várnak. Ebédelj nálunk, vagy rendeld meg online, és házhoz visszük.',
+    },
+    hours: {
+      title: 'Nyitvatartás',
+      restaurant: 'Étterem',
       intake: 'Rendelésfelvétel',
       intakeValue: (from: string, until: string) => `${from}–${until}`,
-      phone: 'Telefon',
-      opening: 'Nyitvatartás',
+      delivery: 'Kiszállítás',
+      deliveryDays: 'Hétfő–szombat',
+    },
+    delivery: {
+      title: 'Rendelj házhoz!',
+      fee: 'Kiszállítási díj',
+      feeValue: (fee: string) => `${fee} / cím / nap`,
+      minimum: 'Minimum rendelés',
+      minimumValue: (minimum: string) => `${minimum} ételérték címenként, naponta`,
+      order: 'Rendeld meg online',
+      orByPhone: 'vagy hívj minket:',
+    },
+    contact: {
+      title: 'Elérhetőség',
       address: 'Cím',
+      phone: 'Telefon',
+      directions: 'Útvonaltervezés',
+    },
+    photos: {
+      window: 'Megterített asztal az ablak előtt, narancssárga kárpitos paddal',
+      hall: 'A hosszú étterem, a fal mentén végig kárpitos pad',
+      booths: 'Asztalok a nagy ablakok előtt és a fal mellett',
+      clock: 'Megterített asztalok a fali óra alatt',
+      entrance: 'A Piccolo bejárata az utcáról',
     },
   },
   common: {

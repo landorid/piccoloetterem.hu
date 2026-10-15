@@ -1,14 +1,14 @@
 ---
 interface Props {
+  /** The accessible name; the logo is the restaurant's name in its own lettering. */
   label: string;
-  class?: string;
 }
 
-const { label, class: className } = Astro.props;
+const { label } = Astro.props;
 ---
 
-<!-- The logo of the O2 mockup, as Masthead.astro draws it; it takes the colour of its text. -->
-<svg viewBox="0 0 299.5 172" role="img" aria-label={label} class={className}>
+<!-- The logo of the O2 mockup (docs/design/megrendeles/mockup.html). -->
+<svg viewBox="0 0 299.5 172" role="img" aria-label={label}>
   <path
     d="M283.2 57.7c-4.1-19.1-40.8-36.6-47.5-39.8-1.1-.5-2.5-1.3-4.4-2.1-13.2-5.7-42.5-19.5-96.3-11.4-60 9-100.6 45.1-105.2 74.8-3.6 23.1 14 66.3 19.4 78.9l-19.5 16.2L59 161.9l-1.6-3.4c-.2-.5-24.2-53.8-20.4-78.2 3.4-22.2 37.3-59.3 99-68.6 51.5-7.8 79.2 5.9 91.8 11.3 2.1.9 3.8 1.7 5.1 2.3 10.7 4.5 40.1 20.6 43 34 .9 4.1-.2 8.1-3 12-7.1 9.5-23.6 16.3-44.2 18-34.6 2.9-96.7-1.3-116.4-10.9l-8.2-3.9 2.8 6.8c22.7 11 89.3 18.1 122.4 15.3 23-1.9 41-9.6 49.4-20.9 4.3-5.7 5.8-11.9 4.5-18z"
   ></path>

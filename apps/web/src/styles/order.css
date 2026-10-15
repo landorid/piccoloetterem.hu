@@ -17,13 +17,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-1) var(--s-3);
-  background: var(--paper);
-  padding: var(--s-3) var(--s-4) 0;
+  padding: var(--s-3) var(--page-gutter) 0;
 }
 .weekbar h1 {
   line-height: 1.2;
   font-weight: 600;
-  font-size: var(--t-xl);
+  font-size: var(--t-2xl);
   letter-spacing: -0.01em;
 }
 .weekbar .week-meta {
@@ -32,13 +31,13 @@
   align-items: center;
   gap: var(--s-2) var(--s-3);
   font-size: var(--t-sm);
-  color: var(--ink-500);
+  color: var(--ink-700);
 }
 .week-pill {
   display: inline-block;
   padding: 2px 8px;
   border-radius: 999px;
-  background: var(--ground);
+  background: var(--brand-100);
   color: var(--ink-700);
   font-weight: 600;
   font-size: var(--t-xs);
@@ -47,18 +46,17 @@
   flex-basis: 100%;
   font-size: var(--t-sm);
   font-weight: 600;
-  color: var(--brand-700);
+  color: var(--ink-700);
 }
 
 /* Six days divide the width evenly: nothing scrolls, nothing is cut off. Not sticky. */
 .daybar {
-  background: var(--paper);
-  border-bottom: 1px solid var(--line);
+  padding: 0 var(--page-gutter);
 }
 .daylist {
   display: grid;
   grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
-  padding: var(--s-2);
+  padding: var(--s-2) 0;
 }
 .day {
   justify-self: start;
@@ -79,7 +77,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--ink-500);
+  color: var(--ink-700);
 }
 .day .dnum {
   position: relative;
@@ -99,9 +97,13 @@
 .day[disabled] {
   cursor: not-allowed;
 }
-.day:is([disabled], [aria-disabled='true']) .dow,
-.day:is([disabled], [aria-disabled='true']) .dnum {
+/* A past day is disabled and greys out. A closed day can still be selected, so its text keeps
+   4.5:1 on sage; the "Zárva" label under it says why it cannot be ordered. */
+.day[disabled] :is(.dow, .dnum) {
   color: var(--ink-400);
+}
+.day[aria-disabled='true'] :is(.dow, .dnum) {
+  color: var(--ink-700);
 }
 .day[aria-selected='true'] .dnum {
   background: var(--brand-600);
@@ -115,7 +117,8 @@
 }
 /* A closed day you look at keeps its circle, in ink: it does not promise you can order. */
 .day[aria-disabled='true'][aria-selected='true'] .dnum {
-  background: var(--ink-400);
+  background: var(--ink-500);
+  color: #fff;
 }
 .day:not([aria-selected='true']):not([disabled]):not([aria-disabled='true']):hover .dnum {
   background: var(--hover);
@@ -143,7 +146,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ink-400);
+  color: var(--ink-700);
 }
 
 /* --- layout ------------------------------------------------------------------------------------ */
@@ -217,7 +220,6 @@
 /* --- cards ------------------------------------------------------------------------------------- */
 .card {
   background: var(--paper);
-  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
 }
@@ -226,12 +228,16 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-2);
-  padding: var(--s-3) var(--s-4);
-  border-bottom: 1px solid var(--line);
+  padding: var(--s-5) var(--s-6) var(--s-1);
 }
-.card-head h2 {
-  font-size: var(--t-lg);
-  font-weight: 600;
+/* The template's section title: coral script, large enough for its 3.9:1 on white. */
+:is(.card-head, .cf-head, .sheet-head) h2,
+.sumbar h2.total {
+  font-family: var(--font-script);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--script);
 }
 .card-head .count {
   margin-left: auto;
@@ -444,11 +450,11 @@
   opacity: 0.85;
 }
 .btn-primary {
-  background: var(--brand-600);
+  background: var(--cta);
   color: #fff;
 }
 .btn-primary:hover {
-  background: var(--brand-700);
+  background: var(--cta-hover);
 }
 .btn-secondary {
   background: var(--paper);
@@ -738,7 +744,7 @@
   color: inherit;
   background: var(--paper);
   border-radius: 24px 24px 0 0;
-  box-shadow: 0 -8px 32px rgba(31, 27, 23, 0.22);
+  box-shadow: 0 -8px 32px rgba(40, 48, 20, 0.22);
   overflow: hidden;
 }
 .sheet[open] {
@@ -747,7 +753,7 @@
   animation: sheet-rise var(--slow) var(--ease);
 }
 .sheet::backdrop {
-  background: rgba(31, 27, 23, 0.45);
+  background: rgba(40, 48, 20, 0.45);
 }
 .sheet[open]::backdrop {
   animation: fade-in var(--slow) var(--ease);
@@ -774,16 +780,12 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--s-3);
-  padding: var(--s-3) var(--s-4);
+  padding: var(--s-4) var(--s-4) var(--s-3) var(--s-6);
   background: var(--paper);
   border-bottom: 1px solid var(--line);
 }
 .sheet-head .titles {
   min-width: 0;
-}
-.sheet-head h2 {
-  font-size: var(--t-lg);
-  font-weight: 600;
 }
 .sheet-head .sub {
   font-size: var(--t-sm);
@@ -827,20 +829,14 @@
 .composer-form {
   display: flex;
   flex-direction: column;
-  margin-inline: calc(var(--s-4) * -1);
-  background: var(--ground);
-  border-block: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
   overflow: hidden;
-  scroll-margin-top: 150px;
+  scroll-margin-top: calc(var(--header-h) + var(--s-6));
 }
 .cf-head {
-  padding: var(--s-3) var(--s-4);
-  background: var(--paper);
-  border-bottom: 1px solid var(--line);
-}
-.cf-head h2 {
-  font-size: var(--t-lg);
-  font-weight: 600;
+  padding: var(--s-5) var(--s-6) 0;
 }
 .cf-body {
   display: flex;
@@ -1326,15 +1322,8 @@
   gap: var(--s-3);
   padding: var(--s-4);
   background: var(--paper);
-  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-}
-.screen > .skeleton {
-  margin-inline: calc(var(--s-4) * -1);
-}
-.screen > .skeleton > .skeleton-card {
-  border-inline: 0;
-  border-radius: 0;
+  box-shadow: var(--shadow-1);
 }
 .skeleton-line {
   display: block;
@@ -1378,7 +1367,6 @@
   gap: var(--s-3);
   padding: var(--s-6) var(--s-4);
   background: var(--paper);
-  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
 }
@@ -1511,7 +1499,7 @@
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--ink-500);
+  color: var(--ink-700);
 }
 .cartsum-total {
   font-size: var(--t-3xl);
@@ -1522,7 +1510,6 @@
 .cartsum-totals {
   padding: var(--s-4);
   background: var(--paper);
-  border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-1);
 }
@@ -1593,27 +1580,8 @@
 
 /* --- desktop: the same components in two columns ----------------------------------------------- */
 @media (min-width: 900px) {
-  .screen > .skeleton {
-    margin-inline: 0;
-  }
-  .screen > .skeleton > .skeleton-card {
-    border-inline: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-  }
-  .composer-form {
-    margin-inline: 0;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-1);
-  }
   .weekbar {
     padding: var(--s-5) var(--page-gutter) 0;
-  }
-  .weekbar h1 {
-    font-size: var(--t-2xl);
-  }
-  .daybar {
-    padding: 0 var(--page-gutter);
   }
   .daylist {
     grid-template-columns: repeat(var(--daycols, 6), 84px);
@@ -1644,11 +1612,12 @@
     flex-direction: column;
     gap: var(--s-4);
     position: sticky;
-    top: 165px;
+    top: calc(var(--header-h) + var(--s-6));
   }
   .sumbar {
     position: static;
-    border: 1px solid var(--line);
+    padding: var(--s-5) var(--s-6) var(--s-6);
+    border: 0;
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-1);
   }

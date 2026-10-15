@@ -1,7 +1,7 @@
 ---
 import Footer from '../components/Footer.astro';
-import Masthead from '../components/Masthead.astro';
 import { OrderingApp } from '../components/OrderingApp';
+import SiteHeader from '../components/SiteHeader.astro';
 import Layout from '../layouts/Layout.astro';
 import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
 import { strings } from '../strings';
@@ -26,7 +26,7 @@ if (baseUrl) {
 ---
 
 <Layout title={strings.meta.title} description={strings.meta.description} apiOrigin={baseUrl}>
-  <Masthead config={config} />
+  <SiteHeader config={config} page="order" />
   <main class="page">
     <OrderingApp client:load initial={{ config }} />
   </main>

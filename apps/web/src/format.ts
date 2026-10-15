@@ -72,7 +72,7 @@ export function weekRange(first: string, last: string): string {
   return strings.week.range(from, to);
 }
 
-/** `07:30` → `7:30`, as the masthead writes a time of day. */
+/** `07:30` → `7:30`, as the header writes a time of day. */
 export function timeOfDay(hhmm: string): string {
   return hhmm.replace(/^0(\d)/, '$1');
 }

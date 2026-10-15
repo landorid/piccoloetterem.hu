@@ -1,15 +1,7 @@
 import type { MenuItem } from '@piccolo/core';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { dayFull, forint, signedForint, weekRange } from '../format';
-import {
-  apiOrigin,
-  createWebApi,
-  largeSrc,
-  type PublicConfig,
-  type PublicMenu,
-  thumbSrc,
-} from '../lib/api';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { dayFull, forint, signedForint } from '../format';
+import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu } from '../lib/api';
 import {
   dayPrice,
   initialDate,
@@ -19,18 +11,17 @@ import {
   weekPrice,
 } from '../menu/week';
 import type { IsoDate } from '../order/cart';
-import { type WeekDay, weekDays } from '../order/days';
+import { weekDays } from '../order/days';
 import { strings } from '../strings';
 import { AllergenChips, AllergenTipProvider } from './Allergens';
 import { describeLoadError, Message, MessageCard } from './OrderingApp';
 import { cls, SoldOut } from './parts';
-import { DayTabs, tabId } from './WeekHeader';
+import { DayTabs, tabId, WeekBar } from './WeekHeader';
 
 const { menuPage: text } = strings;
-const orderHref = '/megrendeles';
 const panelId = 'menu-day';
-/** The `<main>` of `/`, which the hero's second button scrolls to. */
-export const menuSectionId = 'heti-menu';
+/** The target of the page header's link to the menu (index.astro). */
+const anchorId = 'heti-menu';
 
 export type MenuPageProps = {
   /** Baked into the page when it is built. `config` is null only in a build without the API. */
@@ -41,8 +32,11 @@ export type MenuPageProps = {
 
 /**
  * The island of `/`: the week's menu on day tabs, then the featured and permanent sections, to
- * read. It takes no orders; every way forward links to /megrendeles. The menu is fetched in the
- * browser, as on the order page; the server renders the skeleton and the info card.
+ * read. It takes no orders; the page's header and delivery card link to /megrendeles. The menu is
+ * fetched in the browser, as on the order page; the server renders the skeleton.
+ *
+ * It renders no wrapper: the day block and each section are siblings, each with a `data-area`,
+ * so the page's grid (landing.css) can place them between its own blocks.
  */
 export function MenuPage({ initial, now = () => new Date() }: MenuPageProps) {
   const baseUrl = apiOrigin();
@@ -136,186 +130,17 @@ function LoadedPage({
     );
   }
 
+  // A message carries its own heading; the week's heading waits for the week.
   return (
-    <>
-      <MenuCard>{main}</MenuCard>
-      {load.status === 'loading' && <OrderPill />}
-    </>
-  );
-}
-
-/** The framed card the whole menu sits in, like a printed menu on the table. */
-function MenuCard({
-  week,
-  nav,
-  children,
-}: {
-  week?: { isoWeek: number; days: readonly WeekDay[] };
-  nav?: ReactNode;
-  children: ReactNode;
-}) {
-  const first = week?.days[0]?.date;
-  const last = week?.days[week.days.length - 1]?.date;
-  return (
-    <section className="mcard" aria-labelledby="mcard-title">
-      <header className="mcard-head">
-        <h2 id="mcard-title">{strings.week.heading}</h2>
-        {week && first && last && (
-          <p className="mcard-meta">
-            {text.weekOf(strings.week.number(week.isoWeek), weekRange(first, last))}
-          </p>
-        )}
-      </header>
-      {nav}
-      <div className="mcard-body">{children}</div>
-    </section>
-  );
-}
-
-/**
- * The order button that floats at the bottom of the screen. It steps aside while the order
- * section's own button is on screen, so the two never show at once.
- */
-function OrderPill() {
-  const [covered, setCovered] = useState(false);
-  useEffect(() => {
-    const button = document.querySelector('.cta-order');
-    if (!button || typeof IntersectionObserver === 'undefined') return;
-    const observer = new IntersectionObserver(([entry]) =>
-      setCovered(entry?.isIntersecting ?? false),
-    );
-    observer.observe(button);
-    return () => observer.disconnect();
-  }, []);
-  return (
-    <div className="order-pill" data-hidden={covered}>
-      <a className="order-pill-link" href={orderHref}>
-        {text.order}
-      </a>
+    <div className="menu-day" id={anchorId} data-area="day">
+      {load.status === 'loading' && (
+        <div className="weekbar">
+          <h1>{strings.week.heading}</h1>
+        </div>
+      )}
+      {main}
     </div>
   );
-}
-
-type SectionKey = 'daily' | keyof typeof text.sections | 'prices';
-const sectionId = (key: SectionKey) => `menu-${key}`;
-
-/**
- * The card's sticky switcher. On a phone it names the section being read, with arrows to the one
- * before and after; on a wide screen every section is listed. It follows the scroll: the section
- * across the middle of the screen is the current one.
- */
-function SectionNav({ sections }: { sections: ReadonlyArray<{ key: SectionKey; title: string }> }) {
-  const [current, setCurrent] = useState(sections[0]?.key);
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') return;
-    const byId = new Map(sections.map(({ key }) => [sectionId(key), key]));
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          const key = byId.get(entry.target.id);
-          if (entry.isIntersecting && key) setCurrent(key);
-        }
-      },
-      { rootMargin: '-40% 0px -55% 0px' },
-    );
-    for (const id of byId.keys()) {
-      const el = document.getElementById(id);
-      if (el) observer.observe(el);
-    }
-    return () => observer.disconnect();
-  }, [sections]);
-
-  const index = Math.max(
-    0,
-    sections.findIndex((section) => section.key === current),
-  );
-  const jump = (key: SectionKey) => {
-    setCurrent(key);
-    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
-    document
-      .getElementById(sectionId(key))
-      ?.scrollIntoView?.({ block: 'start', behavior: still ? 'auto' : 'smooth' });
-  };
-  const step = (by: number) => {
-    const target = sections[(index + by + sections.length) % sections.length];
-    if (target) jump(target.key);
-  };
-
-  return (
-    <nav className="snav" aria-label={text.sectionNav.label}>
-      <div className="snav-step">
-        <button
-          type="button"
-          className="snav-arrow"
-          aria-label={text.sectionNav.previous}
-          onClick={() => step(-1)}
-        >
-          <ChevronLeft size={18} aria-hidden="true" />
-        </button>
-        <span className="snav-current" aria-live="polite">
-          {sections[index]?.title}
-        </span>
-        <button
-          type="button"
-          className="snav-arrow"
-          aria-label={text.sectionNav.next}
-          onClick={() => step(1)}
-        >
-          <ChevronRight size={18} aria-hidden="true" />
-        </button>
-      </div>
-      <ul className="snav-list">
-        {sections.map(({ key, title }) => (
-          <li key={key}>
-            <a
-              href={`#${sectionId(key)}`}
-              aria-current={key === current || undefined}
-              onClick={(event) => {
-                event.preventDefault();
-                jump(key);
-              }}
-            >
-              {title}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  );
-}
-
-/** One part of the menu card, under a heading set between two flourishes. */
-function MenuSection({
-  sectionKey,
-  title,
-  children,
-}: {
-  sectionKey: SectionKey;
-  title: string;
-  children: ReactNode;
-}) {
-  return (
-    <section id={sectionId(sectionKey)} className="msection" aria-label={title}>
-      <h3 className="orn">{title}</h3>
-      {children}
-    </section>
-  );
-}
-
-type Listed = { key: keyof typeof text.sections; items: readonly MenuItem[]; hint?: string };
-
-/** The week's featured and permanent sections, in menu order, without the empty ones. */
-function listedSections(menu: PublicMenu): Listed[] {
-  const { permanent } = menu;
-  const all: Listed[] = [
-    { key: 'featured', items: menu.featured },
-    { key: 'allWeek', items: permanent.allWeek },
-    { key: 'desserts', items: permanent.desserts },
-    { key: 'pickles', items: permanent.pickles },
-    { key: 'sides', items: permanent.sides, hint: text.sidesHint },
-    { key: 'sideExtras', items: permanent.sideExtras },
-  ];
-  return all.filter((section) => section.items.length > 0);
 }
 
 function Week({
@@ -333,31 +158,16 @@ function Week({
     [menu, orderableDates, closedDates],
   );
   const [active, setActive] = useState<IsoDate>(() => initialDate(menu, orderableDates, now()));
-  const panel = useRef<HTMLDivElement>(null);
-  // A guest deep in one day's list who picks another day lands on that day's title, not mid-list.
-  const select = (date: IsoDate) => {
-    setActive(date);
-    const el = panel.current;
-    if (!el || el.getBoundingClientRect().top >= 0) return;
-    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? true;
-    el.scrollIntoView?.({ block: 'start', behavior: still ? 'auto' : 'smooth' });
-  };
   const day = Object.values(menu.days).find((d) => d.date === active) ?? menu.days[1];
   const closed = closedDates.includes(day.date);
   const { soupPrice } = config.pricing;
-  const listed = useMemo(() => listedSections(menu), [menu]);
-  const sections = useMemo(
-    () => [
-      { key: 'daily' as const, title: text.daily },
-      ...listed.map(({ key }) => ({ key, title: text.sections[key] })),
-      { key: 'prices' as const, title: text.prices.title },
-    ],
-    [listed],
-  );
+  const { permanent } = menu;
 
   return (
     <>
-      <MenuCard week={{ isoWeek: menu.isoWeek, days }} nav={<SectionNav sections={sections} />}>
+      <div className="menu-day" id={anchorId} data-area="day">
+        <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
+        <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
         {notice && (
           <div className="banner banner-warn" role="status">
             <div>
@@ -376,44 +186,83 @@ function Week({
             </div>
           </div>
         )}
-        <MenuSection sectionKey="daily" title={text.daily}>
-          <div className="menu-days">
-            <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={select} browse />
+        <section
+          id={panelId}
+          role="tabpanel"
+          aria-labelledby={tabId(day.date)}
+          className="card menu-card"
+        >
+          <div className="card-head">
+            <h2>{dayFull(day.date)}</h2>
           </div>
-          <div ref={panel} id={panelId} role="tabpanel" aria-labelledby={tabId(day.date)}>
-            {/* Keyed by the day, so a newly picked day fades in and the switch is seen. */}
-            <div key={day.date} className="menu-day-body">
-              <h4 className="menu-day-title">{dayFull(day.date)}</h4>
-              {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
-              {day.soups.length === 0 && day.mains.length === 0 ? (
-                <p className="menu-empty">{text.emptyDay}</p>
-              ) : (
-                <>
-                  <DishList
-                    title={text.soups}
-                    items={day.soups}
-                    price={(item) => dayPrice(item, day.date, soupPrice)}
-                  />
-                  <DishList
-                    title={text.mains}
-                    hint={text.mainsHint}
-                    items={day.mains}
-                    price={(item) => dayPrice(item, day.date, soupPrice)}
-                  />
-                </>
-              )}
-            </div>
-          </div>
-        </MenuSection>
-        {listed.map(({ key, items, hint }) => (
-          <MenuSection key={key} sectionKey={key} title={text.sections[key]}>
-            <DishList items={items} hint={hint} price={(item) => weekPrice(item, menu)} />
-          </MenuSection>
-        ))}
-        <PriceList config={config} />
-      </MenuCard>
-      {notice === null && <OrderPill />}
+          {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
+          {day.soups.length === 0 && day.mains.length === 0 ? (
+            <p className="menu-empty">{text.emptyDay}</p>
+          ) : (
+            <>
+              <DishList
+                title={text.soups}
+                items={day.soups}
+                price={(item) => dayPrice(item, day.date, soupPrice)}
+              />
+              <DishList
+                title={text.mains}
+                hint={text.mainsHint}
+                items={day.mains}
+                price={(item) => dayPrice(item, day.date, soupPrice)}
+              />
+            </>
+          )}
+        </section>
+      </div>
+      <Section area="featured" title={text.sections.featured} items={menu.featured} menu={menu} />
+      <Section
+        area="all-week"
+        title={text.sections.allWeek}
+        items={permanent.allWeek}
+        menu={menu}
+      />
+      <Section
+        area="desserts"
+        title={text.sections.desserts}
+        items={permanent.desserts}
+        menu={menu}
+      />
+      <Section area="pickles" title={text.sections.pickles} items={permanent.pickles} menu={menu} />
+      <Section
+        area="sides"
+        title={text.sections.sides}
+        hint={text.sidesHint}
+        items={[...permanent.sides, ...permanent.sideExtras]}
+        menu={menu}
+      />
+      <PriceCard config={config} />
     </>
+  );
+}
+
+/** A featured or permanent section; left out when staff listed nothing in it. */
+function Section({
+  area,
+  title,
+  hint,
+  items,
+  menu,
+}: {
+  area: string;
+  title: string;
+  hint?: string;
+  items: readonly MenuItem[];
+  menu: PublicMenu;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section className="card menu-card" aria-label={title} data-area={area}>
+      <div className="card-head">
+        <h2>{title}</h2>
+      </div>
+      <DishList items={items} hint={hint} price={(item) => weekPrice(item, menu)} />
+    </section>
   );
 }
 
@@ -431,7 +280,7 @@ function DishList({
   if (items.length === 0) return null;
   return (
     <div className="dish-group">
-      {title && <h4 className="dish-group-title">{title}</h4>}
+      {title && <h3 className="dish-group-title">{title}</h3>}
       {hint && <p className="dish-group-hint">{hint}</p>}
       <ul className="dishes">
         {items.map((item) => (
@@ -447,54 +296,48 @@ function Dish({ item, price }: { item: MenuItem; price: ListedPrice }) {
     item.variations.length > 0 && text.variations(item.variations),
     item.soupIncluded && item.category !== 'daily_main' && text.withSoup,
     item.requiresSide && text.withSide,
-    price.kind === 'price' && price.saturday !== null && text.saturday(forint(price.saturday)),
   ].filter((note): note is string => typeof note === 'string');
   return (
     <li className={cls('dish', item.soldOut && 'is-soldout')}>
-      <DishPhoto item={item} />
       <div className="dish-body">
-        <p className="dish-line">
-          <span className="dish-title">
-            {item.name}
-            {item.soldOut && <SoldOut />}
-            {price.kind !== 'free' && <Leader />}
-          </span>
-          {price.kind === 'price' && <span className="dish-amt num">{forint(price.amount)}</span>}
-          {price.kind === 'soup' && <span className="dish-included">{text.soupIncluded}</span>}
+        <p className="dish-name">
+          <span className="dish-title">{item.name}</span>
+          {item.soldOut && <SoldOut />}
         </p>
         {item.description && <p className="dish-desc">{item.description}</p>}
         {notes.length > 0 && <p className="dish-note">{notes.join(' · ')}</p>}
         <AllergenChips codes={item.allergens} />
       </div>
+      <Price price={price} />
     </li>
   );
 }
 
-/**
- * A permanent dish's photo: wide above the name on a phone (the 1200 px rendition), a small square
- * beside it on a wide screen (the 192 px one). A photo that fails to load leaves nothing behind;
- * the failed URL is remembered, so a new version is tried again.
- */
-function DishPhoto({ item }: { item: MenuItem }) {
-  const large = largeSrc(item);
-  const thumb = thumbSrc(item);
-  const [failed, setFailed] = useState<string | null>(null);
-  if (large === null || thumb === null || failed === large) return null;
-  return (
-    <picture className="dish-photo">
-      <source media="(min-width: 900px)" srcSet={thumb} />
-      <img src={large} alt="" loading="lazy" decoding="async" onError={() => setFailed(large)} />
-    </picture>
-  );
-}
-
-/** The dotted line from a dish's name to its price. */
-function Leader() {
-  return <span className="dish-dots" aria-hidden="true" />;
+function Price({ price }: { price: ListedPrice }) {
+  switch (price.kind) {
+    case 'free':
+      return null;
+    case 'soup':
+      return (
+        <p className="dish-price">
+          <span className="dish-included">{text.soupIncluded}</span>
+          <span className="dish-sub num">{text.soupAlone(forint(price.alone))}</span>
+        </p>
+      );
+    case 'price':
+      return (
+        <p className="dish-price">
+          <span className="dish-amt num">{forint(price.amount)}</span>
+          {price.saturday !== null && (
+            <span className="dish-sub num">{text.saturday(forint(price.saturday))}</span>
+          )}
+        </p>
+      );
+  }
 }
 
 /** The rules a composed menu is priced by, and the extras, all from the config. */
-function PriceList({ config }: { config: PublicConfig }) {
+function PriceCard({ config }: { config: PublicConfig }) {
   const { pricing, extras } = config;
   const rows: Array<[string, string]> = [
     [text.prices.soupAlone, forint(pricing.soupPrice)],
@@ -505,23 +348,23 @@ function PriceList({ config }: { config: PublicConfig }) {
     ]),
   ];
   return (
-    <MenuSection sectionKey="prices" title={text.prices.title}>
+    <section className="card menu-card" aria-label={text.prices.title} data-area="prices">
+      <div className="card-head">
+        <h2>{text.prices.title}</h2>
+      </div>
       <ul className="dishes">
         {rows.map(([name, amount], index) => (
           // biome-ignore lint/suspicious/noArrayIndexKey: the rows are fixed for the page's life.
           <li key={index} className="dish">
-            <p className="dish-body dish-line">
-              <span className="dish-title">
-                {name}
-                <Leader />
-              </span>
+            <p className="dish-body dish-title">{name}</p>
+            <p className="dish-price">
               <span className="dish-amt num">{amount}</span>
             </p>
           </li>
         ))}
       </ul>
       <p className="menu-footnote">{text.prices.vat}</p>
-    </MenuSection>
+    </section>
   );
 }
 

@@ -1,459 +1,90 @@
 /*
- * The menu page (`/`). Its buttons, day chips, tiles and allergen chips come from order.css; this
- * file sets the page on textured paper in one centred column: a text hero, the week as a framed
- * menu card with a sticky section switcher, then the restaurant, the order card over a photo of
- * the room, and how to find us. Phone first; the 900 px breakpoint is the order page's.
+ * The menu island of `/`: its week bar, day strip, cards, tags, allergen chips and buttons come
+ * from order.css, repainted by landing.css. Only the dish list and the day block are new.
  */
-.menu-site {
-  /* Darker than the order page's grey: small print reaches 7:1 on the card. */
-  --ink-500: #5e5750;
-  --ink-700: #454545;
-  --paper-bg: #fbfaf7;
-  --card: #f8f7f2;
-  --rule: #dcd8cd;
-  --rule-soft: #e6e3da;
-  --ink: #141313;
-  --font-page: 'Jost Variable', ui-sans-serif, system-ui, sans-serif;
-  --head-h: 60px;
-  /* A fine paper grain, generated here rather than shipped as a photo. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .35 0 0 0 0 .31 0 0 0 0 .25 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  background: var(--grain), var(--paper-bg);
-  color: var(--ink);
-  font-family: var(--font-page);
-}
-
-/* A heading between two hairlines, each ending in a small brown diamond next to the words. The
-   words wrap, balanced, when the title is long; the lines keep a minimum length. */
-.orn {
-  --diamond: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Crect x='1.2' y='1.2' width='5.6' height='5.6' transform='rotate(45 4 4)' fill='%2396693f'/%3E%3C/svg%3E");
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  margin-bottom: var(--s-4);
-  font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2rem);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-align: center;
-  text-wrap: balance;
-  color: var(--ink);
-}
-.orn::before,
-.orn::after {
-  content: '';
-  flex: 1 0 28px;
-  max-width: 110px;
-  height: 8px;
-}
-.orn::before {
-  background:
-    var(--diamond) right center / 8px 8px no-repeat,
-    linear-gradient(var(--rule), var(--rule)) left center / calc(100% - 12px) 1px no-repeat;
-}
-.orn::after {
-  background:
-    var(--diamond) left center / 8px 8px no-repeat,
-    linear-gradient(var(--rule), var(--rule)) right center / calc(100% - 12px) 1px no-repeat;
-}
-
-/* --- header and hero ----------------------------------------------------------------------------- */
-.site-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s-3);
-  height: var(--head-h);
-  padding: 0 var(--s-4);
-  background: rgba(251, 250, 245, 0.92);
-  backdrop-filter: saturate(1.3) blur(10px);
-  border-bottom: 1px solid var(--rule-soft);
-}
-.site-logo {
-  display: flex;
-  color: var(--brand-700);
-}
-.site-logo svg {
-  width: auto;
-  height: 36px;
-  fill: currentColor;
-}
-.site-nav {
-  display: none;
-}
-.site-call {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  min-height: var(--tap);
-  padding: 0 var(--s-3);
-  border-radius: 999px;
-  color: var(--ink);
-  font-size: var(--t-sm);
-  font-weight: 500;
-  text-decoration: none;
-}
-.site-call:hover {
-  background: var(--rule-soft);
-}
-
-.hero {
-  position: relative;
-  isolation: isolate;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-5);
-  padding: 56px var(--s-5) var(--s-10);
-  overflow: hidden;
-  text-align: center;
-}
-/* An abstract ground behind the hero: two soft fields of the brand's warm browns, a set of fine
-   rings off one corner and the paper grain over all of it. Nothing figurative, and light enough
-   that the words stay at full contrast. */
-.hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-  background:
-    var(--grain),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600' fill='none' stroke='%2396693f' stroke-opacity='.26'%3E%3Ccircle cx='300' cy='300' r='120'/%3E%3Ccircle cx='300' cy='300' r='180'/%3E%3Ccircle cx='300' cy='300' r='240'/%3E%3Ccircle cx='300' cy='300' r='298'/%3E%3C/svg%3E")
-    right -180px top -160px / 520px 520px no-repeat,
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 600 600' fill='none' stroke='%2396693f' stroke-opacity='.26'%3E%3Ccircle cx='300' cy='300' r='120'/%3E%3Ccircle cx='300' cy='300' r='180'/%3E%3Ccircle cx='300' cy='300' r='240'/%3E%3Ccircle cx='300' cy='300' r='298'/%3E%3C/svg%3E")
-    left -220px bottom -260px / 560px 560px no-repeat,
-    radial-gradient(65% 50% at 10% 6%, rgba(226, 196, 160, 0.8), transparent 72%),
-    radial-gradient(60% 45% at 94% 72%, rgba(200, 146, 96, 0.38), transparent 72%),
-    radial-gradient(80% 60% at 50% 110%, rgba(243, 231, 215, 0.9), transparent 70%),
-    var(--paper-bg);
-}
-/* On a phone one photo of the room runs the width under the words; on a wide screen two round
-   photos sit behind them, half off the page's edges, like plates at the table's corners. */
-.hero picture:has(.hero-plate-a) {
-  order: 1;
-  width: 100%;
-  margin-top: var(--s-2);
-}
-.hero-plate {
-  display: block;
-  border: 6px solid #fff;
-  box-shadow: 0 18px 40px rgba(20, 14, 6, 0.2);
-  object-fit: cover;
-}
-.hero-plate-a {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 3;
-  border-radius: var(--radius-lg);
-}
-.hero picture:has(.hero-plate-b) {
-  display: none;
-}
-.hero-eyebrow {
-  font-size: 1rem;
-  font-weight: 500;
-  letter-spacing: 0.3em;
-  text-transform: uppercase;
-  color: var(--ink);
-}
-.hero-title {
-  max-width: 12ch;
-  font-size: clamp(2.625rem, 1.6rem + 4.6vw, 5rem);
-  font-weight: 500;
-  line-height: 1.1;
-  text-transform: uppercase;
-}
-.hero-lede {
-  max-width: 38rem;
-  font-size: 1.375rem;
-  line-height: 1.4;
-  color: var(--ink-700);
-}
-.hero-fact {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s-2);
-  font-size: 1.125rem;
-  color: var(--ink-700);
-}
-.hero-fact::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--brand-600);
-}
-
-/* --- the menu card ------------------------------------------------------------------------------- */
-.menu-page {
-  padding: 0 var(--s-3) var(--s-10);
-}
-.mcard {
-  width: 100%;
-  max-width: 880px;
-  margin: 0 auto;
-  background: var(--card);
-  border: 1px solid var(--rule);
-  box-shadow:
-    0 1px 2px rgba(40, 30, 15, 0.05),
-    0 18px 40px rgba(40, 30, 15, 0.08);
-}
-.mcard-head {
-  padding: var(--s-6) var(--s-4) var(--s-4);
-  border-bottom: 1px solid var(--rule);
-  text-align: center;
-}
-.mcard-head h2 {
-  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-.mcard-meta {
-  margin-top: var(--s-1);
-  font-size: var(--t-sm);
-  color: var(--ink-500);
-}
-.mcard-body {
+/* The week's heading, the day strip and the day's card: one block of the page's grid. */
+.menu-day {
   display: flex;
   flex-direction: column;
   gap: var(--s-4);
-  padding: var(--s-4) var(--s-3) var(--s-5);
+  min-width: 0;
+  scroll-margin-top: calc(var(--header-h) + var(--s-4));
 }
 
-/* The switcher stays under the top edge while the menu scrolls. */
-.snav {
-  position: sticky;
-  top: 0;
-  z-index: 7;
-  background: var(--card);
-  border-bottom: 1px solid var(--rule);
-}
-.snav-step {
-  display: grid;
-  grid-template-columns: var(--tap) 1fr var(--tap);
-  align-items: center;
-  gap: var(--s-2);
-  padding: var(--s-2) var(--s-3);
-}
-.snav-arrow {
-  display: grid;
-  place-items: center;
-  width: var(--tap);
-  height: var(--tap);
-  border: 0;
-  border-radius: 50%;
-  background: var(--ink);
-  color: #fff;
-  transition: transform var(--fast) var(--ease);
-}
-.snav-arrow:active {
-  transform: scale(0.92);
-}
-.snav-current {
-  font-size: 1.125rem;
-  font-weight: 500;
-  text-align: center;
-}
-.snav-list {
-  display: none;
-}
-
-.msection {
-  padding: var(--s-6) var(--s-4) var(--s-4);
-  border: 1px solid var(--rule-soft);
-  border-radius: var(--radius-sm);
-  scroll-margin-top: 72px;
-}
-
-/* The day chips: six equal blocks, the chosen one solid brown. */
-.menu-days {
-  margin-bottom: var(--s-4);
-}
-.menu-days .daybar {
-  background: none;
-  border: 0;
-}
-.menu-days .daylist {
-  gap: 4px;
-  padding: 0;
-}
-.menu-days .day {
-  justify-self: stretch;
-  gap: 0;
-  min-height: 52px;
-  padding: 6px 0;
-  border-radius: var(--radius-sm);
-  background: var(--paper);
-  box-shadow: inset 0 0 0 1px var(--rule);
-  color: var(--ink-700);
-  transition:
-    background-color var(--fast) var(--ease),
-    transform var(--fast) var(--ease);
-}
-.menu-days .day .dnum {
-  width: auto;
-  height: auto;
-  border-radius: 0;
-  background: none;
-  font-size: var(--t-lg);
-  font-weight: 600;
-  color: var(--ink);
-}
-.menu-days .day:active {
-  transform: scale(var(--press));
-}
-.menu-days .day:active .dnum {
-  transform: none;
-}
-.menu-days .day:not([aria-selected='true']):hover {
-  background: var(--brand-50);
-}
-.menu-days .day:not([aria-selected='true']):hover .dnum {
-  background: none;
-}
-.menu-days .day[aria-selected='true'] {
-  background: var(--brand-600);
-  box-shadow: none;
-}
-.menu-days .day[aria-selected='true'] :is(.dow, .dnum) {
-  background: none;
-  color: #fff;
-}
-.menu-days .day[aria-disabled='true'][aria-selected='true'] {
-  background: var(--ink-400);
-}
-
-#menu-day {
-  scroll-margin-top: 72px;
-}
-.menu-day-body {
-  animation: menu-day-in var(--slow) var(--ease);
-}
-@keyframes menu-day-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-.menu-day-title {
-  margin-bottom: var(--s-2);
-  font-size: 1.25rem;
-  font-weight: 500;
-  text-align: center;
-  color: var(--brand-700);
-}
-
-.dish-group + .dish-group {
-  margin-top: var(--s-4);
+/* --- dishes ------------------------------------------------------------------------------------ */
+.menu-card {
+  overflow: hidden;
 }
 .dish-group-title {
-  padding-top: var(--s-2);
-  font-size: var(--t-sm);
-  font-weight: 600;
-  letter-spacing: 0.18em;
+  padding: var(--s-3) var(--s-6) 0;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  text-align: center;
-  color: var(--brand-600);
+  color: var(--brand-700);
 }
 .dish-group-hint {
-  padding-top: var(--s-1);
-  font-size: 1rem;
-  font-style: italic;
-  text-align: center;
+  padding: var(--s-1) var(--s-6) 0;
+  font-size: var(--t-sm);
   color: var(--ink-500);
 }
 .dishes {
-  padding-top: var(--s-1);
+  padding: var(--s-1) 0 var(--s-3);
 }
-/* On a phone a dish's photo runs the width above its name; on a wide screen it sits beside it. */
 .dish {
   display: flex;
-  flex-direction: column;
-  gap: var(--s-4);
-  padding: var(--s-6) 0;
-}
-.dish + .dish {
-  border-top: 1px solid var(--rule-soft);
+  align-items: flex-start;
+  gap: var(--s-3);
+  margin: 0 var(--s-6);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--line);
 }
 .dish-body {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--s-2);
-}
-/* The price sits level with the name's last line, and a dotted leader runs to it from that line's
-   last word: `.dish-dots` is an empty inline at the end of the name, its dots hang off it and are
-   clipped at the name's box. */
-.dish-line {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  column-gap: var(--s-2);
+  align-items: flex-start;
+  gap: 2px;
 }
 .dish-title {
-  overflow: hidden;
-  font-size: 1.25rem;
   font-weight: 500;
-  line-height: 1.2;
-  letter-spacing: 0.01em;
-  text-transform: uppercase;
-  overflow-wrap: break-word;
-}
-.dish-dots {
-  position: relative;
-}
-.dish-dots::after {
-  content: '. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  padding-left: 0.45em;
-  font-weight: 400;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-  color: var(--ink-400);
-}
-.dish-amt {
-  font-size: 1.25rem;
-  font-weight: 500;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-/* A soup has no price of its own: the leader runs to the note that the menu's price includes it.
-   On a phone the note wraps onto a second line rather than squeezing the soup's name. */
-.dish-included {
-  max-width: 8.25rem;
-  font-size: 0.875rem;
-  font-style: italic;
-  line-height: 1.35;
-  text-align: right;
-  text-wrap: balance;
-  color: var(--ink-700);
+  overflow-wrap: anywhere;
 }
 .dish-desc,
 .dish-note {
-  font-size: 1.125rem;
-  line-height: 1.4;
+  font-size: var(--t-sm);
   color: var(--ink-700);
 }
 .dish-note {
-  font-size: 1rem;
   color: var(--ink-500);
 }
 .dish .achips {
   margin-top: var(--s-1);
 }
-.dish-photo img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  border-radius: var(--radius);
-  object-fit: cover;
+.dish-price {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.dish-amt {
+  font-weight: 500;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+.dish-included {
+  white-space: nowrap;
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ok-700);
+}
+.dish-sub {
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+  white-space: nowrap;
 }
 /* Struck through as well as greyed: the state is not carried by colour alone. */
 .dish.is-soldout :is(.dish-title, .dish-desc, .dish-amt) {
@@ -464,502 +95,18 @@
 }
 .menu-closed,
 .menu-empty {
-  margin: var(--s-2) 0;
+  margin: var(--s-3) var(--s-6) 0;
   padding: var(--s-2) var(--s-3);
   border-radius: var(--radius-sm);
-  background: var(--brand-50);
+  background: var(--ground);
   font-size: var(--t-sm);
-  text-align: center;
   color: var(--ink-700);
+}
+.menu-empty {
+  margin-bottom: var(--s-3);
 }
 .menu-footnote {
-  padding-top: var(--s-3);
+  padding: 0 var(--s-6) var(--s-4);
   font-size: var(--t-xs);
-  text-align: center;
   color: var(--ink-500);
-}
-
-/* The order button floating at the bottom; it steps aside while the order card's own shows. */
-.order-pill {
-  position: fixed;
-  left: 50%;
-  bottom: calc(var(--s-4) + env(safe-area-inset-bottom));
-  z-index: 8;
-  transform: translateX(-50%);
-  transition:
-    transform var(--slow) var(--ease),
-    opacity var(--slow) var(--ease);
-}
-.order-pill[data-hidden='true'] {
-  opacity: 0;
-  transform: translate(-50%, 140%);
-  pointer-events: none;
-}
-.order-pill-link {
-  display: inline-flex;
-  align-items: center;
-  min-height: 52px;
-  padding: 0 var(--s-8);
-  border-radius: 999px;
-  background: var(--ink);
-  box-shadow:
-    0 0 0 4px rgba(255, 255, 255, 0.5),
-    0 10px 28px rgba(20, 14, 6, 0.28);
-  color: #fff;
-  font-size: var(--t-md);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-decoration: none;
-}
-.order-pill-link:hover {
-  background: var(--brand-800);
-}
-
-/* --- below the menu ------------------------------------------------------------------------------ */
-.block {
-  padding: var(--s-10) var(--s-3);
-}
-.frame {
-  position: relative;
-  width: 100%;
-  max-width: 880px;
-  margin: 0 auto;
-  padding: var(--s-8) var(--s-5);
-  background: var(--card);
-  border: 1px solid var(--rule);
-  outline: 1px solid var(--rule-soft);
-  outline-offset: -8px;
-}
-.block-title {
-  margin-bottom: var(--s-3);
-  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  text-align: center;
-}
-
-.about-body {
-  max-width: 38rem;
-  margin: 0 auto;
-  font-size: 1.25rem;
-  line-height: 1.6;
-  text-align: center;
-  color: var(--ink-700);
-}
-.about-points {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  max-width: 30rem;
-  margin: var(--s-6) auto 0;
-}
-.about-points li {
-  display: flex;
-  align-items: center;
-  gap: var(--s-3);
-  font-size: 1.125rem;
-}
-.about-points svg {
-  flex: none;
-  color: var(--brand-600);
-}
-
-/* A row to swipe on a phone, each photo snapping to the left edge with the next one peeking in. */
-.gallery {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 78%;
-  gap: var(--s-3);
-  max-width: 880px;
-  margin: var(--s-4) auto 0;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-}
-.gallery::-webkit-scrollbar {
-  display: none;
-}
-.gallery li {
-  scroll-snap-align: start;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-}
-.gallery img {
-  display: block;
-  width: 100%;
-  height: auto;
-  aspect-ratio: 4 / 5;
-  object-fit: cover;
-}
-
-.order-block {
-  position: relative;
-  isolation: isolate;
-}
-.order-block picture,
-.order-photo {
-  position: absolute;
-  inset: 0;
-  z-index: -2;
-}
-.order-photo {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.order-block::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: rgba(24, 16, 8, 0.45);
-}
-.order-card {
-  max-width: 560px;
-  text-align: center;
-}
-/* Four corner marks inside the frame, an L each. */
-.frame-corner {
-  position: absolute;
-  width: 22px;
-  height: 22px;
-  border: 0 solid var(--brand-500);
-}
-.frame-corner:nth-child(1) {
-  top: 16px;
-  left: 16px;
-  border-top-width: 2px;
-  border-left-width: 2px;
-}
-.frame-corner:nth-child(2) {
-  top: 16px;
-  right: 16px;
-  border-top-width: 2px;
-  border-right-width: 2px;
-}
-.frame-corner:nth-child(3) {
-  bottom: 16px;
-  left: 16px;
-  border-bottom-width: 2px;
-  border-left-width: 2px;
-}
-.frame-corner:nth-child(4) {
-  bottom: 16px;
-  right: 16px;
-  border-bottom-width: 2px;
-  border-right-width: 2px;
-}
-.order-lede {
-  font-size: 1.125rem;
-  line-height: 1.55;
-  color: var(--ink-700);
-}
-.order-facts {
-  display: flex;
-  flex-direction: column;
-  margin: var(--s-5) 0;
-  border-block: 1px solid var(--rule-soft);
-}
-.order-facts > div {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-3);
-  padding: var(--s-3) 0;
-  text-align: left;
-}
-.order-facts > div + div {
-  border-top: 1px solid var(--rule-soft);
-}
-.order-facts dt {
-  font-size: var(--t-sm);
-  color: var(--ink-500);
-}
-.order-facts dd {
-  margin: 0;
-  font-size: var(--t-sm);
-  font-weight: 500;
-  text-align: right;
-}
-.cta-order {
-  width: 100%;
-  min-height: 52px;
-  background: var(--brand-600);
-  color: #fff;
-  font-size: var(--t-base);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  text-decoration: none;
-}
-.cta-order:hover {
-  background: var(--brand-700);
-}
-.order-call {
-  margin-top: var(--s-3);
-  font-size: var(--t-sm);
-  color: var(--ink-500);
-}
-.order-call a {
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.contact-card {
-  display: flex;
-  flex-direction: column;
-  padding: var(--s-3);
-}
-.contact-card picture {
-  display: block;
-}
-.contact-photo {
-  display: block;
-  width: 100%;
-  height: 240px;
-  object-fit: cover;
-  object-position: 35% 35%;
-}
-.contact-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-4);
-  padding: var(--s-6) var(--s-3) var(--s-4);
-}
-.contact-body .orn {
-  margin-bottom: 0;
-}
-.contact-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--s-3);
-  margin: 0;
-}
-.contact-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--s-3);
-}
-.contact-item dt {
-  flex: none;
-  padding-top: 2px;
-  color: var(--brand-600);
-}
-.contact-item dd {
-  margin: 0;
-}
-.contact-item a {
-  font-weight: 600;
-  color: var(--ink);
-}
-.contact-directions {
-  align-self: flex-start;
-  gap: var(--s-2);
-  min-height: 48px;
-  background: var(--ink);
-  color: #fff;
-  text-decoration: none;
-}
-.contact-directions:hover {
-  background: var(--brand-800);
-}
-
-.site-foot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--s-1);
-  padding: var(--s-8) var(--s-4) calc(96px + env(safe-area-inset-bottom));
-  background: #e8e5dc;
-  font-size: var(--t-sm);
-  text-align: center;
-  color: var(--ink-500);
-}
-
-/* Set only by Place.astro's script, so without it nothing starts hidden. */
-.reveal-ready [data-reveal] {
-  opacity: 0;
-  transform: translateY(18px);
-  transition:
-    opacity 600ms var(--ease),
-    transform 600ms var(--ease);
-  transition-delay: calc(var(--i, 0) * 90ms);
-}
-.reveal-ready [data-reveal].is-revealed {
-  opacity: 1;
-  transform: none;
-}
-
-@media (hover: hover) {
-  .gallery img {
-    transition: transform 500ms var(--ease);
-  }
-  .gallery li:hover img {
-    transform: scale(1.04);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .menu-days .day,
-  .order-pill,
-  .snav-arrow {
-    transition: none;
-  }
-  .menu-day-body {
-    animation: none;
-  }
-}
-
-@media (min-width: 900px) {
-  .menu-site {
-    --head-h: 68px;
-  }
-  .site-head {
-    position: sticky;
-    top: 0;
-    z-index: 9;
-    padding: 0 var(--page-gutter);
-  }
-  .site-nav {
-    display: block;
-  }
-  .site-nav ul {
-    display: flex;
-    gap: var(--s-6);
-  }
-  .site-nav a {
-    font-size: var(--t-sm);
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink);
-    text-decoration: none;
-  }
-  .site-nav a:hover {
-    color: var(--brand-600);
-  }
-  .hero {
-    min-height: calc(100svh - var(--head-h) - 120px);
-    justify-content: center;
-    padding: 96px var(--s-8) 160px;
-  }
-  .hero-eyebrow {
-    font-size: 1.125rem;
-  }
-  .hero picture:has(.hero-plate-a),
-  .hero picture:has(.hero-plate-b) {
-    display: block;
-    position: absolute;
-    z-index: -1;
-    width: auto;
-    margin: 0;
-  }
-  .hero picture:has(.hero-plate-a) {
-    top: -60px;
-    left: -110px;
-  }
-  .hero picture:has(.hero-plate-b) {
-    right: -120px;
-    bottom: 40px;
-  }
-  .hero-plate,
-  .hero-plate-a {
-    width: 360px;
-    height: 360px;
-    aspect-ratio: auto;
-    border-width: 8px;
-    border-radius: 50%;
-  }
-  .dish {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: var(--s-5);
-  }
-  .dish-photo img {
-    width: 112px;
-    height: 84px;
-    aspect-ratio: auto;
-    border-radius: var(--radius-sm);
-  }
-  .menu-page {
-    padding-inline: var(--s-8);
-  }
-  .snav {
-    top: var(--head-h);
-  }
-  .snav-step {
-    display: none;
-  }
-  .snav-list {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--s-1) var(--s-4);
-    padding: var(--s-3) var(--s-4);
-  }
-  .snav-list a {
-    display: inline-block;
-    padding: var(--s-1) 0;
-    border-bottom: 2px solid transparent;
-    font-size: var(--t-sm);
-    white-space: nowrap;
-    color: var(--ink-700);
-    text-decoration: none;
-  }
-  .snav-list a:hover {
-    color: var(--ink);
-  }
-  .snav-list a[aria-current='true'] {
-    border-bottom-color: var(--brand-600);
-    color: var(--ink);
-  }
-  .mcard-body {
-    padding: var(--s-6);
-  }
-  .msection {
-    padding: var(--s-8) var(--s-8) var(--s-5);
-    scroll-margin-top: calc(var(--head-h) + 64px);
-  }
-  #menu-day {
-    scroll-margin-top: calc(var(--head-h) + 64px);
-  }
-  .menu-days .daylist {
-    max-width: 560px;
-    margin: 0 auto;
-  }
-  .dish-included {
-    max-width: none;
-    white-space: nowrap;
-  }
-  .block {
-    padding-inline: var(--s-8);
-  }
-  .frame {
-    padding: var(--s-10);
-  }
-  .gallery {
-    grid-auto-flow: row;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    overflow: visible;
-  }
-  .order-block {
-    padding-block: 120px;
-  }
-  .contact-card {
-    flex-direction: row;
-  }
-  .contact-card picture {
-    position: relative;
-    flex: 0 0 46%;
-  }
-  .contact-photo {
-    position: absolute;
-    inset: 0;
-    height: 100%;
-  }
-  .contact-body {
-    justify-content: center;
-    padding: var(--s-10) var(--s-8);
-  }
 }

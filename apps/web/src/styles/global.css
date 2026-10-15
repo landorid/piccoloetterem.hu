@@ -1,37 +1,45 @@
 /*
- * The public site's tokens and shell, from the O2 mockup (docs/design/megrendeles/README.md),
- * since repainted: white ground, neutral greys for surfaces and lines, and the brand brown kept
- * for the primary action and the chosen state. A 4 px spacing scale. The order page's components
- * are in order.css.
+ * The public site's tokens and shell, in the look of the Patty Pantry template
+ * (pattypantry.framer.website): a sage ground, olive type in Poppins, coral script headings in
+ * Caveat on white rounded cards. Olive marks the chosen state; a darker coral is the primary
+ * action. A 4 px spacing scale. The order page's components are in order.css, the landing page's
+ * layout in landing.css.
+ *
+ * The template's coral (#f06451) is kept for large script headings only; white on it is 3.2:1,
+ * so a button with white text uses a darker coral (5:1).
  */
 :root {
   color-scheme: light;
 
-  --brand-900: #33210f;
-  --brand-800: #4a3018;
-  --brand-700: #5f4222;
-  --brand-600: #7a5230;
-  --brand-500: #96693f;
-  --brand-200: #e7d3ba;
-  --brand-100: #f3e7d7;
-  --brand-50: #faf4ec;
+  --brand-900: #2f3a12;
+  --brand-800: #3e4d1a;
+  --brand-700: #4f6420;
+  --brand-600: #647c27;
+  --brand-500: #7f9640;
+  --brand-200: #c9d3ad;
+  --brand-100: #d6ddc5;
+  --brand-50: #eef1e6;
 
-  /* Warm greys, on the brand's hue, so they sit beside the beige of a chosen row. */
-  --ink-900: #1f1b17;
-  --ink-700: #4a443e;
-  --ink-500: #736c64;
-  --ink-400: #8f877e;
+  --ink-900: #333a22;
+  --ink-700: #4a5430;
+  --ink-500: #6b7158;
+  --ink-400: #8e937f;
 
-  --line: #ece8e2;
-  --line-strong: #dbd5cc;
+  --line: #e4e6de;
+  --line-strong: #c9cdbd;
 
-  /* Cards and the page are white; `--ground` is the grey a form or a sheet sits on, `--fill` the
-     grey of a chip or a quiet button. */
+  /* The page is sage, cards are white; `--ground` is the tint a form or a sheet sits on, `--fill`
+     the tint of a chip or a quiet button. */
+  --sage: #e3e7d9;
   --paper: #ffffff;
-  --ground: #f7f5f2;
-  --hover: #f3f0eb;
-  --fill: #efebe5;
-  --fill-strong: #e5e0d8;
+  --ground: #eef1e6;
+  --hover: #eef1e6;
+  --fill: #e6eadb;
+  --fill-strong: #d6ddc5;
+
+  --script: #e0503b;
+  --cta: #c93f2a;
+  --cta-hover: #b03522;
 
   --ok-700: #2c6e4a;
   --ok-100: #e3f1e8;
@@ -40,10 +48,9 @@
   --danger-700: #a3251d;
   --danger-100: #fbe8e5;
 
-  /* No web font: each device's own UI face (SF Pro, Segoe UI, Roboto), the stack Gasty uses. */
-  --font-ui:
-    ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
+  /* Self-hosted (fonts.css). */
+  --font-ui: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-script: 'Caveat', cursive;
   --t-xs: 0.75rem;
   --t-sm: 0.8125rem;
   --t-md: 0.9375rem;
@@ -64,12 +71,12 @@
 
   --radius-sm: 8px;
   --radius: 12px;
-  --radius-lg: 18px;
+  --radius-lg: 16px;
   --tap: 44px;
 
-  --shadow-1: 0 1px 2px rgba(45, 32, 18, 0.05);
-  --shadow-2: 0 16px 40px rgba(45, 32, 18, 0.16);
-  --shadow-bar: 0 -4px 16px rgba(45, 32, 18, 0.07);
+  --shadow-1: 0 6px 20px rgba(60, 70, 30, 0.08);
+  --shadow-2: 0 16px 40px rgba(45, 55, 20, 0.16);
+  --shadow-bar: 0 -4px 16px rgba(45, 55, 20, 0.07);
 
   /* One curve and two lengths for every state change; a press shrinks what was pressed. */
   --ease: cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,6 +84,12 @@
   --fast: 150ms;
   --slow: 260ms;
   --press: 0.97;
+
+  /* One centred column for every band and screen; the gutter lines their content up. */
+  --page-max: 1180px;
+  --page-gutter: var(--s-4);
+  /* The sticky header's height; sticky blocks and scroll targets stop below it. */
+  --header-h: 68px;
 }
 
 *,
@@ -93,8 +106,8 @@ body {
   font-family: var(--font-ui);
   font-size: var(--t-base);
   line-height: 1.5;
-  color: var(--ink-900);
-  background: var(--paper);
+  color: var(--ink-700);
+  background: var(--sage);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -122,7 +135,8 @@ button {
 }
 
 :focus-visible {
-  outline: 3px solid var(--brand-500);
+  /* --brand-500 is under 3:1 on sage; this olive is 6.6:1. */
+  outline: 3px solid var(--brand-700);
   outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
@@ -143,35 +157,68 @@ button {
   border: 0;
 }
 
-/* --- masthead and footer ------------------------------------------------------------------ */
-.masthead {
+/* --- header and footer --------------------------------------------------------------------- */
+.site-header {
   position: sticky;
   top: 0;
   z-index: 6;
   display: flex;
   align-items: center;
-  gap: var(--s-3);
-  height: 72px;
-  padding: 0 var(--s-4);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: saturate(1.4) blur(12px);
-  border-bottom: 1px solid var(--line);
-  color: var(--brand-700);
+  gap: var(--s-4);
+  height: var(--header-h);
+  padding: 0 var(--page-gutter);
+  background: color-mix(in srgb, var(--sage) 90%, transparent);
+  backdrop-filter: saturate(1.2) blur(12px);
 }
-.masthead svg {
-  flex: none;
+.site-logo {
+  display: flex;
+  color: var(--brand-600);
+}
+.site-logo svg {
   width: auto;
-  height: 42px;
+  height: 40px;
   fill: currentColor;
 }
-.masthead-meta {
+.site-nav {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+}
+.site-link {
+  display: none;
+  padding-block: 4px;
+  border-bottom: 2px solid transparent;
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--ink-700);
+  text-decoration: none;
+  transition: border-color var(--fast) var(--ease);
+}
+.site-link:hover {
+  border-color: var(--script);
+}
+.site-cta {
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: var(--cta);
+  color: #fff;
+  font-size: var(--t-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--fast) var(--ease);
+}
+.site-cta:hover {
+  background: var(--cta-hover);
+}
+/* The order page's header says when orders are taken and where to call instead. */
+.site-meta {
   text-align: right;
   font-size: var(--t-xs);
   line-height: 1.35;
-  color: var(--ink-500);
+  color: var(--ink-700);
 }
-.masthead-meta a {
+.site-meta a {
   display: inline-block;
   padding-block: 2px;
   font-size: var(--t-sm);
@@ -184,10 +231,9 @@ button {
   display: flex;
   flex-direction: column;
   gap: var(--s-1);
-  padding: var(--s-6) var(--s-4) var(--s-8);
-  background: var(--ground);
-  border-top: 1px solid var(--line);
-  color: var(--ink-500);
+  padding: var(--s-6) var(--page-gutter) var(--s-8);
+  border-top: 1px solid var(--line-strong);
+  color: var(--ink-700);
   font-size: var(--t-sm);
   line-height: 1.6;
 }
@@ -204,22 +250,15 @@ button {
 
 /* The mockup's breakpoint. */
 @media (min-width: 900px) {
-  /*
-   * Side padding that lines the bands' content up with the screen below: bands keep their full-bleed
-   * background, their content sits in the same centred `--page-max` column as `.screen`.
-   */
+  /* Bands keep their full width; their content sits in the centred `--page-max` column. */
   :root {
-    --page-max: 1280px;
+    --header-h: 84px;
     --page-gutter: max(var(--s-8), calc((100% - var(--page-max)) / 2 + var(--s-8)));
   }
-  .masthead {
-    height: 96px;
-    padding: 0 var(--page-gutter);
+  .site-logo svg {
+    height: 48px;
   }
-  .masthead svg {
-    height: 54px;
-  }
-  .footer {
-    padding: var(--s-8) var(--page-gutter);
+  .site-link {
+    display: inline-block;
   }
 }

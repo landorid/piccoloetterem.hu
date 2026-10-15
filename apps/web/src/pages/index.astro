@@ -1,15 +1,13 @@
 ---
-import '@fontsource-variable/jost';
-import jostLatinExt from '@fontsource-variable/jost/files/jost-latin-ext-wght-normal.woff2?url';
-import jostLatin from '@fontsource-variable/jost/files/jost-latin-wght-normal.woff2?url';
-import Hero from '../components/Hero.astro';
-import { MenuPage, menuSectionId } from '../components/MenuPage';
-import Place from '../components/Place.astro';
+import { Contact, DeliveryCard, Hours } from '../components/Landing';
+import { MenuPage } from '../components/MenuPage';
+import SiteHeader from '../components/SiteHeader.astro';
 import Layout from '../layouts/Layout.astro';
 import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
 import { strings } from '../strings';
 import '../styles/order.css';
 import '../styles/menu.css';
+import '../styles/landing.css';
 
 // The public config is baked in at build time, as on /megrendeles (see megrendeles.astro).
 const baseUrl = apiOrigin();
@@ -24,6 +22,21 @@ if (baseUrl) {
     throw new Error(`GET ${baseUrl}/api/config/public failed`, { cause: error });
   }
 }
+
+const { landing: text } = strings;
+const orderHref = '/megrendeles';
+
+/** `photos/<name>-600.jpg` and `-1080.jpg`, made by scripts/photos.sh. */
+const photo = (file: string) => ({
+  src: `/photos/${file}-1080.jpg`,
+  srcset: `/photos/${file}-600.jpg 600w, /photos/${file}-1080.jpg 1080w`,
+});
+const gallery = [
+  { file: 'terem-hosszu', alt: text.photos.hall },
+  { file: 'terem-boxok', alt: text.photos.booths },
+  { file: 'terem-ora', alt: text.photos.clock },
+  { file: 'bejarat', alt: text.photos.entrance },
+];
 ---
 
 <Layout
@@ -31,17 +44,51 @@ if (baseUrl) {
   description={strings.menuPage.meta.description}
   apiOrigin={baseUrl}
 >
-  {/* The page is set in Jost; the hero needs both subsets (the Hungarian long accents are latin-ext). */}
-  {
-    [jostLatin, jostLatinExt].map((href) => (
-      <link slot="head" rel="preload" href={href} as="font" type="font/woff2" crossorigin="anonymous" />
-    ))
-  }
-  <div class="menu-site">
-    <Hero config={config} />
-    <main class="page menu-page" id={menuSectionId}>
-      <MenuPage client:load initial={{ config }} />
-    </main>
-    <Place config={config} />
-  </div>
+
+  <SiteHeader config={config} page="menu" />
+
+  <!-- Blocks in phone order; landing.css places them in two columns on a wide screen. -->
+  <main class="lp-main">
+    <img
+      class="lp-photo lp-hero"
+      data-area="hero"
+      {...photo('terem-ablak')}
+      sizes="(min-width: 900px) 560px, 100vw"
+      alt={text.photos.window}
+      width="1080"
+      height="1440"
+      fetchpriority="high"
+    />
+    <p class="lp-lede" data-area="lede">{text.lede}</p>
+    <MenuPage client:load initial={{ config }} />
+    {config && <DeliveryCard config={config} orderHref={orderHref} />}
+    <section class="lp-section lp-about" id="etterem" data-area="about" aria-labelledby="lp-about">
+      <h2 id="lp-about">{text.about.title}</h2>
+      <p>{text.about.body}</p>
+    </section>
+    {config && <Hours config={config} />}
+    <div class="lp-gallery" data-area="gallery">
+      {
+        gallery.map(({ file, alt }) => (
+          <img
+            class="lp-photo"
+            {...photo(file)}
+            sizes="(min-width: 900px) 270px, 50vw"
+            alt={alt}
+            width="1080"
+            height="1440"
+            loading="lazy"
+          />
+        ))
+      }
+    </div>
+    {config && <Contact config={config} />}
+  </main>
 </Layout>
+
+<script>
+  import { masonry } from '../lib/masonry';
+
+  const grid = document.querySelector<HTMLElement>('.lp-main');
+  if (grid) masonry(grid);
+</script>
