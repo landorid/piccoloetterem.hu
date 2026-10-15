@@ -1,7 +1,7 @@
 /*
  * Étlap images: what an image is. One registry (`renditionSpecs`) names the renditions of an
  * item's image and their limits. The admin that produces them (client resize), the API that
- * accepts them (byte caps, multipart field names, body limit) and the route that serves them all
+ * accepts them (byte caps, multipart field names, body limit) and the frontends that show them all
  * read it, so none of them keeps a list of its own.
  *
  * Only permanent items carry an image (a CHECK on `menu_items`), and both renditions are always
@@ -38,6 +38,29 @@ export function byRendition<T>(value: (rendition: ImageRendition) => T): Record<
   return Object.fromEntries(
     imageRenditions.map((rendition) => [rendition, value(rendition)]),
   ) as Record<ImageRendition, T>;
+}
+
+/**
+ * The object key of a rendition in the images bucket. A version is immutable (a replace writes a
+ * new one), so a key's bytes never change.
+ */
+export function imageKey(itemId: string, version: string, rendition: ImageRendition): string {
+  return `${itemId}/${version}/${rendition}`;
+}
+
+/**
+ * The public URL of an item's image, or `null` when it has none or no images origin is known. The
+ * bucket is served as-is from its own domain (`https://img.<domain>`), so the path is the key.
+ */
+export function itemImageUrl(
+  imagesOrigin: string | undefined,
+  item: { id: string; imageVersion?: string | undefined },
+  rendition: ImageRendition,
+): string | null {
+  if (!imagesOrigin || item.imageVersion === undefined) {
+    return null;
+  }
+  return `${imagesOrigin.replace(/\/+$/, '')}/${imageKey(item.id, item.imageVersion, rendition)}`;
 }
 
 /** What the browser's encoder is asked for and the server accepts, in order of preference. */

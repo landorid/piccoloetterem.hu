@@ -22,10 +22,3 @@ const multipartOverheadBytes = 64 * 1024;
 export const imageUploadMaxBodyBytes =
   imageRenditions.reduce((sum, rendition) => sum + renditionSpecs[rendition].maxBytes, 0) +
   multipartOverheadBytes;
-
-/** `GET /api/images/:id/:version/:rendition`. Strict, because the segments become an R2 key. */
-export const imageParams = z.object({
-  id: z.uuid(),
-  version: z.uuid(),
-  rendition: z.enum(imageRenditions),
-});

@@ -18,6 +18,21 @@ export async function adminAuthorizationHeaders(
   return { Authorization: `Bearer ${token}` };
 }
 
+/**
+ * The origin of the dish photos, `https://img.<domain>`. Dev defaults to the development bucket,
+ * which the local API writes as well; production builds must set `VITE_IMAGES_URL`.
+ */
+export function adminImagesOrigin(): string | null {
+  const configured = import.meta.env.VITE_IMAGES_URL;
+  if (configured) {
+    return configured;
+  }
+  if (import.meta.env.DEV) {
+    return 'https://img-dev.piccoloetterem.hu';
+  }
+  return null;
+}
+
 /** API origin. Dev defaults to the local Worker; production builds must set `VITE_API_URL`. */
 export function adminApiOrigin(): string | null {
   const configured = import.meta.env.VITE_API_URL;

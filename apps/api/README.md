@@ -29,9 +29,8 @@ Staging and production suffix the name: `piccolo-api-staging`, `piccolo-admin-pr
 | `src/menu/cache.ts` | The menu cache on Workers KV: `purgeWeek`, `purgeAll`, `week`; `menuCacheFor(env)` |
 | `src/menu/memoryKv.ts` | An in-memory `KvStore` for tests |
 | `src/images/admin.routes.ts` | `PUT`/`DELETE /api/admin/menu/items/:id/image`, mounted by the admin menu router (see below) |
-| `src/images/public.routes.ts` | `GET /api/images/:id/:version/:rendition`: an item's image, anonymous, no database (see below) |
-| `src/images/store.ts` | The R2 key layout, `put`/`get`/`discard`; `itemImagesFor(env)` |
-| `src/images/schemas.ts` | The multipart form, the body limit and the GET params, all from core's `renditionSpecs` |
+| `src/images/store.ts` | The bucket's writes, `put`/`discard`, under core's `imageKey`; `itemImagesFor(env)` |
+| `src/images/schemas.ts` | The multipart form and the body limit, both from core's `renditionSpecs` |
 | `src/images/memoryR2.ts` | An in-memory `R2Store` for tests |
 | `src/orders/public.routes.ts` | `POST /api/orders`: a guest's submission (see below) |
 | `src/orders/submit.ts` | `submitOrder()`: the transaction that decides and stores a submission |
@@ -133,10 +132,18 @@ JPEG) with core's `checkImageUpload` and never trusts the declared type. The obj
 points at the current version. An upload writes a new version, then points the item at it under
 the row lock, purges the menu cache, and only then deletes the previous version; a failure before
 the pointer moves leaves the item on its old image. The whole-list `PUT /items` never touches the
-image. `GET /api/images/:id/:version/:rendition` serves the bytes with
-`Cache-Control: public, max-age=31536000, immutable` (a version never changes), `nosniff` and a
-sandbox CSP; an unknown object is 404 `image_not_found`, `no-store`. It reads neither the database
-nor the config. `itemImageUrl` in `@piccolo/api-client` builds that URL from an item.
+image. The API never serves an image: the bucket is public on its own custom domain,
+`img-dev.piccoloetterem.hu` (development) and `img.piccoloetterem.hu` (production), and
+`itemImageUrl` in `@piccolo/core` builds `<images origin>/<item id>/<version>/<rendition>` from an
+item (`PUBLIC_IMAGES_URL` in the web, `VITE_IMAGES_URL` in the admin). Each object is stored with
+`Cache-Control: public, max-age=31536000, immutable` (a version never changes). A Cloudflare
+Transform Rule (Modify Response Header) on each images host, matching
+`http.host eq "<host>" and http.response.code eq 200`, sets that same `Cache-Control` (objects
+uploaded before it was stored lack it), `X-Content-Type-Options: nosniff`,
+`Content-Security-Policy: default-src 'none'; sandbox` and `Cross-Origin-Resource-Policy:
+cross-origin`. An unknown key is Cloudflare's 404, and the bucket cannot be listed. The `r2.dev`
+URL stays off. Locally `wrangler dev` binds the real development bucket (`remote = true`), so
+photos uploaded from a laptop show on `img-dev` and match the shared development database.
 
 **Week upsert.** One transaction, holding the week's row lock so two saves in flight cannot
 interleave. A list fixes its items' category (soups `daily_soup`, mains `daily_main`, featured
@@ -431,7 +438,7 @@ complete for the RPC client (`packages/api-client`).
 
 ### Error bodies
 
-Every response is JSON, except an image from `GET /api/images/*`. The `error` code is machine-readable; the frontends map it to Hungarian copy
+Every response is JSON. The `error` code is machine-readable; the frontends map it to Hungarian copy
 in their own `strings.ts`. `message` is for developers and never shown to users.
 
 | Cause | Status | Body |
@@ -521,9 +528,10 @@ and bind `HYPERDRIVE` and `MENU_CACHE`. Their Hyperdrive and KV ids and origin U
 `r2_buckets`, so each has its own block: `piccolo-menu-images-development` (top level),
 `piccolo-menu-images-staging` and `piccolo-menu-images-production`. A missing bucket passes
 `wrangler deploy --dry-run` and fails the real deploy, so create it first
-(`wrangler r2 bucket create <name>`). Locally `wrangler dev` uses Miniflare's R2 under
-`.wrangler/state`, empty on every machine: an `image_version` in the shared development database
-then names an object this machine does not have, and its GET answers 404.
+(`wrangler r2 bucket create <name>`), then give it its public domain
+(`wrangler r2 bucket domain add <name> --domain img.<domain> --zone-id <zone> --min-tls 1.2`) and
+the header Transform Rule above. The top-level block is `remote = true`: `wrangler dev` writes
+the real development bucket, which needs `wrangler login`. The tests use `memoryR2`.
 
 `MENU_CACHE` is a KV namespace per environment. The top level binds
 `piccolo-menu-cache-development`. Create the others with
@@ -549,7 +557,7 @@ wrangler secret put SENTRY_DSN --env staging
 | `RESTAURANT` | var | `wrangler.toml`: the `RestaurantConfig` instance (`loadConfig`) |
 | `CORS_ORIGINS` | var | `wrangler.toml`: the web and admin origins for that environment |
 | `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
-| `ITEM_IMAGES` | R2 binding | `wrangler.toml`: the étlap images bucket for that environment, `piccolo-menu-images-<environment>`. Locally Miniflare's |
+| `ITEM_IMAGES` | R2 binding | `wrangler.toml`: the étlap images bucket for that environment, `piccolo-menu-images-<environment>`, public on `img[-dev].<domain>`. Locally the real development bucket (`remote = true`) |
 | `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment, also holding the per-IP order limit (`order-rate:`). Locally Miniflare's |
 | `EMAIL_DRY_RUN` | var | `wrangler.toml`: `1` at the top level (local and development), unset in staging and production. `1` logs the confirmation e-mail instead of sending it |
 | `SES_REGION` | secret | `wrangler secret put` per environment that sends (P1, #39); `.dev.vars` locally only to send for real. The region of the SES identity |

@@ -27,7 +27,7 @@ Kapcsolódó: [PLAN.md](PLAN.md) — a döntések, a domain modell és az issue-
 | API | Hono | Web-standard `Request`/`Response`, fut Workersen és Node-on |
 | Domain logika | `core/` — sima TypeScript | ISO-hét, határidő, ünnepnapok, rendelés-összeállítás. HTTP nélkül tesztelhető |
 | Adatbázis | Neon Postgres (Free) | Ügyfelenként külön projekt |
-| Képek | Cloudflare R2 | Az étlaptételek képei. Ügyfelenként privát bucket, az API Worker szolgálja ki (`/api/images/*`); a kicsinyítés az admin böngészőjében történik |
+| Képek | Cloudflare R2 | Az étlaptételek képei. Ügyfelenként bucket, saját nyilvános domainről (`img.<domain>`), a Cloudflare CDN szolgálja ki, az API csak ír bele; a kicsinyítés az admin böngészőjében történik |
 | DB-hozzáférés | Drizzle ORM | Migrációk a repóban |
 | Kapcsolatkezelés | Hyperdrive | Kötelező Workersről; standard `pg` TCP driver marad használható |
 | Személyzeti auth | Clerk | Hosted. Egy alkalmazás, éttermenként egy organization |
@@ -228,6 +228,9 @@ Másold ügyfelenként, és pipáld végig.
 - [ ] R2 bucket az étlap képeinek: `wrangler r2 bucket create piccolo-menu-images-<környezet>`,
       és a nevét az API `wrangler.toml` környezetének `r2_buckets` blokkjába (`ITEM_IMAGES`)
       — a deploy előtt: a `--dry-run` bucket nélkül is átmegy, az éles deploy nem
+- [ ] A bucket nyilvános domainje: `img.<domain>` (`wrangler r2 bucket domain add`), az `r2.dev`
+      URL kikapcsolva marad, plusz a fejléc Transform Rule (apps/api/README.md, „Item images”);
+      a frontendek buildjébe `PUBLIC_IMAGES_URL` és `VITE_IMAGES_URL`
 - [ ] Ügyfél domainjei a Workerekre (Custom Domain): `<domain>` → web, `admin.<domain>` → admin,
       `api.<domain>` → API
 - [ ] SES domain identity + DKIM verifikáció

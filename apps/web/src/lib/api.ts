@@ -1,5 +1,5 @@
-import { ApiError, createApiClient, itemImageUrl, unwrap } from '@piccolo/api-client';
-import { isWeeklyCategory, type MenuItem } from '@piccolo/core';
+import { ApiError, createApiClient, unwrap } from '@piccolo/api-client';
+import { isWeeklyCategory, itemImageUrl, type MenuItem } from '@piccolo/core';
 
 export { ApiError };
 
@@ -28,13 +28,28 @@ export function apiOrigin(): string | null {
 }
 
 /**
- * The 192 px photo of a permanent dish, or `null`: no photo, no API, or a weekly dish, which never
- * shows one even if the menu carried a version for it.
+ * The origin of the dish photos, `https://img.<domain>`, inlined at build time like the API's.
+ * `astro dev` defaults to the development bucket, which the local API writes as well.
+ */
+export function imagesOrigin(): string | null {
+  const configured = import.meta.env.PUBLIC_IMAGES_URL;
+  if (configured) {
+    return configured;
+  }
+  if (import.meta.env.DEV) {
+    return 'https://img-dev.piccoloetterem.hu';
+  }
+  return null;
+}
+
+/**
+ * The 192 px photo of a permanent dish, or `null`: no photo, no images origin, or a weekly dish,
+ * which never shows one even if the menu carried a version for it.
  */
 export function thumbSrc(item: MenuItem): string | null {
   return isWeeklyCategory(item.category)
     ? null
-    : itemImageUrl(apiOrigin() ?? undefined, item, 'thumb');
+    : itemImageUrl(imagesOrigin() ?? undefined, item, 'thumb');
 }
 
 /**
