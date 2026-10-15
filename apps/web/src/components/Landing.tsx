@@ -33,7 +33,7 @@ function Phone({ phone }: { phone: string }) {
 export function Hours({ config }: { config: PublicConfig }) {
   const { contact } = config;
   return (
-    <section className="lp-section lp-hours" aria-labelledby="lp-hours">
+    <section className="lp-section" data-area="hours" aria-labelledby="lp-hours">
       <h2 id="lp-hours">{text.hours.title}</h2>
       <Leaders
         rows={[
@@ -55,7 +55,7 @@ export function Hours({ config }: { config: PublicConfig }) {
 export function DeliveryCard({ config, orderHref }: { config: PublicConfig; orderHref: string }) {
   const { pricing, contact } = config;
   return (
-    <section className="lp-delivery" aria-labelledby="lp-delivery">
+    <section className="lp-delivery" data-area="delivery" aria-labelledby="lp-delivery">
       <h2 id="lp-delivery">{text.delivery.title}</h2>
       <Leaders
         rows={[
@@ -80,7 +80,12 @@ export function Contact({ config }: { config: PublicConfig }) {
   const { contact } = config;
   const directions = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(contact.address)}`;
   return (
-    <section className="lp-section lp-contact" id="elerhetoseg" aria-labelledby="lp-contact">
+    <section
+      className="lp-section"
+      id="elerhetoseg"
+      data-area="contact"
+      aria-labelledby="lp-contact"
+    >
       <h2 id="lp-contact">{text.contact.title}</h2>
       <Leaders
         rows={[

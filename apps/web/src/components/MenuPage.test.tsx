@@ -95,6 +95,27 @@ describe('MenuPage', () => {
     expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();
   });
 
+  it('renders the day and each section as sibling blocks the page grid can place', async () => {
+    const { container } = render(
+      <MenuPage initial={{ config: publicConfig }} now={wednesdayAfternoon} />,
+    );
+    await waitFor(() => expect(screen.queryByText(strings.week.loading)).toBeNull());
+    const areas = [...container.querySelectorAll(':scope > [data-area]')].map(
+      (block) => (block as HTMLElement).dataset.area,
+    );
+    expect(areas).toEqual([
+      'day',
+      'featured',
+      'all-week',
+      'desserts',
+      'pickles',
+      'sides',
+      'side-extras',
+      'prices',
+    ]);
+    expect(container.querySelector('[data-area="day"]')?.id).toBe('heti-menu');
+  });
+
   it('prices the extras from the config', async () => {
     await renderPage();
     const prices = screen.getByRole('region', { name: text.prices.title });

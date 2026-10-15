@@ -63,9 +63,11 @@ const gallery = [
     </nav>
   </header>
 
+  <!-- Blocks in phone order; landing.css places them in two columns on a wide screen. -->
   <main class="lp-main">
     <img
       class="lp-photo lp-hero"
+      data-area="hero"
       {...photo('terem-ablak')}
       sizes="(min-width: 900px) 560px, 100vw"
       alt={text.photos.window}
@@ -73,35 +75,36 @@ const gallery = [
       height="1440"
       fetchpriority="high"
     />
-    <div class="lp-col lp-menu-col">
-      <p class="lp-lede">{text.lede}</p>
-      <section class="lp-menu" id="heti-menu">
-        <MenuPage client:load initial={{ config }} />
-      </section>
+    <p class="lp-lede" data-area="lede">{text.lede}</p>
+    <MenuPage client:load initial={{ config }} />
+    {config && <DeliveryCard config={config} orderHref={orderHref} />}
+    <section class="lp-section lp-about" id="etterem" data-area="about" aria-labelledby="lp-about">
+      <h2 id="lp-about">{text.about.title}</h2>
+      <p>{text.about.body}</p>
+    </section>
+    {config && <Hours config={config} />}
+    <div class="lp-gallery" data-area="gallery">
+      {
+        gallery.map(({ file, alt }) => (
+          <img
+            class="lp-photo"
+            {...photo(file)}
+            sizes="(min-width: 900px) 270px, 50vw"
+            alt={alt}
+            width="1080"
+            height="1440"
+            loading="lazy"
+          />
+        ))
+      }
     </div>
-    <div class="lp-col lp-info-col">
-      <section class="lp-section lp-about" id="etterem" aria-labelledby="lp-about">
-        <h2 id="lp-about">{text.about.title}</h2>
-        <p>{text.about.body}</p>
-      </section>
-      {config && <Hours config={config} />}
-      {config && <DeliveryCard config={config} orderHref={orderHref} />}
-      <div class="lp-gallery">
-        {
-          gallery.map(({ file, alt }) => (
-            <img
-              class="lp-photo"
-              {...photo(file)}
-              sizes="(min-width: 900px) 270px, 50vw"
-              alt={alt}
-              width="1080"
-              height="1440"
-              loading="lazy"
-            />
-          ))
-        }
-      </div>
-      {config && <Contact config={config} />}
-    </div>
+    {config && <Contact config={config} />}
   </main>
 </Layout>
+
+<script>
+  import { masonry } from '../lib/masonry';
+
+  const grid = document.querySelector<HTMLElement>('.lp-main');
+  if (grid) masonry(grid);
+</script>

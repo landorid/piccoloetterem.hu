@@ -20,6 +20,8 @@ import { DayTabs, tabId, WeekBar } from './WeekHeader';
 
 const { menuPage: text } = strings;
 const panelId = 'menu-day';
+/** The target of the page header's link to the menu (index.astro). */
+const anchorId = 'heti-menu';
 
 export type MenuPageProps = {
   /** Baked into the page when it is built. `config` is null only in a build without the API. */
@@ -32,6 +34,9 @@ export type MenuPageProps = {
  * The island of `/`: the week's menu on day tabs, then the featured and permanent sections, to
  * read. It takes no orders; the page's header and delivery card link to /megrendeles. The menu is
  * fetched in the browser, as on the order page; the server renders the skeleton.
+ *
+ * It renders no wrapper: the day block and each section are siblings, each with a `data-area`,
+ * so the page's grid (landing.css) can place them between its own blocks.
  */
 export function MenuPage({ initial, now = () => new Date() }: MenuPageProps) {
   const baseUrl = apiOrigin();
@@ -127,14 +132,14 @@ function LoadedPage({
 
   // A message carries its own heading; the week's heading waits for the week.
   return (
-    <>
+    <div className="menu-day" id={anchorId} data-area="day">
       {load.status === 'loading' && (
         <div className="weekbar">
           <h1>{strings.week.heading}</h1>
         </div>
       )}
-      <div className="menu-stack">{main}</div>
-    </>
+      {main}
+    </div>
   );
 }
 
@@ -160,9 +165,9 @@ function Week({
 
   return (
     <>
-      <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
-      <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
-      <div className="menu-stack">
+      <div className="menu-day" id={anchorId} data-area="day">
+        <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
+        <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
         {notice && (
           <div className="banner banner-warn" role="status">
             <div>
@@ -209,30 +214,48 @@ function Week({
             </>
           )}
         </section>
-        <Section title={text.sections.featured} items={menu.featured} menu={menu} />
-        <Section title={text.sections.allWeek} items={permanent.allWeek} menu={menu} />
-        <Section title={text.sections.desserts} items={permanent.desserts} menu={menu} />
-        <Section title={text.sections.pickles} items={permanent.pickles} menu={menu} />
-        <Section
-          title={text.sections.sides}
-          hint={text.sidesHint}
-          items={permanent.sides}
-          menu={menu}
-        />
-        <Section title={text.sections.sideExtras} items={permanent.sideExtras} menu={menu} />
-        <PriceCard config={config} />
       </div>
+      <Section area="featured" title={text.sections.featured} items={menu.featured} menu={menu} />
+      <Section
+        area="all-week"
+        title={text.sections.allWeek}
+        items={permanent.allWeek}
+        menu={menu}
+      />
+      <Section
+        area="desserts"
+        title={text.sections.desserts}
+        items={permanent.desserts}
+        menu={menu}
+      />
+      <Section area="pickles" title={text.sections.pickles} items={permanent.pickles} menu={menu} />
+      <Section
+        area="sides"
+        title={text.sections.sides}
+        hint={text.sidesHint}
+        items={permanent.sides}
+        menu={menu}
+      />
+      <Section
+        area="side-extras"
+        title={text.sections.sideExtras}
+        items={permanent.sideExtras}
+        menu={menu}
+      />
+      <PriceCard config={config} />
     </>
   );
 }
 
 /** A featured or permanent section; left out when staff listed nothing in it. */
 function Section({
+  area,
   title,
   hint,
   items,
   menu,
 }: {
+  area: string;
   title: string;
   hint?: string;
   items: readonly MenuItem[];
@@ -240,7 +263,7 @@ function Section({
 }) {
   if (items.length === 0) return null;
   return (
-    <section className="card menu-card" aria-label={title}>
+    <section className="card menu-card" aria-label={title} data-area={area}>
       <div className="card-head">
         <h2>{title}</h2>
       </div>
@@ -331,7 +354,7 @@ function PriceCard({ config }: { config: PublicConfig }) {
     ]),
   ];
   return (
-    <section className="card menu-card" aria-label={text.prices.title}>
+    <section className="card menu-card" aria-label={text.prices.title} data-area="prices">
       <div className="card-head">
         <h2>{text.prices.title}</h2>
       </div>
