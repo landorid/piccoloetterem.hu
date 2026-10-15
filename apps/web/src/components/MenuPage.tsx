@@ -1,6 +1,6 @@
 import type { MenuItem } from '@piccolo/core';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { dayFull, forint, signedForint, telHref, timeOfDay } from '../format';
+import { dayFull, forint, signedForint } from '../format';
 import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu } from '../lib/api';
 import {
   dayPrice,
@@ -19,7 +19,6 @@ import { cls, SoldOut } from './parts';
 import { DayTabs, tabId, WeekBar } from './WeekHeader';
 
 const { menuPage: text } = strings;
-const orderHref = '/megrendeles';
 const panelId = 'menu-day';
 
 export type MenuPageProps = {
@@ -31,8 +30,8 @@ export type MenuPageProps = {
 
 /**
  * The island of `/`: the week's menu on day tabs, then the featured and permanent sections, to
- * read. It takes no orders; every way forward links to /megrendeles. The menu is fetched in the
- * browser, as on the order page; the server renders the skeleton and the info card.
+ * read. It takes no orders; the page's header and delivery card link to /megrendeles. The menu is
+ * fetched in the browser, as on the order page; the server renders the skeleton.
  */
 export function MenuPage({ initial, now = () => new Date() }: MenuPageProps) {
   const baseUrl = apiOrigin();
@@ -134,38 +133,7 @@ function LoadedPage({
           <h1>{strings.week.heading}</h1>
         </div>
       )}
-      <Layout config={config} ordering={load.status !== 'loaded'}>
-        {main}
-      </Layout>
-    </>
-  );
-}
-
-/** The main column, the info card beside it, and on a phone the order bar below. */
-function Layout({
-  config,
-  ordering,
-  children,
-}: {
-  config: PublicConfig;
-  ordering: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <>
-      <div className="screen menu-screen">
-        <div className="menu-main">{children}</div>
-        <aside className="menu-aside">
-          <InfoCard config={config} />
-        </aside>
-      </div>
-      {ordering && (
-        <div className="menu-orderbar only-mobile">
-          <a className="btn btn-primary btn-block" href={orderHref}>
-            {text.order}
-          </a>
-        </div>
-      )}
+      <div className="menu-stack">{main}</div>
     </>
   );
 }
@@ -194,7 +162,7 @@ function Week({
     <>
       <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
       <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
-      <Layout config={config} ordering={notice === null}>
+      <div className="menu-stack">
         {notice && (
           <div className="banner banner-warn" role="status">
             <div>
@@ -253,7 +221,7 @@ function Week({
         />
         <Section title={text.sections.sideExtras} items={permanent.sideExtras} menu={menu} />
         <PriceCard config={config} />
-      </Layout>
+      </div>
     </>
   );
 }
@@ -379,48 +347,6 @@ function PriceCard({ config }: { config: PublicConfig }) {
         ))}
       </ul>
       <p className="menu-footnote">{text.prices.vat}</p>
-    </section>
-  );
-}
-
-function InfoCard({ config }: { config: PublicConfig }) {
-  const { contact, pricing } = config;
-  const { info } = text;
-  return (
-    <section className="card menu-info" aria-label={info.title}>
-      <div className="card-head">
-        <h2>{info.title}</h2>
-      </div>
-      <div className="card-body">
-        <dl className="info-list">
-          <dt>{info.deliveryFee}</dt>
-          <dd>
-            {info.deliveryFeeValue(forint(pricing.deliveryFee))}
-            <br />
-            {info.deliveryDays}
-          </dd>
-          <dt>{info.minimum}</dt>
-          <dd>{info.minimumValue(forint(pricing.minimumOrder))}</dd>
-          <dt>{info.intake}</dt>
-          <dd className="num">
-            {info.intakeValue(
-              timeOfDay(contact.intakeWindow.from),
-              timeOfDay(contact.intakeWindow.until),
-            )}
-          </dd>
-          <dt>{info.phone}</dt>
-          <dd>
-            <a href={telHref(contact.phone)}>{contact.phone}</a>
-          </dd>
-          <dt>{info.opening}</dt>
-          <dd>{contact.openingHours}</dd>
-          <dt>{info.address}</dt>
-          <dd>{contact.address}</dd>
-        </dl>
-        <a className="btn btn-primary btn-block" href={orderHref}>
-          {text.order}
-        </a>
-      </div>
     </section>
   );
 }

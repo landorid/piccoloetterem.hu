@@ -6,9 +6,12 @@ interface Props {
   description: string;
   /** The API origin, preconnected because the island calls it as soon as it loads. */
   apiOrigin: string | null;
+  /** Scopes a page's own look (`/` is `landing`); the order page has none. */
+  bodyClass?: string;
+  themeColor?: string;
 }
 
-const { title, description, apiOrigin } = Astro.props;
+const { title, description, apiOrigin, bodyClass, themeColor = '#ffffff' } = Astro.props;
 ---
 
 <!doctype html>
@@ -18,13 +21,14 @@ const { title, description, apiOrigin } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content={themeColor} />
     <link rel="icon" href="/favicon.ico" sizes="16x16" />
     <link rel="icon" href="/favicon-32x32.png" type="image/png" sizes="32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {apiOrigin && <link rel="preconnect" href={apiOrigin} crossorigin="anonymous" />}
+    <slot name="head" />
   </head>
-  <body>
+  <body class={bodyClass}>
     <slot />
   </body>
 </html>

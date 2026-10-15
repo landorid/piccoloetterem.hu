@@ -35,7 +35,6 @@ const sunday = () => new Date(2026, 8, 13, 20, 0);
 /** Renders the page and waits until the menu, or what replaces it, has loaded. */
 async function renderPage(now = wednesdayAfternoon) {
   render(<MenuPage initial={{ config: publicConfig }} now={now} />);
-  await screen.findByRole('region', { name: text.info.title });
   await waitFor(() => expect(screen.queryByText(strings.week.loading)).toBeNull());
 }
 
@@ -96,7 +95,7 @@ describe('MenuPage', () => {
     expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();
   });
 
-  it('prices the extras from the config and links every order button to /megrendeles', async () => {
+  it('prices the extras from the config', async () => {
     await renderPage();
     const prices = screen.getByRole('region', { name: text.prices.title });
     const amounts = [...prices.querySelectorAll('.dish')].map((li) => li.textContent);
@@ -105,19 +104,6 @@ describe('MenuPage', () => {
       text.prices.noSoup + strings.common.minus(forint(100)),
       ...publicConfig.extras.map((extra) => extra.name + text.prices.perPiece(forint(extra.price))),
     ]);
-    const links = screen.getAllByRole('link', { name: text.order });
-    expect(links.length).toBe(2);
-    for (const link of links) expect(link.getAttribute('href')).toBe('/megrendeles');
-  });
-
-  it('shows the info card from the config', async () => {
-    await renderPage();
-    const info = screen.getByRole('region', { name: text.info.title });
-    expect(info.textContent).toContain(text.info.deliveryFeeValue(forint(150)));
-    expect(info.textContent).toContain(text.info.minimumValue(forint(2200)));
-    expect(info.textContent).toContain('7:30–9:30');
-    expect(within(info).getByRole('link', { name: publicConfig.contact.phone })).toBeTruthy();
-    expect(info.textContent).toContain(publicConfig.contact.openingHours);
   });
 
   it('shows the current week to read when next week is not published', async () => {
@@ -131,8 +117,6 @@ describe('MenuPage', () => {
     expect(screen.getByRole('tab', { selected: true }).getAttribute('aria-label')).toMatch(
       /^Hétfő/,
     );
-    // Only the info card's link: no order bar for a week that cannot be ordered.
-    expect(screen.getAllByRole('link', { name: text.order }).length).toBe(1);
   });
 
   it('shows the current week to read when the order window is closed', async () => {
