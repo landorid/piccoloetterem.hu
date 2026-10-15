@@ -1,0 +1,380 @@
+/*
+ * `/` in the look of the Patty Pantry template (pattypantry.framer.website): a sage ground, olive
+ * type in Poppins, coral script headings in Caveat, white rounded cards and rounded photos, facts
+ * on ruled lines. Everything is scoped to `body.landing`: the order page keeps its own look. The
+ * tokens are redefined here, so the menu island's cards, day tabs and buttons (order.css,
+ * menu.css) take the palette without their own overrides.
+ *
+ * The template's coral (#f06451) is kept for large script headings only; white on it is 3.2:1,
+ * so a button with white text uses a darker coral (5:1).
+ */
+.landing {
+  --brand-900: #2f3a12;
+  --brand-800: #3e4d1a;
+  --brand-700: #4f6420;
+  --brand-600: #647c27;
+  --brand-500: #7f9640;
+  --brand-200: #c9d3ad;
+  --brand-100: #d6ddc5;
+  --brand-50: #eef1e6;
+
+  --ink-900: #333a22;
+  --ink-700: #4a5430;
+  --ink-500: #6b7158;
+  --ink-400: #8e937f;
+
+  --line: #e4e6de;
+  --line-strong: #c9cdbd;
+  --ground: #eef1e6;
+  --hover: #eef1e6;
+  --fill: #e6eadb;
+  --fill-strong: #d6ddc5;
+
+  --sage: #e3e7d9;
+  --script: #e0503b;
+  --cta: #c93f2a;
+  --cta-hover: #b03522;
+
+  --font-ui: 'Poppins', ui-sans-serif, system-ui, sans-serif;
+  --font-script: 'Caveat', cursive;
+  --radius-lg: 16px;
+  --shadow-1: 0 6px 20px rgba(60, 70, 30, 0.08);
+  --lp-gutter: var(--s-4);
+  --lp-gap: var(--s-6);
+
+  background: var(--sage);
+  color: var(--ink-700);
+}
+
+/* The global ring is --brand-500, under 3:1 on sage; the darker olive is 6.6:1. */
+.landing :focus-visible {
+  outline-color: var(--brand-700);
+}
+
+/* --- header ------------------------------------------------------------------------------------ */
+.lp-header {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  height: 68px;
+  padding: 0 var(--lp-gutter);
+  background: color-mix(in srgb, var(--sage) 90%, transparent);
+  backdrop-filter: saturate(1.2) blur(12px);
+}
+.lp-logo {
+  display: flex;
+  color: var(--brand-600);
+}
+.lp-logo svg {
+  width: auto;
+  height: 40px;
+  fill: currentColor;
+}
+.lp-nav {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-6);
+}
+.lp-link {
+  display: none;
+  padding-block: 4px;
+  border-bottom: 2px solid transparent;
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--ink-700);
+  text-decoration: none;
+  transition: border-color var(--fast) var(--ease);
+}
+.lp-link:hover {
+  border-color: var(--script);
+}
+.lp-cta {
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: var(--cta);
+  color: #fff;
+  font-size: var(--t-md);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color var(--fast) var(--ease);
+}
+.lp-cta:hover {
+  background: var(--cta-hover);
+}
+
+/* --- layout ------------------------------------------------------------------------------------ */
+/* One column on a phone, in source order: photo, lede, the menu, then the restaurant. */
+.lp-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lp-gap);
+  width: 100%;
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--s-2) var(--lp-gutter) var(--s-10);
+}
+
+/* --- type and photos --------------------------------------------------------------------------- */
+.lp-lede {
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--brand-600);
+  text-wrap: balance;
+}
+.lp-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  scroll-margin-top: 84px;
+}
+.lp-section h2 {
+  font-size: var(--t-xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--ink-700);
+}
+.lp-about p {
+  font-size: var(--t-md);
+  line-height: 1.65;
+}
+.lp-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--fill-strong);
+}
+.lp-hero {
+  aspect-ratio: 4 / 3;
+}
+.lp-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+.lp-gallery .lp-photo {
+  aspect-ratio: 1;
+}
+.lp-textlink {
+  align-self: flex-start;
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--ink-700);
+  text-underline-offset: 3px;
+}
+
+/* Label, rule, value: the template's opening-hours and location lines. */
+.lp-leaders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: var(--t-md);
+}
+.lp-leaders > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+.lp-leaders dt {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  white-space: nowrap;
+}
+.lp-leaders dt::after {
+  content: '';
+  flex: 1;
+  min-width: var(--s-4);
+  border-bottom: 1px solid var(--line-strong);
+}
+.lp-leaders dd {
+  margin: 0;
+  max-width: 62%;
+  text-align: right;
+}
+.lp-leaders a {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+/* The template's testimonial card, here the call to order. */
+.lp-delivery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-6);
+  border-radius: var(--radius-lg);
+  background: var(--brand-100);
+}
+.lp-delivery h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--brand-700);
+}
+.lp-delivery .btn {
+  align-self: flex-start;
+}
+.lp-delivery-phone {
+  font-size: var(--t-md);
+}
+.lp-delivery-phone a {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+/* --- the menu island ------------------------------------------------------------------------- */
+.landing :is(.weekbar, .daybar) {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+.landing .weekbar h1 {
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  color: var(--ink-700);
+}
+.landing .week-pill {
+  background: var(--brand-100);
+}
+/* On sage instead of white, --ink-500 is 4:1; small text needs 4.5:1. */
+.landing :is(.week-terms, .week-meta, .day .dow) {
+  color: var(--ink-700);
+}
+/* The order page's desktop strip has fixed 84 px days; half a page is too narrow for that. */
+.landing .daylist {
+  grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
+  padding: var(--s-1) 0 0;
+}
+.landing .day {
+  justify-self: center;
+}
+.landing .btn-primary {
+  background: var(--cta);
+}
+.landing .btn-primary:hover {
+  background: var(--cta-hover);
+}
+.landing .card {
+  border: 0;
+}
+.landing .card > .card-head {
+  padding: var(--s-5) var(--s-6) var(--s-1);
+  border-bottom: 0;
+}
+.landing .card-head h2 {
+  font-family: var(--font-script);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--script);
+}
+
+@media (min-width: 900px) {
+  .landing {
+    --lp-gutter: max(var(--s-8), calc((100% - 1180px) / 2 + var(--s-8)));
+    --lp-gap: var(--s-8);
+  }
+  .lp-header {
+    height: 84px;
+  }
+  .lp-logo svg {
+    height: 48px;
+  }
+  .lp-link {
+    display: inline-block;
+  }
+  /*
+   * Two columns, each block placed by the table below: its column, and its place in that column.
+   * `dense` lets a block fill its column from the top, whatever the other column holds. Without
+   * script the rows stay aligned across the columns; lib/masonry.ts switches to short rows that
+   * each block spans by its height, which packs every column tight.
+   */
+  .lp-main {
+    --lp-unit: 4px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    align-items: start;
+    padding: var(--s-4) var(--s-8) var(--s-10);
+  }
+  .lp-main.is-masonry {
+    grid-auto-rows: var(--lp-unit);
+    row-gap: 0;
+  }
+  .lp-main [data-area] {
+    grid-column: 1;
+  }
+  .lp-main [data-area='hero'] {
+    order: 1;
+  }
+  .lp-main [data-area='about'] {
+    order: 2;
+  }
+  .lp-main [data-area='hours'] {
+    order: 3;
+  }
+  .lp-main [data-area='delivery'] {
+    order: 4;
+  }
+  .lp-main [data-area='all-week'] {
+    order: 5;
+  }
+  .lp-main [data-area='pickles'] {
+    order: 6;
+  }
+  .lp-main [data-area='sides'] {
+    order: 7;
+  }
+  .lp-main [data-area='prices'] {
+    order: 8;
+  }
+  .lp-main
+    :is(
+      [data-area='lede'],
+      [data-area='day'],
+      [data-area='featured'],
+      [data-area='gallery'],
+      [data-area='desserts'],
+      [data-area='contact']
+    ) {
+    grid-column: 2;
+  }
+  .lp-main [data-area='lede'] {
+    order: 1;
+  }
+  .lp-main [data-area='day'] {
+    order: 2;
+  }
+  .lp-main [data-area='featured'] {
+    order: 3;
+  }
+  .lp-main [data-area='gallery'] {
+    order: 4;
+  }
+  .lp-main [data-area='desserts'] {
+    order: 5;
+  }
+  .lp-main [data-area='contact'] {
+    order: 6;
+  }
+  /* The template sets its lede beside the photo, lower than the photo's top edge. */
+  .lp-lede {
+    padding-top: var(--s-10);
+    font-size: 2.75rem;
+  }
+  .lp-hero {
+    aspect-ratio: 6 / 5;
+  }
+}

@@ -234,7 +234,6 @@ export const strings = {
       description:
         'A Piccolo Club Étterem heti menüje és étlapja: napi levesek és főételek, desszertek, savanyúságok. Rendeld meg online, kiszállítással Szombathelyen.',
     },
-    order: 'Rendeld meg online',
     soups: 'Levesek',
     mains: 'Főételek',
     mainsHint: 'A napi főételek ára tartalmaz egy választott levest.',
@@ -252,7 +251,6 @@ export const strings = {
       desserts: 'Desszertek',
       pickles: 'Savanyúságok',
       sides: 'Köretek',
-      sideExtras: 'Feláras köretek',
     },
     sidesHint: 'A köretes főételekhez egy köret felár nélkül jár.',
     /** The page shows this week because the API has no orderable week now. */
@@ -270,18 +268,51 @@ export const strings = {
       perPiece: (price: string) => `${price} / db`,
       vat: 'Az árak forintban értendők, és tartalmazzák az áfát.',
     },
-    info: {
-      title: 'Rendelj házhoz!',
-      deliveryFee: 'Kiszállítás',
-      deliveryFeeValue: (fee: string) => `${fee} / cím / nap`,
-      deliveryDays: 'Hétfőtől szombatig szállítunk.',
-      minimum: 'Minimum rendelés',
-      minimumValue: (minimum: string) => `${minimum} ételérték címenként, naponta`,
+  },
+  /** The shell of `/` around the menu: header, photos, the restaurant, hours, delivery, contact. */
+  landing: {
+    nav: {
+      label: 'Oldal tartalma',
+      menu: 'Heti menü',
+      restaurant: 'Az étterem',
+      contact: 'Elérhetőség',
+      order: 'Rendelés',
+    },
+    // TODO(copy): Dávid to confirm the lede and the restaurant's paragraph.
+    lede: 'Friss, házias ebéd hétfőtől szombatig, nálunk vagy házhoz szállítva',
+    about: {
+      title: 'Az étterem',
+      body: 'A Piccolo Club Étterem Szombathelyen várja a vendégeket. Minden héten új menüt főzünk: naponta több leves és főétel közül választhatsz, mellettük egész héten rendelhető ételek, desszertek és savanyúságok várnak. Ebédelj nálunk, vagy rendeld meg online, és házhoz visszük.',
+    },
+    hours: {
+      title: 'Nyitvatartás',
+      restaurant: 'Étterem',
       intake: 'Rendelésfelvétel',
       intakeValue: (from: string, until: string) => `${from}–${until}`,
-      phone: 'Telefon',
-      opening: 'Nyitvatartás',
+      delivery: 'Kiszállítás',
+      deliveryDays: 'Hétfő–szombat',
+    },
+    delivery: {
+      title: 'Rendelj házhoz!',
+      fee: 'Kiszállítási díj',
+      feeValue: (fee: string) => `${fee} / cím / nap`,
+      minimum: 'Minimum rendelés',
+      minimumValue: (minimum: string) => `${minimum} ételérték címenként, naponta`,
+      order: 'Rendeld meg online',
+      orByPhone: 'vagy hívj minket:',
+    },
+    contact: {
+      title: 'Elérhetőség',
       address: 'Cím',
+      phone: 'Telefon',
+      directions: 'Útvonaltervezés',
+    },
+    photos: {
+      window: 'Megterített asztal az ablak előtt, narancssárga kárpitos paddal',
+      hall: 'A hosszú étterem, a fal mentén végig kárpitos pad',
+      booths: 'Asztalok a nagy ablakok előtt és a fal mellett',
+      clock: 'Megterített asztalok a fali óra alatt',
+      entrance: 'A Piccolo bejárata az utcáról',
     },
   },
   common: {
