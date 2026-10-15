@@ -104,6 +104,19 @@
   font-weight: 600;
   color: var(--ink-900);
 }
+/* On a phone the value would wrap into a sliver beside its label, so the rule runs across and the
+   value sits under it. */
+@media (max-width: 599px) {
+  .lp-leaders > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+  .lp-leaders dd {
+    max-width: none;
+    text-align: left;
+  }
+}
 
 /* The template's testimonial card, here the call to order. */
 .lp-delivery {

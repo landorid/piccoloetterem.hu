@@ -25,10 +25,6 @@ export const strings = {
     order: 'Rendelés',
     intake: (from: string, until: string) => `Rendelésfelvétel ${from}–${until}`,
   },
-  order: {
-    terms: (fee: string, minimum: string) =>
-      `Kiszállítás ${fee} / cím / nap · Naponta legalább ${minimum} ételérték`,
-  },
   week: {
     heading: 'Heti menü',
     // TODO(O2): not in the handover.
@@ -246,7 +242,6 @@ export const strings = {
     emptyDay: 'Erre a napra nincs feltöltve menü.',
     /** In place of a daily soup's price, which the menu's price includes. */
     soupIncluded: 'egy választott levest a menü ára tartalmaz',
-    saturday: (price: string) => `szombaton ${price}`,
     withSoup: '+ választott leves',
     withSide: '+ választott köret',
     variations: (names: readonly string[]) => `Választható: ${names.join(', ')}`,

@@ -83,14 +83,12 @@ describe('MenuPage', () => {
     expect(soldOut?.textContent).toContain(strings.dish.soldOut);
   });
 
-  it('lists the featured and permanent sections with weekday and Saturday prices', async () => {
+  it('lists the featured and permanent sections with their weekday price', async () => {
     await renderPage();
     for (const title of Object.values(text.sections)) {
       expect(screen.getByRole('region', { name: title })).toBeTruthy();
     }
-    expect(row('Cordon bleu').querySelector('.dish-price')?.textContent).toBe(
-      forint(1690) + text.saturday(forint(1790)),
-    );
+    expect(row('Cordon bleu').querySelector('.dish-price')?.textContent).toBe(forint(1690));
     expect(row('Somlói galuska').querySelector('.dish-price')?.textContent).toBe(forint(690));
     // A plain side is free: no price at all.
     expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();

@@ -3,8 +3,8 @@
  * are the mockup's. Its container queries are media queries at the same 900 px breakpoint, and
  * where the mockup keyed a style on a row's ARIA state, the row carries a class instead
  * (`is-picked`, `is-disabled`), because the control is now an input or a button inside the row.
- * The mockup's `.app :is(h1, h2, h3, p, ul, ol) { margin: 0 }` outranked the margins it gave
- * `.block-hint` and `.week-terms`, and its `.app button { font: inherit }` outranked
+ * The mockup's `.app :is(h1, h2, h3, p, ul, ol) { margin: 0 }` outranked the margin it gave
+ * `.block-hint`, and its `.app button { font: inherit }` outranked
  * the font sizes and weights of `.btn`, `.btn-sm`, `.btn-quiet`, `.btn-danger`, `.stepper-add` and
  * `.sheet-close`. The approved look has neither, so those declarations are left out.
  */
@@ -41,12 +41,6 @@
   color: var(--ink-700);
   font-weight: 600;
   font-size: var(--t-xs);
-}
-.week-terms {
-  flex-basis: 100%;
-  font-size: var(--t-sm);
-  font-weight: 600;
-  color: var(--ink-700);
 }
 
 /* Six days divide the width evenly: nothing scrolls, nothing is cut off. Not sticky. */
@@ -951,6 +945,28 @@
   }
   .mainrow .main-cta-change {
     width: auto;
+    padding: 0 var(--s-3);
+  }
+  .main-cta-change .main-cta-label {
+    display: inline;
+  }
+}
+/* On a phone the name and its hint take the full width, and the action drops to a full-width
+   button under them, so the name never breaks mid-word beside it. */
+@media (max-width: 479px) {
+  .mainrow {
+    flex-wrap: wrap;
+  }
+  .mainrow .pbody {
+    flex: 1 1 100%;
+  }
+  .mainrow .main-cta {
+    flex: 1 1 100%;
+    justify-content: center;
+    min-height: var(--tap);
+  }
+  .mainrow .main-cta-change {
+    width: 100%;
     padding: 0 var(--s-3);
   }
   .main-cta-change .main-cta-label {

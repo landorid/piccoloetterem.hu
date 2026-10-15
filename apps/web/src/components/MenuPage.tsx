@@ -166,7 +166,7 @@ function Week({
   return (
     <>
       <div className="menu-day" id={anchorId} data-area="day">
-        <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} terms={config.pricing} />
+        <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} />
         <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
         {notice && (
           <div className="banner banner-warn" role="status">
@@ -330,9 +330,6 @@ function Price({ price }: { price: ListedPrice }) {
       return (
         <p className="dish-price">
           <span className="dish-amt num">{forint(price.amount)}</span>
-          {price.saturday !== null && (
-            <span className="dish-sub num">{text.saturday(forint(price.saturday))}</span>
-          )}
         </p>
       );
   }
