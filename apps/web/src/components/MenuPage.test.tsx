@@ -95,6 +95,17 @@ describe('MenuPage', () => {
     expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();
   });
 
+  it('lists the paid sides with their price in the sides card, after the free ones', async () => {
+    await renderPage();
+    const sides = screen.getByRole('region', { name: text.sections.sides });
+    const names = [...sides.querySelectorAll('.dish-title')].map((title) => title.textContent);
+    expect(names.slice(-3)).toEqual(['Steak burgonya', 'Édesburgonya-hasáb', 'Rizi-bizi']);
+    expect(within(sides).getByText('Rizi-bizi').closest('li')?.textContent).toContain(forint(250));
+    expect(
+      within(sides).getByText('Párolt rizs').closest('li')?.querySelector('.dish-price'),
+    ).toBeNull();
+  });
+
   it('renders the day and each section as sibling blocks the page grid can place', async () => {
     const { container } = render(
       <MenuPage initial={{ config: publicConfig }} now={wednesdayAfternoon} />,
@@ -110,7 +121,6 @@ describe('MenuPage', () => {
       'desserts',
       'pickles',
       'sides',
-      'side-extras',
       'prices',
     ]);
     expect(container.querySelector('[data-area="day"]')?.id).toBe('heti-menu');

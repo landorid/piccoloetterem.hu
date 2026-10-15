@@ -233,13 +233,7 @@ function Week({
         area="sides"
         title={text.sections.sides}
         hint={text.sidesHint}
-        items={permanent.sides}
-        menu={menu}
-      />
-      <Section
-        area="side-extras"
-        title={text.sections.sideExtras}
-        items={permanent.sideExtras}
+        items={[...permanent.sides, ...permanent.sideExtras]}
         menu={menu}
       />
       <PriceCard config={config} />

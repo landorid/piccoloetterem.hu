@@ -251,7 +251,6 @@ export const strings = {
       desserts: 'Desszertek',
       pickles: 'Savanyúságok',
       sides: 'Köretek',
-      sideExtras: 'Feláras köretek',
     },
     sidesHint: 'A köretes főételekhez egy köret felár nélkül jár.',
     /** The page shows this week because the API has no orderable week now. */

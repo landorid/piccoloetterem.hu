@@ -340,9 +340,6 @@
   .lp-main [data-area='prices'] {
     order: 8;
   }
-  .lp-main [data-area='contact'] {
-    order: 9;
-  }
   .lp-main
     :is(
       [data-area='lede'],
@@ -350,7 +347,7 @@
       [data-area='featured'],
       [data-area='gallery'],
       [data-area='desserts'],
-      [data-area='side-extras']
+      [data-area='contact']
     ) {
     grid-column: 2;
   }
@@ -369,7 +366,7 @@
   .lp-main [data-area='desserts'] {
     order: 5;
   }
-  .lp-main [data-area='side-extras'] {
+  .lp-main [data-area='contact'] {
     order: 6;
   }
   /* The template sets its lede beside the photo, lower than the photo's top edge. */
