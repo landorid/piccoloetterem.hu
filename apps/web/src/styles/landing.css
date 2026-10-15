@@ -46,6 +46,11 @@
   color: var(--ink-700);
 }
 
+/* The global ring is --brand-500, under 3:1 on sage; the darker olive is 6.6:1. */
+.landing :focus-visible {
+  outline-color: var(--brand-700);
+}
+
 /* --- header ------------------------------------------------------------------------------------ */
 .lp-header {
   position: sticky;
@@ -103,8 +108,8 @@
 
 /* --- layout ------------------------------------------------------------------------------------ */
 /*
- * Two independent columns on a wide screen, like the template's masonry. On a phone the columns
- * dissolve (`display: contents`) and `order` interleaves them: lede, photo, menu, then the rest.
+ * The source is in phone order: photo, lede and menu, then the restaurant. A wide screen puts the
+ * photo and the restaurant in the left column and the menu in the right, like the template.
  */
 .lp-main {
   flex: 1;
@@ -117,31 +122,10 @@
   padding: var(--s-2) var(--lp-gutter) var(--s-10);
 }
 .lp-col {
-  display: contents;
-}
-.lp-lede {
-  order: 1;
-}
-.lp-hero {
-  order: 2;
-}
-.lp-menu {
-  order: 3;
-}
-.lp-about {
-  order: 4;
-}
-.lp-hours {
-  order: 5;
-}
-.lp-delivery {
-  order: 6;
-}
-.lp-gallery {
-  order: 7;
-}
-.lp-contact {
-  order: 8;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lp-gap);
+  min-width: 0;
 }
 
 /* --- type and photos --------------------------------------------------------------------------- */
@@ -280,7 +264,8 @@
 .landing .week-pill {
   background: var(--brand-100);
 }
-.landing .week-terms {
+/* On sage instead of white, --ink-500 is 4:1; small text needs 4.5:1. */
+.landing :is(.week-terms, .week-meta, .day .dow) {
   color: var(--ink-700);
 }
 /* The order page's desktop strip has fixed 84 px days; half a page is too narrow for that. */
@@ -326,17 +311,23 @@
   .lp-link {
     display: inline-block;
   }
+  /* The menu spans both rows; the flexible second row takes its extra height, so the restaurant
+     starts right under the photo. */
   .lp-main {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: auto 1fr;
     align-items: start;
     padding: var(--s-4) var(--s-8) var(--s-10);
   }
-  .lp-col {
-    display: flex;
-    flex-direction: column;
-    gap: var(--lp-gap);
-    min-width: 0;
+  .lp-hero {
+    grid-area: 1 / 1;
+  }
+  .lp-menu-col {
+    grid-area: 1 / 2 / 3;
+  }
+  .lp-info-col {
+    grid-area: 2 / 1;
   }
   /* The template sets its lede beside the photo, lower than the photo's top edge. */
   .lp-lede {

@@ -64,16 +64,22 @@ const gallery = [
   </header>
 
   <main class="lp-main">
-    <div class="lp-col">
-      <img
-        class="lp-photo lp-hero"
-        {...photo('terem-ablak')}
-        sizes="(min-width: 900px) 560px, 100vw"
-        alt={text.photos.window}
-        width="1080"
-        height="1440"
-        fetchpriority="high"
-      />
+    <img
+      class="lp-photo lp-hero"
+      {...photo('terem-ablak')}
+      sizes="(min-width: 900px) 560px, 100vw"
+      alt={text.photos.window}
+      width="1080"
+      height="1440"
+      fetchpriority="high"
+    />
+    <div class="lp-col lp-menu-col">
+      <p class="lp-lede">{text.lede}</p>
+      <section class="lp-menu" id="heti-menu">
+        <MenuPage client:load initial={{ config }} />
+      </section>
+    </div>
+    <div class="lp-col lp-info-col">
       <section class="lp-section lp-about" id="etterem" aria-labelledby="lp-about">
         <h2 id="lp-about">{text.about.title}</h2>
         <p>{text.about.body}</p>
@@ -96,13 +102,6 @@ const gallery = [
         }
       </div>
       {config && <Contact config={config} />}
-    </div>
-
-    <div class="lp-col">
-      <p class="lp-lede">{text.lede}</p>
-      <section class="lp-menu" id="heti-menu">
-        <MenuPage client:load initial={{ config }} />
-      </section>
     </div>
   </main>
 </Layout>

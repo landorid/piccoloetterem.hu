@@ -88,7 +88,7 @@ export function Contact({ config }: { config: PublicConfig }) {
           { label: text.contact.phone, value: <Phone phone={contact.phone} /> },
         ]}
       />
-      <a className="lp-textlink" href={directions} target="_blank" rel="noopener">
+      <a className="lp-textlink" href={directions}>
         {text.contact.directions}
       </a>
     </section>

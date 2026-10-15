@@ -298,7 +298,7 @@ export const strings = {
       fee: 'Kiszállítási díj',
       feeValue: (fee: string) => `${fee} / cím / nap`,
       minimum: 'Minimum rendelés',
-      minimumValue: (minimum: string) => `${minimum} ételérték naponta`,
+      minimumValue: (minimum: string) => `${minimum} ételérték címenként, naponta`,
       order: 'Rendeld meg online',
       orByPhone: 'vagy hívj minket:',
     },
