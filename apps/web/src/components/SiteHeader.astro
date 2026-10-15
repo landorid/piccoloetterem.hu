@@ -1,0 +1,37 @@
+---
+import { telHref, timeOfDay } from '../format';
+import type { PublicConfig } from '../lib/api';
+import { strings } from '../strings';
+import Logo from './Logo.astro';
+
+interface Props {
+  config: PublicConfig | null;
+  /** On the order page the order button gives way to the intake window and the phone. */
+  page: 'menu' | 'order';
+}
+
+const { config, page } = Astro.props;
+const text = strings.header;
+---
+
+<header class="site-header">
+  <a class="site-logo" href="/"><Logo label={config?.name ?? strings.siteName} /></a>
+  <nav class="site-nav" aria-label={text.label}>
+    <a class="site-link" href="/#heti-menu">{text.menu}</a>
+    <a class="site-link" href="/#etterem">{text.restaurant}</a>
+    <a class="site-link" href="/#elerhetoseg">{text.contact}</a>
+    {page === 'menu' && <a class="site-cta" href="/megrendeles">{text.order}</a>}
+    {
+      page === 'order' && config && (
+        <p class="site-meta">
+          {text.intake(
+            timeOfDay(config.contact.intakeWindow.from),
+            timeOfDay(config.contact.intakeWindow.until),
+          )}
+          <br />
+          <a href={telHref(config.contact.phone)}>{config.contact.phone}</a>
+        </p>
+      )
+    }
+  </nav>
+</header>

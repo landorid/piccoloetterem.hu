@@ -86,12 +86,12 @@ function supportsPopover(el: HTMLElement): boolean {
   return typeof el.showPopover === 'function';
 }
 
-/** The sticky chrome a bubble must not cover: the masthead on top, the summary bar below. */
+/** The sticky chrome a bubble must not cover: the header on top, the summary bar below. */
 function safeBand(): { top: number; bottom: number } {
   let top = 8;
   let bottom = window.innerHeight - 8;
-  const masthead = document.querySelector('.masthead')?.getBoundingClientRect();
-  if (masthead && masthead.height > 0 && masthead.top <= 1) top = masthead.bottom + 4;
+  const header = document.querySelector('.site-header')?.getBoundingClientRect();
+  if (header && header.height > 0 && header.top <= 1) top = header.bottom + 4;
   const bar = document.querySelector('.sumbar.only-mobile')?.getBoundingClientRect();
   if (bar && bar.height > 0 && bar.top < bottom) bottom = bar.top - 4;
   return { top, bottom };

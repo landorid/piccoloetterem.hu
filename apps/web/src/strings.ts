@@ -16,7 +16,13 @@ export const strings = {
     description:
       'Rendeld meg online a Piccolo Club Étterem heti menüjét: napi levesek és főételek, kiszállítással Szombathelyen.',
   },
-  masthead: {
+  /** The header of every page: the links lead to the sections of `/`. */
+  header: {
+    label: 'Navigáció',
+    menu: 'Heti menü',
+    restaurant: 'Az étterem',
+    contact: 'Elérhetőség',
+    order: 'Rendelés',
     intake: (from: string, until: string) => `Rendelésfelvétel ${from}–${until}`,
   },
   order: {
@@ -271,13 +277,6 @@ export const strings = {
   },
   /** The shell of `/` around the menu: header, photos, the restaurant, hours, delivery, contact. */
   landing: {
-    nav: {
-      label: 'Oldal tartalma',
-      menu: 'Heti menü',
-      restaurant: 'Az étterem',
-      contact: 'Elérhetőség',
-      order: 'Rendelés',
-    },
     // TODO(copy): Dávid to confirm the lede and the restaurant's paragraph.
     lede: 'Friss, házias ebéd hétfőtől szombatig, nálunk vagy házhoz szállítva',
     about: {
