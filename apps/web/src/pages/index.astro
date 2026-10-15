@@ -1,13 +1,12 @@
 ---
 import { Contact, DeliveryCard, Hours } from '../components/Landing';
-import Logo from '../components/Logo.astro';
 import { MenuPage } from '../components/MenuPage';
+import SiteHeader from '../components/SiteHeader.astro';
 import Layout from '../layouts/Layout.astro';
 import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
 import { strings } from '../strings';
 import '../styles/order.css';
 import '../styles/menu.css';
-import '../styles/fonts.css';
 import '../styles/landing.css';
 
 // The public config is baked in at build time, as on /megrendeles (see megrendeles.astro).
@@ -26,7 +25,6 @@ if (baseUrl) {
 
 const { landing: text } = strings;
 const orderHref = '/megrendeles';
-const name = config?.name ?? strings.siteName;
 
 /** `photos/<name>-600.jpg` and `-1080.jpg`, made by scripts/photos.sh. */
 const photo = (file: string) => ({
@@ -45,23 +43,9 @@ const gallery = [
   title={strings.menuPage.meta.title}
   description={strings.menuPage.meta.description}
   apiOrigin={baseUrl}
-  bodyClass="landing"
-  themeColor="#e3e7d9"
 >
-  <Fragment slot="head">
-    <link rel="preload" href="/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/fonts/poppins-600-latin.woff2" as="font" type="font/woff2" crossorigin />
-  </Fragment>
 
-  <header class="lp-header">
-    <a class="lp-logo" href="/"><Logo label={name} /></a>
-    <nav class="lp-nav" aria-label={text.nav.label}>
-      <a class="lp-link" href="#heti-menu">{text.nav.menu}</a>
-      <a class="lp-link" href="#etterem">{text.nav.restaurant}</a>
-      <a class="lp-link" href="#elerhetoseg">{text.nav.contact}</a>
-      <a class="lp-cta" href={orderHref}>{text.nav.order}</a>
-    </nav>
-  </header>
+  <SiteHeader config={config} page="menu" />
 
   <!-- Blocks in phone order; landing.css places them in two columns on a wide screen. -->
   <main class="lp-main">

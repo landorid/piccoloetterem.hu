@@ -1,122 +1,19 @@
 /*
- * `/` in the look of the Patty Pantry template (pattypantry.framer.website): a sage ground, olive
- * type in Poppins, coral script headings in Caveat, white rounded cards and rounded photos, facts
- * on ruled lines. Everything is scoped to `body.landing`: the order page keeps its own look. The
- * tokens are redefined here, so the menu island's cards, day tabs and buttons (order.css,
- * menu.css) take the palette without their own overrides.
- *
- * The template's coral (#f06451) is kept for large script headings only; white on it is 3.2:1,
- * so a button with white text uses a darker coral (5:1).
+ * The layout of `/`: the photo, the lede, the restaurant's blocks and the menu island's blocks in
+ * one grid. The palette, the cards and the header are the site's (global.css, order.css).
  */
-.landing {
-  --brand-900: #2f3a12;
-  --brand-800: #3e4d1a;
-  --brand-700: #4f6420;
-  --brand-600: #647c27;
-  --brand-500: #7f9640;
-  --brand-200: #c9d3ad;
-  --brand-100: #d6ddc5;
-  --brand-50: #eef1e6;
-
-  --ink-900: #333a22;
-  --ink-700: #4a5430;
-  --ink-500: #6b7158;
-  --ink-400: #8e937f;
-
-  --line: #e4e6de;
-  --line-strong: #c9cdbd;
-  --ground: #eef1e6;
-  --hover: #eef1e6;
-  --fill: #e6eadb;
-  --fill-strong: #d6ddc5;
-
-  --sage: #e3e7d9;
-  --script: #e0503b;
-  --cta: #c93f2a;
-  --cta-hover: #b03522;
-
-  --font-ui: 'Poppins', ui-sans-serif, system-ui, sans-serif;
-  --font-script: 'Caveat', cursive;
-  --radius-lg: 16px;
-  --shadow-1: 0 6px 20px rgba(60, 70, 30, 0.08);
-  --lp-gutter: var(--s-4);
-  --lp-gap: var(--s-6);
-
-  background: var(--sage);
-  color: var(--ink-700);
-}
-
-/* The global ring is --brand-500, under 3:1 on sage; the darker olive is 6.6:1. */
-.landing :focus-visible {
-  outline-color: var(--brand-700);
-}
-
-/* --- header ------------------------------------------------------------------------------------ */
-.lp-header {
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: var(--s-4);
-  height: 68px;
-  padding: 0 var(--lp-gutter);
-  background: color-mix(in srgb, var(--sage) 90%, transparent);
-  backdrop-filter: saturate(1.2) blur(12px);
-}
-.lp-logo {
-  display: flex;
-  color: var(--brand-600);
-}
-.lp-logo svg {
-  width: auto;
-  height: 40px;
-  fill: currentColor;
-}
-.lp-nav {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: var(--s-6);
-}
-.lp-link {
-  display: none;
-  padding-block: 4px;
-  border-bottom: 2px solid transparent;
-  font-size: var(--t-md);
-  font-weight: 600;
-  color: var(--ink-700);
-  text-decoration: none;
-  transition: border-color var(--fast) var(--ease);
-}
-.lp-link:hover {
-  border-color: var(--script);
-}
-.lp-cta {
-  padding: 6px 14px;
-  border-radius: 10px;
-  background: var(--cta);
-  color: #fff;
-  font-size: var(--t-md);
-  font-weight: 600;
-  text-decoration: none;
-  transition: background-color var(--fast) var(--ease);
-}
-.lp-cta:hover {
-  background: var(--cta-hover);
-}
-
 /* --- layout ------------------------------------------------------------------------------------ */
 /* One column on a phone, in source order: photo, lede, the menu, then the restaurant. */
 .lp-main {
+  --lp-gap: var(--s-6);
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: var(--lp-gap);
   width: 100%;
-  max-width: 1180px;
+  max-width: var(--page-max);
   margin: 0 auto;
-  padding: var(--s-2) var(--lp-gutter) var(--s-10);
+  padding: var(--s-2) var(--page-gutter) var(--s-10);
 }
 
 /* --- type and photos --------------------------------------------------------------------------- */
@@ -235,66 +132,20 @@
 }
 
 /* --- the menu island ------------------------------------------------------------------------- */
-.landing :is(.weekbar, .daybar) {
+/* The week bar and the day strip sit inside the day block, not across the page. */
+.lp-main :is(.weekbar, .daybar) {
   padding: 0;
-  background: none;
-  border: 0;
-}
-.landing .weekbar h1 {
-  font-size: var(--t-2xl);
-  font-weight: 600;
-  color: var(--ink-700);
-}
-.landing .week-pill {
-  background: var(--brand-100);
-}
-/* On sage instead of white, --ink-500 is 4:1; small text needs 4.5:1. */
-.landing :is(.week-terms, .week-meta, .day .dow) {
-  color: var(--ink-700);
 }
 /* The order page's desktop strip has fixed 84 px days; half a page is too narrow for that. */
-.landing .daylist {
+.lp-main .daylist {
   grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
   padding: var(--s-1) 0 0;
 }
-.landing .day {
+.lp-main .day {
   justify-self: center;
-}
-.landing .btn-primary {
-  background: var(--cta);
-}
-.landing .btn-primary:hover {
-  background: var(--cta-hover);
-}
-.landing .card {
-  border: 0;
-}
-.landing .card > .card-head {
-  padding: var(--s-5) var(--s-6) var(--s-1);
-  border-bottom: 0;
-}
-.landing .card-head h2 {
-  font-family: var(--font-script);
-  font-size: 2.25rem;
-  font-weight: 700;
-  line-height: 1.1;
-  color: var(--script);
 }
 
 @media (min-width: 900px) {
-  .landing {
-    --lp-gutter: max(var(--s-8), calc((100% - 1180px) / 2 + var(--s-8)));
-    --lp-gap: var(--s-8);
-  }
-  .lp-header {
-    height: 84px;
-  }
-  .lp-logo svg {
-    height: 48px;
-  }
-  .lp-link {
-    display: inline-block;
-  }
   /*
    * Two columns, each block placed by the table below: its column, and its place in that column.
    * `dense` lets a block fill its column from the top, whatever the other column holds. Without
@@ -302,6 +153,7 @@
    * each block spans by its height, which packs every column tight.
    */
   .lp-main {
+    --lp-gap: var(--s-8);
     --lp-unit: 4px;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
