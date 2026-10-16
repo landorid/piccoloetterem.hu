@@ -240,6 +240,28 @@ button {
 .footer b {
   color: var(--ink-900);
 }
+.footer-credit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-2);
+  margin-top: var(--s-4);
+}
+.hlv-logo {
+  display: block;
+  height: 24px;
+  width: auto;
+  color: var(--brand-600);
+}
+/* Same motion as honlapvarazslo.com: the icon turns 45° while the logo is hovered. */
+.hlv-icon {
+  transform-origin: 25px 25px;
+  transition: transform 300ms ease-in-out;
+}
+.footer-credit-link:hover .hlv-icon,
+.footer-credit-link:focus-visible .hlv-icon {
+  transform: rotate(45deg);
+}
 
 /* The island renders full-width bands (week bar, day rail) and its own screens. */
 .page {
