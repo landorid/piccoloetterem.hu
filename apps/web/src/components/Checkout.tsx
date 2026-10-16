@@ -199,7 +199,7 @@ export function Checkout({
 
   return (
     <div className="screen screen-checkout">
-      <form className="col-main" noValidate onSubmit={submit} aria-busy={submitting}>
+      <div className="col-main checkout-head">
         <button type="button" className="btn-quiet back" onClick={onBack}>
           <ChevronLeft size={18} aria-hidden="true" />
           {checkout.back}
@@ -240,6 +240,8 @@ export function Checkout({
             <Banner kind="danger" title={checkout.errors.summary} />
           )}
         </div>
+      </div>
+      <form className="col-main" noValidate onSubmit={submit} aria-busy={submitting}>
         <section className="card" aria-labelledby="checkout-contact">
           <div className="card-head">
             <h2 id="checkout-contact">{checkout.contact}</h2>
@@ -311,8 +313,6 @@ export function Checkout({
       </form>
       <div className="rail">
         <div className="cartsum">
-          <p className="eyebrow">{checkout.cartValue}</p>
-          <p className="cartsum-total num">{forint(priced.total)}</p>
           <OrderRecap days={priced.days} />
           {!empty && (
             <div className="cartsum-totals">

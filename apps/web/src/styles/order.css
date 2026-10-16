@@ -1510,19 +1510,6 @@
   flex-direction: column;
   gap: var(--s-3);
 }
-.eyebrow {
-  font-size: var(--t-xs);
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--ink-700);
-}
-.cartsum-total {
-  font-size: var(--t-3xl);
-  font-weight: 600;
-  line-height: 1;
-  margin-top: calc(var(--s-2) * -1);
-}
 .cartsum-totals {
   padding: var(--s-4);
   background: var(--paper);
@@ -1669,6 +1656,22 @@
   .screen-menu > .rail {
     grid-column: 2;
     grid-row: 2 / span 2;
+  }
+  /* The rail starts level with the contact card, not with the heading above it. */
+  .screen-checkout {
+    row-gap: var(--s-4);
+  }
+  .screen-checkout > .checkout-head {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .screen-checkout > form {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .screen-checkout > .rail {
+    grid-column: 2;
+    grid-row: 2;
   }
   .only-desktop {
     display: flex;
