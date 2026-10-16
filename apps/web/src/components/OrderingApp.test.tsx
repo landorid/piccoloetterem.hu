@@ -3,6 +3,7 @@ import { maxExtraQuantity, orderMessagesHu } from '@piccolo/core';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forint } from '../format';
+import { storageKey } from '../order/store';
 import { strings } from '../strings';
 import { openMenu, publicConfig } from '../test/fixtures';
 import { OrderingApp } from './OrderingApp';
@@ -191,6 +192,155 @@ describe('the order form', () => {
     expect(
       within(composer()).getByRole('button', { name: strings.composer.mainPrompt }),
     ).toBeTruthy();
+  });
+});
+
+describe('what a guest selects', () => {
+  const message = () => composer().querySelector('.cf-foot .error')?.textContent ?? null;
+  const checked = (group: RegExp) =>
+    within(block(group))
+      .getAllByRole('radio')
+      .filter((radio) => (radio as HTMLInputElement).checked)
+      .map((radio) => radio.getAttribute('aria-label') ?? radio.closest('label')?.textContent);
+  const menusInCart = () => within(cart() as HTMLElement).queryAllByText(/^\d+\. menü$/).length;
+
+  it('drops the side with a main that needs none, and asks for one again with a main that does', async () => {
+    await renderOrderPage();
+    pickSoup('Húsleves cérnametélttel');
+    pickMain('Rántott szelet — Csirkemell');
+    fireEvent.click(within(block(/^Köret$/)).getByRole('radio', { name: 'Párolt rizs' }));
+
+    pickMain('Paprikás csirke');
+    expect(within(composer()).queryByRole('group', { name: /^Köret$/ })).toBeNull();
+    expect(footerPrice()).toBe(forint(1020));
+
+    pickMain('Rántott szelet — Csirkemell');
+    fireEvent.click(addButton());
+    expect(message()).toBe(orderMessagesHu.side_required);
+    expect(menusInCart()).toBe(0);
+  });
+
+  it('keeps the side when only the variation changes', async () => {
+    await renderOrderPage();
+    pickSoup('Húsleves cérnametélttel');
+    pickMain('Rántott szelet — Csirkemell');
+    fireEvent.click(within(block(/^Köret$/)).getByRole('radio', { name: 'Párolt rizs' }));
+
+    pickMain('Rántott szelet — Sertéskaraj');
+    expect(
+      (within(block(/^Köret$/)).getByRole('radio', { name: 'Párolt rizs' }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+    fireEvent.click(addButton());
+    expect(within(cart() as HTMLElement).getByText(/Rántott szelet — Sertéskaraj/)).toBeTruthy();
+  });
+
+  it('charges a paid side on top of the main', async () => {
+    await renderOrderPage();
+    pickSoup('Húsleves cérnametélttel');
+    pickMain('Sertéssült');
+    fireEvent.click(within(block(/^Köret$/)).getByRole('radio', { name: /^Steak burgonya/ }));
+    expect(footerPrice()).toBe(forint(1120 + 350));
+  });
+
+  it('reprices the menu as the soup is changed after the main', async () => {
+    await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    pickMain('Paprikás csirke');
+    expect(footerPrice()).toBe(forint(1020));
+    pickSoup(strings.composer.none);
+    expect(footerPrice()).toBe(forint(920));
+    pickSoup('Húsleves cérnametélttel');
+    expect(footerPrice()).toBe(forint(1020));
+  });
+
+  it('wants a dish when soup and main are declined, extras alone do not count, a dessert does', async () => {
+    await renderOrderPage();
+    pickSoup(strings.composer.none);
+    pickMain(strings.composer.none);
+    fireEvent.click(within(block(/^Extra/)).getByRole('button', { name: 'Több: Doboz' }));
+    fireEvent.click(addButton());
+    expect(message()).toBe(strings.composer.emptyMenu);
+    expect(menusInCart()).toBe(0);
+
+    fireEvent.click(within(block(/^Desszert$/)).getByRole('radio', { name: /^Somlói galuska/ }));
+    expect(message()).toBeNull();
+    fireEvent.click(addButton());
+    expect(menusInCart()).toBe(1);
+    expect(grandTotal()).toBe(forint(690 + 100 + 150));
+  });
+
+  it('keeps each day’s half-built menu across day switches and a reload', async () => {
+    const first = await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    fireEvent.click(tab(/^Csütörtök/));
+    expect(checked(/^Leves/)).toEqual([]);
+    pickSoup('Gulyásleves');
+
+    fireEvent.click(tab(/^Szerda/));
+    expect(
+      (
+        within(block(/^Leves/)).getByRole('radio', {
+          name: 'Brokkolikrémleves',
+        }) as HTMLInputElement
+      ).checked,
+    ).toBe(true);
+
+    first.unmount();
+    await renderOrderPage();
+    expect(
+      (
+        within(block(/^Leves/)).getByRole('radio', {
+          name: 'Brokkolikrémleves',
+        }) as HTMLInputElement
+      ).checked,
+    ).toBe(true);
+    fireEvent.click(tab(/^Csütörtök/));
+    expect(
+      (within(block(/^Leves/)).getByRole('radio', { name: 'Gulyásleves' }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it('keeps the main chosen before when the picker is closed or its backdrop is tapped', async () => {
+    await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    pickMain('Paprikás csirke');
+    const chosen = () =>
+      within(composer()).getByRole('button', {
+        name: strings.composer.mainChosen('Paprikás csirke'),
+      });
+
+    fireEvent.click(chosen());
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: strings.common.close }),
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(chosen()).toBeTruthy();
+
+    fireEvent.click(chosen());
+    fireEvent.click(screen.getByRole('dialog'));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(chosen()).toBeTruthy();
+  });
+
+  it('adds one menu for a double tap on "Hozzáadás"', async () => {
+    await renderOrderPage();
+    pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
+    fireEvent.click(addButton());
+    fireEvent.click(addButton());
+    expect(menusInCart()).toBe(1);
+  });
+
+  it('starts with an empty cart when the stored one cannot be read', async () => {
+    sessionStorage.setItem(storageKey, '{"state": {"menusByDate":');
+    await renderOrderPage();
+    expect(screen.queryByRole('tab', { name: /menü a kosárban/ })).toBeNull();
+    pickSoup('Brokkolikrémleves');
+    pickMain(strings.composer.none);
+    fireEvent.click(addButton());
+    expect(menusInCart()).toBe(1);
   });
 });
 

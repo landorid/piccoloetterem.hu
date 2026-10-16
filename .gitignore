@@ -26,3 +26,7 @@ coverage/
 
 # `pnpm email:preview` output (apps/api/scripts/email-preview.ts).
 apps/api/.preview/
+
+# Playwright runs of apps/web/e2e: results, traces and the HTML report.
+test-results/
+playwright-report/
