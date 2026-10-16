@@ -1498,6 +1498,12 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .success-hat {
+    animation: none;
+  }
+  .success-mark::after {
+    display: none;
+  }
   .spinner {
     animation-duration: 3s;
   }
@@ -1548,50 +1554,186 @@
   font-weight: 600;
   letter-spacing: -0.01em;
 }
+.success {
+  gap: var(--s-6);
+}
+.success-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-2);
+  text-align: center;
+  padding-top: var(--s-4);
+}
 .success-mark {
-  width: 64px;
-  height: 64px;
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin-bottom: var(--s-2);
   border-radius: 50%;
-  background: var(--ok-100);
-  color: var(--ok-700);
+  background: var(--ok-700);
+  color: var(--paper);
   display: grid;
   place-items: center;
+  box-shadow: 0 0 0 10px var(--ok-100);
   animation: sheet-pop var(--slow) var(--ease-pop);
+}
+/* One ring that widens and fades once, behind the mark. */
+.success-mark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--ok-700);
+  animation: success-ring 900ms var(--ease) 120ms both;
+}
+/* The cook's hat, set at an angle on the mark's crown. */
+.success-hat {
+  position: absolute;
+  top: -32px;
+  right: -4px;
+  z-index: 1;
+  fill: var(--paper);
+  color: var(--ink-900);
+  transform: rotate(16deg);
+  transform-origin: bottom left;
+  animation: success-hat 520ms var(--ease-pop) 180ms both;
+}
+@keyframes success-hat {
+  from {
+    transform: translateY(-14px) rotate(-10deg);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(16deg);
+    opacity: 1;
+  }
+}
+@keyframes success-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+.success-kicker {
+  font-family: var(--font-script);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--script);
 }
 .success h1 {
   font-size: var(--t-2xl);
   font-weight: 600;
   letter-spacing: -0.015em;
+  text-wrap: balance;
 }
 .success .lead,
 .success .questions {
   color: var(--ink-700);
-  max-width: 60ch;
 }
 .success .questions a {
   font-weight: 700;
   color: var(--brand-700);
 }
-.success > .btn {
-  align-self: flex-start;
+
+.success-steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--s-3);
 }
-.order-id {
-  margin-top: var(--s-2);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+.success-steps li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: var(--s-3);
+  row-gap: 2px;
+  align-items: center;
+  padding: var(--s-4);
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-1);
+}
+.success-step-icon {
+  grid-row: span 2;
+  align-self: start;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--brand-50);
+  color: var(--brand-700);
+}
+.success-steps h2 {
+  font-size: var(--t-base);
+  font-weight: 600;
+}
+.success-steps p {
   font-size: var(--t-sm);
   color: var(--ink-500);
   overflow-wrap: anywhere;
 }
-/* On the success screen the grand total stands alone: no day lines above it to rule off. */
-.success .totals .grand {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
+
+.receipt {
+  overflow: hidden;
 }
-.pay-note {
-  margin-top: var(--s-2);
+/* Day lines, the card title and the total share one inset. */
+.receipt {
+  --receipt-inset: var(--s-4);
+}
+.receipt > .card-head {
+  padding-inline: var(--receipt-inset);
+}
+.receipt > .card-body {
+  padding: var(--s-3) var(--receipt-inset) var(--s-5);
+}
+.receipt-day + .receipt-day {
+  margin-top: var(--s-3);
+  padding-top: var(--s-3);
+  border-top: 1px dashed var(--line-strong);
+}
+.receipt-day-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding: var(--s-2) 0 var(--s-1);
+}
+.receipt-day-head h3 {
+  font-size: var(--t-base);
+  font-weight: 600;
+}
+.receipt-day-head .num {
   font-size: var(--t-sm);
   color: var(--ink-500);
+}
+.receipt-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--receipt-inset);
+  background: var(--brand-50);
+  font-weight: 600;
+  font-size: var(--t-lg);
+}
+.receipt-grand {
+  font-size: var(--t-2xl);
+  font-weight: 700;
+  color: var(--brand-800);
+}
+
+.success-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-3);
+  text-align: center;
 }
 
 /* --- desktop: the same components in two columns ----------------------------------------------- */
@@ -1656,6 +1798,21 @@
   }
   .success h1 {
     font-size: var(--t-3xl);
+  }
+  .success-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .receipt {
+    --receipt-inset: var(--s-6);
+  }
+  .success-steps li {
+    grid-template-columns: 1fr;
+    align-content: start;
+    row-gap: var(--s-1);
+  }
+  .success-step-icon {
+    grid-row: auto;
+    margin-bottom: var(--s-2);
   }
   /* Row placement belongs to the menu screen only. */
   .screen-menu > .banners {
