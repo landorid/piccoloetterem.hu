@@ -487,7 +487,7 @@ describe('what a guest types at checkout', () => {
     expect(errorOf(email())).toBeNull();
     await submit();
     expect(await screen.findByRole('heading', { name: success.title })).toBeTruthy();
-    expect(screen.getByText(success.lead('Anna.Kovacs@Example.HU'))).toBeTruthy();
+    expect(screen.getByText(success.steps.mail.body('Anna.Kovacs@Example.HU'))).toBeTruthy();
   });
 
   it('treats a field of spaces as empty and sends nothing', async () => {
