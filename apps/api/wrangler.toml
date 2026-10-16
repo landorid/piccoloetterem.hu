@@ -10,6 +10,12 @@ compatibility_flags = ["nodejs_compat"]
 workers_dev = true
 routes = [{ pattern = "api-dev.piccoloetterem.hu", custom_domain = true }]
 
+# Workers Logs: console output and one log per request, in the dashboard. Inherited by the named
+# environments.
+[observability.logs]
+enabled = true
+invocation_logs = true
+
 # The confirmation e-mail's renderer (@react-email/render) imports prettier only for its `pretty`
 # option, which the API never uses. Aliased to a stub, it costs nothing; bundled, it was 325 KiB of
 # the upload. See src/email/prettier-stub.ts.
