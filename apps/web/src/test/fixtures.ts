@@ -17,7 +17,12 @@ export const publicConfig: PublicConfig = {
     intakeWindow: { from: '07:30', until: '09:30' },
   },
   pickupEnabled: false,
-  pricing: { noSoupDiscount: 100, soupPrice: 650, deliveryFee: 150, minimumOrder: 2200 },
+  pricing: {
+    noSoupDiscount: 100,
+    soupPrice: 650,
+    deliveryFee: 150,
+    minimumOrder: { weekday: 2200, weekend: 2590 },
+  },
   extras: [
     { key: 'doboz', name: 'Doboz', price: 100 },
     { key: 'kenyer', name: 'Kenyér', price: 50 },

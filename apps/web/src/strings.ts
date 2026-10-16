@@ -318,6 +318,8 @@ export const strings = {
   },
   common: {
     close: 'Bezár',
+    /** The minimum order when Saturday's differs: `2200 Ft (szombaton 2590 Ft)`. */
+    minimumWithWeekend: (weekday: string, weekend: string) => `${weekday} (szombaton ${weekend})`,
     /** `amount` is already grouped by `Intl.NumberFormat('hu-HU')`; see format.ts. */
     forint: (amount: string) => `${amount}\u00a0Ft`,
     /** A signed adjustment, `+650 Ft` / `−100 Ft`; `amount` is the unsigned formatted value. */

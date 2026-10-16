@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { forint, telHref, timeOfDay } from '../format';
+import { forint, minimumOrder, telHref, timeOfDay } from '../format';
 import type { PublicConfig } from '../lib/api';
 import { strings } from '../strings';
 
@@ -62,7 +62,7 @@ export function DeliveryCard({ config, orderHref }: { config: PublicConfig; orde
           { label: text.delivery.fee, value: text.delivery.feeValue(forint(pricing.deliveryFee)) },
           {
             label: text.delivery.minimum,
-            value: text.delivery.minimumValue(forint(pricing.minimumOrder)),
+            value: text.delivery.minimumValue(minimumOrder(pricing.minimumOrder)),
           },
         ]}
       />

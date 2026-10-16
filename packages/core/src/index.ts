@@ -126,7 +126,13 @@ export {
   phoneSearchFragment,
 } from './order/normalise';
 export { orderMessagesHu } from './order/orderMessages.hu';
-export { type PricingConfig, priceDay, priceMenu, priceSubmission } from './order/price';
+export {
+  minimumOrderOn,
+  type PricingConfig,
+  priceDay,
+  priceMenu,
+  priceSubmission,
+} from './order/price';
 export {
   canChangeStatus,
   type OrderStatus,

@@ -1,7 +1,7 @@
 import { type PricingConfig, type PublicMenu, validateContact } from '@piccolo/core';
 import { ChevronLeft } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { dayFull, forint, timeOfDay } from '../format';
+import { dayFull, forint, minimumOrder, timeOfDay } from '../format';
 import { type PublicConfig, type SubmittedOrder, submitOrder, type WebApi } from '../lib/api';
 import {
   browserStorage,
@@ -221,7 +221,7 @@ export function Checkout({
             // Below the minimum nothing is blocked (#57): checkout is the one place that says
             // so, naming each day and the difference paid on delivery.
             <Banner kind="warn" title={checkout.minimumTitle}>
-              <p>{checkout.minimumBody(forint(config.pricing.minimumOrder))}</p>
+              <p>{checkout.minimumBody(minimumOrder(config.pricing.minimumOrder))}</p>
               <ul>
                 {below.map((day) => (
                   <li key={day.date}>

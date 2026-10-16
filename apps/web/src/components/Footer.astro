@@ -1,5 +1,5 @@
 ---
-import { forint } from '../format';
+import { forint, minimumOrder } from '../format';
 import type { PublicConfig } from '../lib/api';
 import { strings } from '../strings';
 import HonlapvarazsloLogo from './HonlapvarazsloLogo.astro';
@@ -22,7 +22,7 @@ const { config } = Astro.props;
           <b>{strings.footer.deliveryTitle}</b> ·{' '}
           {strings.footer.delivery(
             forint(config.pricing.deliveryFee),
-            forint(config.pricing.minimumOrder),
+            minimumOrder(config.pricing.minimumOrder),
           )}
         </p>
         <p>

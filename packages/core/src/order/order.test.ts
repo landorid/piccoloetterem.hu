@@ -5,7 +5,7 @@ import type { MenuDay, MenuItem, PublicMenu, PublicMenuDay } from '../menu/types
 import type { IsPublished } from '../menu/window';
 import { isEmail, normaliseEmailKey, normalisePhone, phoneSearchFragment } from './normalise';
 import { orderMessagesHu } from './orderMessages.hu';
-import { priceDay, priceMenu, priceSubmission } from './price';
+import { minimumOrderOn, priceDay, priceMenu, priceSubmission } from './price';
 import { adjustmentsOf } from './stored';
 import {
   type ComposedMenuDraft,
@@ -762,6 +762,37 @@ describe('priceDay and priceSubmission — rule: extras, fee, minimum', () => {
     expect(exact.foodSubtotal).toBe(2200);
     expect(exact.missingToMinimum).toBe(0);
     expect(exact.total).toBe(2350);
+  });
+
+  it('a Saturday delivery uses the weekend minimum: 2200 → missingToMinimum 390, 2590 → 0', () => {
+    const saturday = priceDay(
+      day({ deliveryDate: SAT, menus: [{ mainId: 'main-2200' }] }),
+      menu,
+      config,
+    );
+    expect(saturday.foodSubtotal).toBe(2200);
+    expect(saturday.missingToMinimum).toBe(390);
+    expect(saturday.total).toBe(2350);
+
+    const enough = priceDay(
+      day({
+        deliveryDate: SAT,
+        menus: [{ mainId: 'main-2200' }],
+        extras: [
+          { key: 'ketchup', quantity: 1 },
+          { key: 'doboz', quantity: 1 },
+        ],
+      }),
+      menu,
+      config,
+    );
+    expect(enough.foodSubtotal).toBe(2700);
+    expect(enough.missingToMinimum).toBe(0);
+  });
+
+  it('minimumOrderOn picks the weekday or the weekend minimum by delivery date', () => {
+    expect(minimumOrderOn(WED, config)).toBe(2200);
+    expect(minimumOrderOn(SAT, config)).toBe(2590);
   });
 
   it('extras count toward the minimum and the delivery fee is excluded from it', () => {
