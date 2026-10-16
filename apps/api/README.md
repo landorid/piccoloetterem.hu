@@ -368,8 +368,7 @@ Every Hungarian word is in `src/strings.ts`.
   (`apps/test-inbox`), so a run that holds the SES keys can mail nothing else.
 - **SES** (`src/email/ses.ts`): SES v2 `SendEmail` over HTTPS, signed with SigV4 by `aws4fetch`.
   No AWS SDK, and SendOps is not in the path (docs/STACK.md rule 7). A 5xx or 429 is retried twice.
-- **Always sent.** Every environment sends through SES, `wrangler dev` included. A sent e-mail logs
-  `Confirmation for submission … sent through SES, message <MessageId>`. Without the `SES_*`
+- **Always sent.** Every environment sends through SES, `wrangler dev` included. Without the `SES_*`
   secrets the send fails (`SES is not configured: …`), is reported, and the orders stay unmarked.
   The development database's orders carry made-up addresses, which bounce.
 
