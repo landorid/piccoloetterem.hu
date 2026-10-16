@@ -1614,6 +1614,8 @@
     grid-template-columns: minmax(0, 1fr) 372px;
     gap: var(--s-6);
     align-items: start;
+    /* The screen grows to fill the page; without this its rows share the slack. */
+    align-content: start;
     padding: var(--s-6) var(--s-8) var(--s-10);
     max-width: var(--page-max);
     width: 100%;

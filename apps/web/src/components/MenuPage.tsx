@@ -1,6 +1,7 @@
 import type { MenuItem } from '@piccolo/core';
+import { CalendarClock, Phone } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
-import { dayFull, forint, signedForint } from '../format';
+import { dayFull, forint, signedForint, telHref } from '../format';
 import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
 import {
   dayPrice,
@@ -143,6 +144,39 @@ function LoadedPage({
   );
 }
 
+/** Why the week on show cannot be ordered: next week is not up yet, or this week is over. */
+function WeekNotice({
+  notice,
+  phone,
+}: {
+  notice: NonNullable<Extract<Page, { kind: 'week' }>['notice']>;
+  phone: string;
+}) {
+  const nextWeek = notice === 'next_week_not_published';
+  const Icon = nextWeek ? CalendarClock : Phone;
+  return (
+    <div className="week-notice" role="status">
+      <span className="week-notice-icon" aria-hidden="true">
+        <Icon size={20} />
+      </span>
+      <div className="week-notice-text">
+        <p className="week-notice-title">
+          {nextWeek ? text.notices.nextWeekTitle : text.notices.closedTitle}
+        </p>
+        <p>
+          {nextWeek ? text.notices.nextWeekBody : text.notices.closedBody}
+          {!nextWeek && (
+            <>
+              {' '}
+              <a href={telHref(phone)}>{phone}</a>
+            </>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function Week({
   page,
   config,
@@ -168,24 +202,7 @@ function Week({
       <div className="menu-day" id={anchorId} data-area="day">
         <WeekBar isoWeek={menu.isoWeek} days={days} cutoff={null} />
         <DayTabs days={days} activeDate={day.date} panelId={panelId} onSelect={setActive} browse />
-        {notice && (
-          <div className="banner banner-warn" role="status">
-            <div>
-              <p>
-                <strong>
-                  {notice === 'next_week_not_published'
-                    ? text.notices.nextWeekTitle
-                    : text.notices.closedTitle}
-                </strong>
-              </p>
-              <p>
-                {notice === 'next_week_not_published'
-                  ? text.notices.nextWeekBody
-                  : text.notices.closedBody}
-              </p>
-            </div>
-          </div>
-        )}
+        {notice && <WeekNotice notice={notice} phone={config.contact.phone} />}
         <section
           id={panelId}
           role="tabpanel"
@@ -197,7 +214,7 @@ function Week({
           </div>
           {closed && <p className="menu-closed">{strings.errors.closedDay}</p>}
           {day.soups.length === 0 && day.mains.length === 0 ? (
-            <p className="menu-empty">{text.emptyDay}</p>
+            !closed && <p className="menu-empty">{text.emptyDay}</p>
           ) : (
             <>
               <DishList
@@ -297,6 +314,7 @@ function Dish({ item, price, tile }: { item: MenuItem; price: ListedPrice; tile:
   const notes = [
     item.variations.length > 0 && text.variations(item.variations),
     item.soupIncluded && item.category !== 'daily_main' && text.withSoup,
+    !item.soupIncluded && item.category === 'daily_main' && text.withoutSoup,
     item.requiresSide && text.withSide,
   ].filter((note): note is string => typeof note === 'string');
   return (
