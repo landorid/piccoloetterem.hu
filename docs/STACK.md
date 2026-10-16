@@ -233,6 +233,8 @@ Másold ügyfelenként, és pipáld végig.
       a frontendek buildjébe `PUBLIC_IMAGES_URL` és `VITE_IMAGES_URL`
 - [ ] Ügyfél domainjei a Workerekre (Custom Domain): `<domain>` → web, `admin.<domain>` → admin,
       `api.<domain>` → API
+- [ ] Adatbázis-mentés: privát backup bucket + lifecycle szabály + `backup_reader` szerepkör + secretek
+      (docs/BACKUP.md, „Setting it up for a customer”)
 - [ ] SES domain identity + DKIM verifikáció
 - [ ] SPF, DKIM és DMARC rekordok az ügyfél DNS-ében
       — enélkül a visszaigazolók spambe esnek: rendelési rendszernél ez üzleti hiba

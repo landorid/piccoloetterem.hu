@@ -1,0 +1,123 @@
+# Nightly backup of the Neon `production` branch to a private R2 bucket. See docs/BACKUP.md.
+#
+# A `schedule` trigger runs only from this file on the default branch (`main`). GitHub e-mails a
+# failed scheduled run to whoever last changed the `cron` line.
+#
+# The repository is public, and so are these logs. Never upload the dump as an Actions artifact,
+# and never print a connection string, a row or anything else read from the dump.
+#
+# Secrets on the `production` GitHub Environment (no values in the repo):
+#
+# - BACKUP_DATABASE_URL (the read-only `backup_reader` role, direct host without `-pooler`)
+# - R2_BACKUP_ACCESS_KEY_ID, R2_BACKUP_SECRET_ACCESS_KEY (R2 token, Object Read & Write on the
+#   backup bucket only)
+# - CLOUDFLARE_ACCOUNT_ID (already there for ci.yml; builds the R2 S3 endpoint)
+#
+# Variable on the `production` GitHub Environment:
+#
+# - BACKUP_BUCKET (piccolo-db-backups-production)
+
+name: Backup
+
+on:
+  schedule:
+    # 00:30 UTC: 01:30 or 02:30 in Budapest, far from the ordering window.
+    - cron: '30 0 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: backup
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    services:
+      # The nightly restore test's target. It lives only as long as this job.
+      restore-target:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      RESTORE_TARGET_URL: postgres://postgres:postgres@localhost:5432/postgres
+    steps:
+      - uses: actions/checkout@v4
+
+      # pg_dump must be at least the server's major version (18); the runner ships an older one.
+      - name: Install the Postgres 18 client
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc \
+            https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-18
+          echo /usr/lib/postgresql/18/bin >>"$GITHUB_PATH"
+
+      - name: Dump
+        id: dump
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+        run: |
+          pg_dump --version
+          mkdir -p "$RUNNER_TEMP/backup"
+          file=$(scripts/backup/dump.sh "$RUNNER_TEMP/backup")
+          echo "file=$file" >>"$GITHUB_OUTPUT"
+
+      # The counts stay in the runner: they go to a file that is read here and never printed.
+      - name: Restore test
+        env:
+          BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          DUMP_FILE: ${{ steps.dump.outputs.file }}
+        run: |
+          counts="$RUNNER_TEMP/restore-counts.txt"
+          scripts/backup/restore.sh "$DUMP_FILE" "$RESTORE_TARGET_URL" >"$counts"
+          for table in orders menu_items; do
+            rows=$(awk -v t="$table" '$1 == t { print $2 }' "$counts")
+            if [ -z "$rows" ] || [ "$rows" -eq 0 ]; then
+              echo "::error::the restored $table table is empty or missing"
+              exit 1
+            fi
+          done
+          echo "Restore test passed: $(wc -l <"$counts" | tr -d ' ') tables restored."
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_BACKUP_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_BACKUP_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          # R2 does not accept every checksum the newer AWS CLI sends by default.
+          AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+          AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
+          R2_ENDPOINT: https://${{ secrets.CLOUDFLARE_ACCOUNT_ID }}.r2.cloudflarestorage.com
+          BACKUP_BUCKET: ${{ vars.BACKUP_BUCKET }}
+          DUMP_FILE: ${{ steps.dump.outputs.file }}
+        run: |
+          if [ -z "$BACKUP_BUCKET" ]; then
+            echo "::error::the BACKUP_BUCKET variable is not set on the production environment"
+            exit 1
+          fi
+          key="daily/$(basename "$DUMP_FILE")"
+          aws s3api put-object --endpoint-url "$R2_ENDPOINT" \
+            --bucket "$BACKUP_BUCKET" --key "$key" --body "$DUMP_FILE" >/dev/null
+          local_size=$(wc -c <"$DUMP_FILE" | tr -d ' ')
+          remote_size=$(aws s3api head-object --endpoint-url "$R2_ENDPOINT" \
+            --bucket "$BACKUP_BUCKET" --key "$key" --query ContentLength --output text)
+          if [ "$remote_size" != "$local_size" ]; then
+            echo "::error::uploaded $key is $remote_size bytes, the dump is $local_size"
+            exit 1
+          fi
+          echo "Uploaded $key ($local_size bytes)."
