@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { orderMessagesHu } from '@piccolo/core';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forint } from '../format';
@@ -379,5 +380,187 @@ describe('a refused submission', () => {
     ];
     await submit();
     expect(screen.getByText(errors.rejectedTitle)).toBeTruthy();
+  });
+});
+
+describe('what a guest types at checkout', () => {
+  async function atCheckout() {
+    await renderOrderPage();
+    addMenu({ soup: 'Brokkolikrémleves' });
+    await toCheckout();
+  }
+
+  /** Types into the field and leaves it, as a guest moving on to the next one does. */
+  function typeInto(input: HTMLInputElement | HTMLTextAreaElement, value: string) {
+    fireEvent.change(input, { target: { value } });
+    fireEvent.blur(input);
+  }
+
+  const errorOf = (input: HTMLElement) =>
+    input.closest('.field')?.querySelector('.error')?.textContent ?? null;
+
+  it('tells the phone keyboard and autofill what each field holds', async () => {
+    await atCheckout();
+    expect([phone().type, phone().inputMode, phone().autocomplete]).toEqual(['tel', 'tel', 'tel']);
+    expect([email().type, email().inputMode, email().autocomplete]).toEqual([
+      'email',
+      'email',
+      'email',
+    ]);
+    expect(name().autocomplete).toBe('name');
+    expect(address().autocomplete).toBe('street-address');
+    expect(field(/^Megjegyzés/).tagName).toBe('TEXTAREA');
+  });
+
+  it.each([
+    '+36 30 123 4567',
+    '+36301234567 ',
+    '06-30/123-4567',
+    '0036 30 123 4567',
+    '36 70 123 4567',
+    '(30) 123-4567',
+    '06 1 234 5678',
+    '06 94 123 456',
+  ])('takes the phone number %j as typed', async (typed) => {
+    await atCheckout();
+    typeInto(phone(), typed);
+    expect(errorOf(phone())).toBeNull();
+  });
+
+  it.each([
+    '+44 20 7946 0958',
+    '06 30 123 456',
+    '06 30 123 45678',
+    '06 30 ABC 4567',
+    'nincs telefonom',
+  ])('marks %j as a wrong phone number', async (typed) => {
+    await atCheckout();
+    typeInto(phone(), typed);
+    expect(errorOf(phone())).toBe(checkout.errors.phoneInvalid);
+  });
+
+  it.each([
+    'anna@example',
+    'anna.example.hu',
+    'anna@@example.hu',
+    'anna @example.hu',
+    'anna@example.hu.',
+  ])('marks %j as a wrong e-mail address', async (typed) => {
+    await atCheckout();
+    typeInto(email(), typed);
+    expect(errorOf(email())).toBe(checkout.errors.emailInvalid);
+  });
+
+  it('takes an e-mail address with capitals and the space a keyboard leaves after it', async () => {
+    await atCheckout();
+    fillContact();
+    typeInto(email(), 'Anna.Kovacs@Example.HU ');
+    expect(errorOf(email())).toBeNull();
+    await submit();
+    expect(await screen.findByRole('heading', { name: success.title })).toBeTruthy();
+    expect(screen.getByText(success.lead('Anna.Kovacs@Example.HU'))).toBeTruthy();
+  });
+
+  it('treats a field of spaces as empty and sends nothing', async () => {
+    await atCheckout();
+    for (const input of [name(), phone(), email(), address()]) {
+      fireEvent.change(input, { target: { value: '   ' } });
+    }
+    await submit();
+    expect(errorOf(name())).toBe(checkout.errors.nameRequired);
+    expect(errorOf(phone())).toBe(checkout.errors.phoneRequired);
+    expect(errorOf(email())).toBe(checkout.errors.emailRequired);
+    expect(errorOf(address())).toBe(checkout.errors.addressRequired);
+    expect(orderBodies).toHaveLength(0);
+  });
+
+  it('wants a name of 2 to 80 characters', async () => {
+    await atCheckout();
+    typeInto(name(), ' A ');
+    expect(errorOf(name())).toBe(orderMessagesHu.too_short);
+    typeInto(name(), 'Al');
+    expect(errorOf(name())).toBeNull();
+    typeInto(name(), 'A'.repeat(81));
+    expect(errorOf(name())).toBe(orderMessagesHu.too_long);
+    typeInto(name(), 'A'.repeat(80));
+    expect(errorOf(name())).toBeNull();
+  });
+
+  it('wants an address of 5 to 200 characters, and says what a short one misses', async () => {
+    await atCheckout();
+    typeInto(address(), 'Fő 1');
+    expect(errorOf(address())).toBe(checkout.errors.addressIncomplete);
+    typeInto(address(), 'Fő u. 1');
+    expect(errorOf(address())).toBeNull();
+    typeInto(address(), 'x'.repeat(201));
+    expect(errorOf(address())).toBe(orderMessagesHu.too_long);
+  });
+
+  it('marks only the field left empty, and unmarks it while it is corrected', async () => {
+    await atCheckout();
+    name().focus();
+    fireEvent.blur(name());
+    expect(errorOf(name())).toBe(checkout.errors.nameRequired);
+    expect(errorOf(phone())).toBeNull();
+    expect(screen.queryByText(checkout.errors.summary)).toBeNull();
+
+    fireEvent.change(name(), { target: { value: 'K' } });
+    expect(errorOf(name())).toBe(orderMessagesHu.too_short);
+    fireEvent.change(name(), { target: { value: 'Ko' } });
+    expect(errorOf(name())).toBeNull();
+    expect(name().getAttribute('aria-invalid')).toBeNull();
+  });
+
+  it("sends with the keyboard's Go key as with the button", async () => {
+    await atCheckout();
+    fillContact();
+    fireEvent.submit(email().form as HTMLFormElement);
+    await settle();
+    expect(orderBodies).toHaveLength(1);
+    expect(await screen.findByRole('heading', { name: success.title })).toBeTruthy();
+  });
+
+  it.each([
+    ['  \n  ', undefined],
+    ['  Kapukód: 12#\n2. emelet, balra 🙂  ', 'Kapukód: 12#\n2. emelet, balra 🙂'],
+  ])('sends the note %j as %j', async (typed, sent) => {
+    await atCheckout();
+    fillContact();
+    fireEvent.change(field(/^Megjegyzés/), { target: { value: typed } });
+    await submit();
+    expect((orderBodies[0] as { note?: string }).note).toBe(sent);
+  });
+
+  it('starts with empty fields when the remembered guest cannot be read', async () => {
+    localStorage.setItem(customerStorageKey, '{"name": "Kovács');
+    await atCheckout();
+    expect([name().value, phone().value, email().value, address().value]).toEqual(['', '', '', '']);
+  });
+
+  it('prefills only what the remembered guest holds as text', async () => {
+    localStorage.setItem(customerStorageKey, JSON.stringify({ name: 'Kovács Anna', phone: 3630 }));
+    await atCheckout();
+    expect(name().value).toBe('Kovács Anna');
+    expect(phone().value).toBe('');
+  });
+
+  it('says the cart emptied and stops sending when its only day passed the cutoff meanwhile', async () => {
+    await atCheckout();
+    fillContact();
+    orderReplies = [
+      async () =>
+        Response.json(
+          { error: 'validation', fields: { 'days.0.deliveryDate': 'cutoff_passed' } },
+          { status: 409 },
+        ),
+    ];
+    menuAnswer = { ...openMenu, orderableDates: ['2026-09-10', '2026-09-11', '2026-09-12'] };
+    await submit();
+
+    expect(screen.getByText(strings.summary.empty)).toBeTruthy();
+    expect(screen.getByText(errors.cartEmptied)).toBeTruthy();
+    expect(submitButton()).toHaveProperty('disabled', true);
+    await submit();
+    expect(orderBodies).toHaveLength(1);
   });
 });
