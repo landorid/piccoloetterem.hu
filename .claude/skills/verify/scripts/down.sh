@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ends a verification run: stops the three servers it started (their process groups, never by
-# name), deletes the orders it placed (e-mail verify+<RUN_ID>…@example.com) and the run's private
+# name), deletes the orders it placed (e-mail verify+<RUN_ID>…@<any domain>) and the run's private
 # state. Keeps $RUN/evidence and $RUN/logs.
 #
 #   .claude/skills/verify/scripts/down.sh            # the run in $VERIFY_RUN, else .verify/latest
@@ -24,7 +24,7 @@ for name in API WEB ADMIN; do
 done
 
 if [ -f "$RUN/state/db.url" ]; then
-  pattern="verify+$RUN_ID%@example.com"
+  pattern="verify+$RUN_ID%@%"
   {
     echo "-- orders and customers of $pattern, deleted by down.sh"
     node "$SKILL_DIR/scripts/sql.mjs" \

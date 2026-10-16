@@ -25,6 +25,7 @@ binding.
 | `apps/web` | Astro + React island — public ordering page; assets-only Worker | `<domain>` (`/megrendeles`) |
 | `apps/admin` | Vite + React + shadcn/ui — staff SPA; assets-only Worker | `admin.<domain>` |
 | `apps/api` | Hono on Cloudflare Workers | `api.<domain>` (`/api/*`) |
+| `apps/test-inbox` | Email Worker: the verify skill's test inbox; tooling, not per customer | `inbox.piccoloetterem.hu` |
 | `packages/core` | Domain logic, `RestaurantConfig`, pure TypeScript, fully unit-tested | — |
 | `packages/db` | Drizzle schema, migrations, `createDb()` | — |
 | `packages/api-client` | Typed client from Hono RPC, used by both apps | — |

@@ -1,0 +1,22 @@
+# The test inbox (issue #121): test tooling for the verify skill, not part of the product, and one
+# Worker for the whole project, not per customer. Email Routing on inbox.piccoloetterem.hu sends
+# every address there to this Worker's `email` handler; the `fetch` handler serves the messages
+# back on the same hostname. Deployed by hand (`pnpm --filter @piccolo/test-inbox deploy`); see
+# README.md for the one-time setup.
+name = "piccolo-test-inbox"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+workers_dev = false
+routes = [{ pattern = "inbox.piccoloetterem.hu", custom_domain = true }]
+
+[vars]
+INBOX_DOMAIN = "inbox.piccoloetterem.hu"
+
+# Each message is kept for one day: the bucket's lifecycle rule
+#   wrangler r2 bucket lifecycle add piccolo-test-inbox --expire-days 1
+[[r2_buckets]]
+binding = "MESSAGES"
+bucket_name = "piccolo-test-inbox"
+
+# Secret, never in this file: wrangler secret put INBOX_TOKEN

@@ -26,3 +26,7 @@ CLERK_ORG_ID=
 SES_REGION=
 SES_ACCESS_KEY_ID=
 SES_SECRET_ACCESS_KEY=
+
+# Optional. Comma-separated domains the confirmation e-mail may go to; others are logged and
+# skipped. Unset sends to anyone. A verify run sets inbox.piccoloetterem.hu (the test inbox).
+# EMAIL_ALLOWED_RECIPIENT_DOMAINS=inbox.piccoloetterem.hu

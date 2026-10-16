@@ -4,6 +4,10 @@
 //   state/staff.jwt     a staff session token the API accepts
 //   state/db.url        DATABASE_URL, for sql.mjs
 //
+// The run sends real confirmation e-mails when the root .env has all three SES_* keys: they are
+// copied with EMAIL_ALLOWED_RECIPIENT_DOMAINS set to the test inbox, so the API mails nothing
+// else. The allowlist is written either way.
+//
 // Staff auth without Clerk's hosted sign-in: a per-run RSA key pair stands in for the Clerk
 // instance. The API runs the real `requireStaff` with CLERK_JWT_KEY set to the run's public key,
 // so it verifies the token below exactly as it verifies Clerk's (signature, azp, org). Nothing is
@@ -41,6 +45,11 @@ if (!databaseUrl) {
   console.error('DATABASE_URL not found in the environment, apps/api/.dev.vars or .env');
   process.exit(1);
 }
+
+const INBOX_DOMAIN = 'inbox.piccoloetterem.hu';
+const sesNames = ['SES_REGION', 'SES_ACCESS_KEY_ID', 'SES_SECRET_ACCESS_KEY'];
+const rootEnv = readEnv(rootEnvPath);
+const ses = sesNames.every((name) => rootEnv[name]) ? sesNames : [];
 
 const { publicKey, privateKey } = generateKeyPairSync('rsa', { modulusLength: 2048 });
 const publicPem = publicKey.export({ type: 'spki', format: 'pem' }).toString().trim();
@@ -80,6 +89,8 @@ writeFileSync(
     `CLERK_SECRET_KEY=${quote('sk_test_verify')}`,
     `CLERK_JWT_KEY=${quote(publicPem)}`,
     `CLERK_ORG_ID=${quote(ORG_ID)}`,
+    `EMAIL_ALLOWED_RECIPIENT_DOMAINS=${quote(INBOX_DOMAIN)}`,
+    ...ses.map((name) => `${name}=${quote(rootEnv[name])}`),
     '',
   ].join('\n'),
   { mode: 0o600 },
@@ -97,3 +108,8 @@ writeFileSync(
 );
 writeFileSync(join(state, 'staff.jwt'), token, { mode: 0o600 });
 writeFileSync(join(state, 'db.url'), databaseUrl, { mode: 0o600 });
+console.log(
+  ses.length
+    ? `e-mail: SES keys copied; the API sends only to @${INBOX_DOMAIN}`
+    : 'e-mail: no SES keys in the root .env; every confirmation fails before sending',
+);
