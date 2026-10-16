@@ -11,40 +11,22 @@ export interface Email {
   text: string;
 }
 
-export type SendResult = { dryRun: true } | { dryRun: false; messageId: string };
+export interface SendResult {
+  messageId: string;
+}
 
-export type SesEnv = Pick<
-  Bindings,
-  'EMAIL_DRY_RUN' | 'SES_REGION' | 'SES_ACCESS_KEY_ID' | 'SES_SECRET_ACCESS_KEY'
->;
+export type SesEnv = Pick<Bindings, 'SES_REGION' | 'SES_ACCESS_KEY_ID' | 'SES_SECRET_ACCESS_KEY'>;
 
 const credentialNames = ['SES_REGION', 'SES_ACCESS_KEY_ID', 'SES_SECRET_ACCESS_KEY'] as const;
 
 /**
  * Sends `email` with SES v2 `SendEmail`, signed with SigV4 by `aws4fetch` (no AWS SDK: it does not
- * fit a Worker). `EMAIL_DRY_RUN=1` logs it instead and sends nothing. Rejects when a credential is
- * missing or SES answers with an error, so the caller can tell a sent e-mail from one that was not.
+ * fit a Worker). Rejects when a credential is missing or SES answers with an error, so the caller can tell a sent e-mail from one that was not.
  *
  * A 5xx or 429 is retried twice, briefly: this runs inside `waitUntil`, and `aws4fetch`'s default
  * of ten retries with exponential backoff would outlive it.
  */
 export async function sendEmail(env: SesEnv, email: Email): Promise<SendResult> {
-  if (env.EMAIL_DRY_RUN === '1') {
-    console.log(
-      [
-        '[email dry run]',
-        `From: ${email.from.name} <${email.from.address}>`,
-        `Reply-To: ${email.replyTo}`,
-        `To: ${email.to}`,
-        `Subject: ${email.subject}`,
-        `HTML: ${email.html.length} characters`,
-        '',
-        email.text,
-      ].join('\n'),
-    );
-    return { dryRun: true };
-  }
-
   const missing = credentialNames.filter((name) => !env[name]);
   const { SES_REGION: region, SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY } = env;
   if (!region || !SES_ACCESS_KEY_ID || !SES_SECRET_ACCESS_KEY) {
@@ -90,7 +72,7 @@ export async function sendEmail(env: SesEnv, email: Email): Promise<SendResult> 
     const message = body.message ?? body.Message ?? response.statusText;
     throw new Error(`SES SendEmail failed with ${response.status} ${type}: ${message}`);
   }
-  return { dryRun: false, messageId: body.MessageId };
+  return { messageId: body.MessageId };
 }
 
 /**

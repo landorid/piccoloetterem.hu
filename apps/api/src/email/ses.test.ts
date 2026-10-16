@@ -38,10 +38,7 @@ describe('sendEmail', () => {
   it('posts a signed SES v2 SendEmail and returns its MessageId', async () => {
     const requests = stubFetch(() => Response.json({ MessageId: 'ses-message-1' }));
 
-    await expect(sendEmail(credentials, email)).resolves.toEqual({
-      dryRun: false,
-      messageId: 'ses-message-1',
-    });
+    await expect(sendEmail(credentials, email)).resolves.toEqual({ messageId: 'ses-message-1' });
 
     expect(requests).toHaveLength(1);
     const [request] = requests;
@@ -69,35 +66,13 @@ describe('sendEmail', () => {
     });
   });
 
-  it('logs the e-mail in dry run and sends nothing', async () => {
-    const requests = stubFetch(() => Response.json({ MessageId: 'never' }));
-    const log = vi.spyOn(console, 'log').mockImplementation(() => {});
-
-    await expect(sendEmail({ EMAIL_DRY_RUN: '1' }, email)).resolves.toEqual({ dryRun: true });
-
-    expect(requests).toEqual([]);
-    expect(log).toHaveBeenCalledTimes(1);
-    expect(log.mock.calls[0]?.[0]).toBe(
-      [
-        '[email dry run]',
-        'From: Piccolo Club Étterem <rendeles@piccoloetterem.hu>',
-        'Reply-To: info@piccoloetterem.hu',
-        'To: kiss.anna@example.com',
-        'Subject: Rendelését rögzítettük – 2026/41. hét (10.05 – 10.10)',
-        'HTML: 24 characters',
-        '',
-        'Kedves Kiss Anna!',
-      ].join('\n'),
-    );
-  });
-
   it('names every missing credential and sends nothing', async () => {
     const requests = stubFetch(() => Response.json({ MessageId: 'never' }));
 
     await expect(sendEmail({ SES_REGION: 'eu-central-1' }, email)).rejects.toThrow(
       'SES is not configured: set SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY.',
     );
-    await expect(sendEmail({ EMAIL_DRY_RUN: '0' }, email)).rejects.toThrow(
+    await expect(sendEmail({}, email)).rejects.toThrow(
       'SES is not configured: set SES_REGION, SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY.',
     );
     expect(requests).toEqual([]);

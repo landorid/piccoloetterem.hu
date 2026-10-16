@@ -29,7 +29,7 @@ export const orders = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     processedAt: timestamp('processed_at', { withTimezone: true }),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
-    /** When the confirmation e-mail went out (or was logged, in dry run); set once, never cleared. */
+    /** When the confirmation e-mail went out; set once, never cleared. */
     confirmationSentAt: timestamp('confirmation_sent_at', { withTimezone: true }),
   },
   (t) => [
