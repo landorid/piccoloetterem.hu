@@ -107,7 +107,7 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
     expect(left).toEqual([]);
   });
 
-  it('sends the e-mail once, logs it, marks every order, and skips the second time', async () => {
+  it('sends the e-mail once, marks every order, and skips the second time', async () => {
     const { submissionId, email } = await store('once');
     const sent = stubSes();
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -124,10 +124,7 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
     expect(body).toContain(`Leves felár  ${forint(650)}`);
     expect(body).toContain(`Leves nélkül  ${forint(-100)}`);
     expect(body).toContain(`Fizetendő összesen  ${forint(fixturePriced.total)}`);
-    expect(log).toHaveBeenCalledTimes(1);
-    expect(log.mock.calls[0]?.[0]).toBe(
-      `Confirmation for submission ${submissionId} sent through SES, message ses-message-1`,
-    );
+    expect(log).not.toHaveBeenCalled();
     const marked = await sentAt(submissionId);
     expect(marked).toHaveLength(2);
     expect(marked.every((at) => at instanceof Date)).toBe(true);

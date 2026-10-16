@@ -39,10 +39,7 @@ export async function sendConfirmation(env: Bindings, submissionId: string): Pro
       return;
     }
     const { html, text } = await renderOrderConfirmation(view);
-    const { messageId } = await sendEmail(env, { ...email, html, text });
-    console.log(
-      `Confirmation for submission ${submissionId} sent through SES, message ${messageId}`,
-    );
+    await sendEmail(env, { ...email, html, text });
     await markConfirmationSent(db, submissionId);
   } finally {
     await db.$client.end();
