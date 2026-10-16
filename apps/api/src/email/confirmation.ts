@@ -13,7 +13,7 @@ import { confirmationEmail } from './view';
  * when the request's database client is already released, so it opens a client of its own.
  *
  * `confirmation_sent_at` is the idempotency guard: a submission with any order marked is skipped,
- * and the orders are marked only after SES accepted the e-mail (or dry run logged it), so a failed
+ * and the orders are marked only after SES accepted the e-mail, so a failed
  * send leaves them unmarked for a later attempt. The check and the mark are not one claim, so two
  * calls running at once for the same submission would both send; the route makes exactly one.
  * Rejects on any failure; the caller reports it.
@@ -31,7 +31,10 @@ export async function sendConfirmation(env: Bindings, submissionId: string): Pro
     }
     const { view, ...email } = confirmationEmail(submission, loadConfig(env));
     const { html, text } = await renderOrderConfirmation(view);
-    await sendEmail(env, { ...email, html, text });
+    const { messageId } = await sendEmail(env, { ...email, html, text });
+    console.log(
+      `Confirmation for submission ${submissionId} sent through SES, message ${messageId}`,
+    );
     await markConfirmationSent(db, submissionId);
   } finally {
     await db.$client.end();

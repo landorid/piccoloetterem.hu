@@ -29,11 +29,6 @@ CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.
 # Exact origin, including scheme and port. The public site is not an authorized party.
 # Empty is rejected by the API: Clerk skips the check when the list is empty.
 CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev,https://admin-dev.piccoloetterem.hu"
-# The confirmation e-mail is sent through SES from the development Worker too, so it can be tested
-# end to end. The development database is shared and its orders carry made-up addresses, which
-# will bounce; the SES identity must be verified and the Worker needs its SES secrets. Set
-# EMAIL_DRY_RUN = "1" again to log instead (src/email/ses.ts). Staging and production send through SES.
-EMAIL_DRY_RUN = "0"
 
 # The deployed development Worker's database. Locally `pnpm dev` (scripts/dev.mjs) hands wrangler
 # DATABASE_URL from .dev.vars as CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
@@ -76,8 +71,6 @@ routes = []
 [env.staging.vars]
 ENVIRONMENT = "staging"
 RESTAURANT = "piccolo"
-# Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
-EMAIL_DRY_RUN = "0"
 # Placeholder. Replace with the staging web and admin Workers' URLs (manual issue #40).
 CORS_ORIGINS = "https://piccolo-web-staging.<account>.workers.dev,https://piccolo-admin-staging.<account>.workers.dev"
 # Placeholder. The admin origin only. Replace together with CORS_ORIGINS (manual issue #40).
@@ -106,8 +99,6 @@ routes = [{ pattern = "api.piccoloetterem.hu", custom_domain = true }]
 [env.production.vars]
 ENVIRONMENT = "production"
 RESTAURANT = "piccolo"
-# Sends the confirmation e-mail through SES; needs the SES_* secrets (P1, #39).
-EMAIL_DRY_RUN = "0"
 # The public site is tested on prod.piccoloetterem.hu before it moves to piccoloetterem.hu; both
 # are allowed so the move needs no API change.
 CORS_ORIGINS = "https://prod.piccoloetterem.hu,https://piccoloetterem.hu,https://admin.piccoloetterem.hu"

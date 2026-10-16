@@ -52,7 +52,7 @@ api.sh`, `Gotchas`.
 - [Order submission](./order-submission.md): `POST /api/orders` stores one order per day, or
   rejects with field codes. Checkout on `/megrendeles` (O7, #35) is its user path.
 - [Order confirmation e-mail](./order-confirmation-email.md): one e-mail per stored submission,
-  logged in dry run (`EMAIL_DRY_RUN`), marked by `orders.confirmation_sent_at`.
+  sent through SES (fails in a run: no `SES_*`), marked by `orders.confirmation_sent_at`.
 - [Staff access](./staff-access.md): the admin shell behind sign-in; 401/403 on `/api/admin/*`.
 - [Permanent menu (Étlap)](./admin-etlap.md): editing permanent items and the sold-out switch at
   `/etlap`.

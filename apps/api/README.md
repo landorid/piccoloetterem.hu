@@ -363,21 +363,19 @@ Every Hungarian word is in `src/strings.ts`.
   (`@piccolo/api/types`), and they have no JSX setting for the template.
 - **SES** (`src/email/ses.ts`): SES v2 `SendEmail` over HTTPS, signed with SigV4 by `aws4fetch`.
   No AWS SDK, and SendOps is not in the path (docs/STACK.md rule 7). A 5xx or 429 is retried twice.
-- **Dry run.** With `EMAIL_DRY_RUN=1` the e-mail is logged (headers and the plain-text part) and
-  nothing is sent; it still counts as sent. The top level of `wrangler.toml` sets it, so
-  `wrangler dev` and the development Worker never mail anyone. Staging and production leave it
-  unset.
+- **Always sent.** Every environment sends through SES, `wrangler dev` included. A sent e-mail logs
+  `Confirmation for submission … sent through SES, message <MessageId>`. Without the `SES_*`
+  secrets the send fails (`SES is not configured: …`), is reported, and the orders stay unmarked.
+  The development database's orders carry made-up addresses, which bounce.
 
 ```bash
 pnpm email:preview                         # the fixture e-mail → apps/api/.preview/order-confirmation.{html,txt}
 pnpm email:test-send you@example.com       # sends the fixture e-mail through SES, with the root .env's SES_*
-pnpm email:test-send you@example.com --dry-run
 ```
 
 The fixture (`src/email/fixture.ts`) is two days and three menus with both soup adjustments and
 extras, priced by core and snapshotted by `snapshotOf`, so its totals are core's.
-`email:test-send` always sends for real, whatever `EMAIL_DRY_RUN` says. While SES is in the
-sandbox, the recipient must be a verified identity too.
+While SES is in the sandbox, the recipient must be a verified identity too.
 
 **Before the first real send (P1, #39):** a verified SES domain identity for the sender's domain
 with DKIM, SPF and DMARC records, production access (out of the sandbox), and an IAM access key
@@ -559,6 +557,5 @@ wrangler secret put SENTRY_DSN --env staging
 | `CLERK_AUTHORIZED_PARTIES` | var | `wrangler.toml`: admin origins whose session tokens are accepted (`azp`) |
 | `ITEM_IMAGES` | R2 binding | `wrangler.toml`: the étlap images bucket for that environment, `piccolo-menu-images-<environment>`, public on `img[-dev].<domain>`. Locally the real development bucket (`remote = true`) |
 | `MENU_CACHE` | KV binding | `wrangler.toml`: the public menu cache's namespace for that environment, also holding the per-IP order limit (`order-rate:`). Locally Miniflare's |
-| `EMAIL_DRY_RUN` | var | `wrangler.toml`: `1` at the top level (local and development), unset in staging and production. `1` logs the confirmation e-mail instead of sending it |
-| `SES_REGION` | secret | `wrangler secret put` per environment that sends (P1, #39); `.dev.vars` locally only to send for real. The region of the SES identity |
+| `SES_REGION` | secret | `wrangler secret put` per environment (P1, #39); `.dev.vars` locally. The region of the SES identity |
 | `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY` | secret | same. An IAM access key allowed `ses:SendEmail` |

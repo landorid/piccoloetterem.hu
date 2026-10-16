@@ -1,6 +1,6 @@
 /*
  * The confirmation e-mail against a real database: `sendConfirmation` reads a stored submission,
- * logs it in dry run, and marks its orders. Runs only when DATABASE_URL is set in the shell (a
+ * sends it through a stubbed SES, and marks its orders. Runs only when DATABASE_URL is set in the shell (a
  * database `pnpm db:migrate` has migrated).
  *
  * That database may also serve a deployed development environment, so the test never truncates:
@@ -37,8 +37,28 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
     ENVIRONMENT: 'development',
     MENU_CACHE: memoryKv(),
     ITEM_IMAGES: memoryR2(),
-    EMAIL_DRY_RUN: '1',
+    SES_REGION: 'eu-west-1',
+    SES_ACCESS_KEY_ID: 'AKIDEXAMPLE',
+    SES_SECRET_ACCESS_KEY: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY',
   };
+
+  /**
+   * Stubs SES and records every SendEmail body. Any other request goes to the real `fetch`, which
+   * the database driver uses.
+   */
+  function stubSes(): Record<string, unknown>[] {
+    const realFetch = globalThis.fetch;
+    const sent: Record<string, unknown>[] = [];
+    vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
+      const request = new Request(input, init);
+      if (!request.url.startsWith('https://email.eu-west-1.amazonaws.com/')) {
+        return realFetch(input, init);
+      }
+      sent.push(await request.json());
+      return Response.json({ MessageId: `ses-message-${sent.length}` });
+    });
+    return sent;
+  }
 
   /** Stores the fixture submission (Tuesday and Thursday of the test's week) for `who`. */
   async function store(who: string): Promise<{ submissionId: string; email: string }> {
@@ -74,6 +94,7 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
     ).map((row) => row.at);
 
   afterEach(() => {
+    vi.unstubAllGlobals();
     vi.restoreAllMocks();
   });
 
@@ -86,21 +107,27 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
     expect(left).toEqual([]);
   });
 
-  it('logs the e-mail in dry run once, marks every order, and skips the second time', async () => {
+  it('sends the e-mail once, logs it, marks every order, and skips the second time', async () => {
     const { submissionId, email } = await store('once');
+    const sent = stubSes();
     const log = vi.spyOn(console, 'log').mockImplementation(() => {});
 
     await sendConfirmation(env, submissionId);
 
+    expect(sent).toHaveLength(1);
+    const body = JSON.stringify(sent[0]);
+    expect(sent[0]).toMatchObject({
+      Destination: { ToAddresses: [email] },
+      ReplyToAddresses: ['info@piccoloetterem.hu'],
+    });
+    expect(body).toContain('Rendelését rögzítettük – ');
+    expect(body).toContain(`Leves felár  ${forint(650)}`);
+    expect(body).toContain(`Leves nélkül  ${forint(-100)}`);
+    expect(body).toContain(`Fizetendő összesen  ${forint(fixturePriced.total)}`);
     expect(log).toHaveBeenCalledTimes(1);
-    const logged = String(log.mock.calls[0]?.[0]);
-    expect(logged).toContain('[email dry run]');
-    expect(logged).toContain(`To: ${email}`);
-    expect(logged).toContain('Reply-To: info@piccoloetterem.hu');
-    expect(logged).toContain('Subject: Rendelését rögzítettük – ');
-    expect(logged).toContain(`Leves felár  ${forint(650)}`);
-    expect(logged).toContain(`Leves nélkül  ${forint(-100)}`);
-    expect(logged).toContain(`Fizetendő összesen  ${forint(fixturePriced.total)}`);
+    expect(log.mock.calls[0]?.[0]).toBe(
+      `Confirmation for submission ${submissionId} sent through SES, message ses-message-1`,
+    );
     const marked = await sentAt(submissionId);
     expect(marked).toHaveLength(2);
     expect(marked.every((at) => at instanceof Date)).toBe(true);
@@ -113,16 +140,15 @@ describe.skipIf(!url)('sendConfirmation against DATABASE_URL', () => {
       `Confirmation for submission ${submissionId} already sent; skipped`,
     );
     expect(await sentAt(submissionId)).toEqual(marked);
+    expect(sent).toHaveLength(1);
   });
 
   it('rejects when SES is not configured and leaves the orders unmarked for a retry', async () => {
     const { submissionId } = await store('unsent');
 
     await expect(
-      sendConfirmation({ ...env, EMAIL_DRY_RUN: undefined }, submissionId),
-    ).rejects.toThrow(
-      'SES is not configured: set SES_REGION, SES_ACCESS_KEY_ID, SES_SECRET_ACCESS_KEY.',
-    );
+      sendConfirmation({ ...env, SES_ACCESS_KEY_ID: undefined }, submissionId),
+    ).rejects.toThrow('SES is not configured: set SES_ACCESS_KEY_ID.');
     expect(await sentAt(submissionId)).toEqual([null, null]);
   });
 
