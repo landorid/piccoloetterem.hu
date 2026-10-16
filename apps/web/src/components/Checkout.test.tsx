@@ -339,6 +339,37 @@ describe('a refused submission', () => {
     expect(document.activeElement).toBe(email());
   });
 
+  it('brings the banner to the guest who sent from the last field', async () => {
+    await checkoutWith([{ soup: 'Brokkolikrémleves' }]);
+    orderReplies = [
+      async () => {
+        throw new TypeError('Failed to fetch');
+      },
+    ];
+    // The submit button keeps focus where it was, so the last field typed in still holds it.
+    address().focus();
+    await submit();
+    expect(document.activeElement?.contains(screen.getByRole('alert'))).toBe(true);
+  });
+
+  it('leaves focus on the refused field when the banner comes with it', async () => {
+    await checkoutWith([{ soup: 'Brokkolikrémleves' }]);
+    orderReplies = [
+      async () =>
+        Response.json(
+          {
+            error: 'validation',
+            fields: { email: 'invalid_email', 'days.0.menus.0.variation': 'not_allowed' },
+          },
+          { status: 400 },
+        ),
+    ];
+    address().focus();
+    await submit();
+    expect(screen.getByText(errors.rejectedTitle)).toBeTruthy();
+    expect(document.activeElement).toBe(email());
+  });
+
   it('keeps the cart after a network failure and sends it again on retry', async () => {
     await checkoutWith([{ soup: 'Brokkolikrémleves' }]);
     orderReplies = [
