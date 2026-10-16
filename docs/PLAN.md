@@ -342,3 +342,12 @@ resources are P2 (#40).
 - `CLOUDFLARE_ACCOUNT_ID`
 - `DATABASE_URL` (per environment)
 - `WORKER_URL` (per environment, the API origin)
+
+`.github/workflows/backup.yml` dumps `production` every night to a private R2 bucket
+(docs/BACKUP.md). It reads these from the `production` environment only:
+
+- `BACKUP_DATABASE_URL` (the read-only `backup_reader` role, direct connection string)
+- `R2_BACKUP_ACCESS_KEY_ID`, `R2_BACKUP_SECRET_ACCESS_KEY` (R2 token, Object Read & Write on the
+  backup bucket only)
+- `CLOUDFLARE_ACCOUNT_ID` (shared with `ci.yml`)
+- `BACKUP_BUCKET` (a variable, not a secret)

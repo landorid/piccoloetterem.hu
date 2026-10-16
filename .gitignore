@@ -26,3 +26,6 @@ coverage/
 
 # `pnpm email:preview` output (apps/api/scripts/email-preview.ts).
 apps/api/.preview/
+
+# Database dumps hold personal data (docs/BACKUP.md); never commit one.
+*.dump
