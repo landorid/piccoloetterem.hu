@@ -111,6 +111,8 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   in #57. Revised 2026-10-09: the difference is **a checkout notice only**, as in the old app. It
   is not a priced line and is not stored on the order. The admin delivery list and order detail
   do not show it, and the confirmation e-mail does not mention it. Decided by Dávid (#57).
+  Revised 2026-10-16: the minimum is **2590 Ft on Saturday**, chosen by the delivery date like
+  the weekend price; weekdays stay 2200 Ft. Decided by Dávid.
 - Pickup exists behind a config flag: no fee, no minimum, no address. **Off for Piccolo.**
 - No payment method selection, no online payment. Cash on delivery is implied.
 - "Sold out" is a manual per-item switch, enforced server-side at submission. No stock counting.
@@ -196,7 +198,7 @@ closed_dates         date (PK, YYYY-MM-DD), created_at    -- set by staff, no or
 {
   name, timezone: 'Europe/Budapest',
   cutoff: '09:30', operatingDays: [1,2,3,4,5,6], lastSameWeekOrderDay: 5,
-  pricing: { noSoupDiscount: 100, soupPrice: 650, deliveryFee: 150, minimumOrder: 2200 },
+  pricing: { noSoupDiscount: 100, soupPrice: 650, deliveryFee: 150, minimumOrder: { weekday: 2200, weekend: 2590 } },
   extras: [{ key, name, price }],
   pickupEnabled: false,
   email: { from: 'rendeles@…', replyTo: 'info@…' },

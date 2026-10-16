@@ -56,7 +56,11 @@ export interface RestaurantConfig {
     noSoupDiscount: number;
     soupPrice: number;
     deliveryFee: number;
-    minimumOrder: number;
+    /**
+     * Food subtotal per delivery day, picked by the delivery date like menu prices: `weekend` on
+     * Saturday and Sunday.
+     */
+    minimumOrder: { weekday: number; weekend: number };
   };
   extras: readonly ExtraDef[];
   pickupEnabled: boolean;

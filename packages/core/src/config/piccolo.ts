@@ -17,7 +17,7 @@ export const piccolo: RestaurantConfig = {
     noSoupDiscount: 100,
     soupPrice: 650,
     deliveryFee: 150,
-    minimumOrder: 2200,
+    minimumOrder: { weekday: 2200, weekend: 2590 },
   },
   extras: [
     { key: 'doboz', name: 'Doboz', price: 100 },

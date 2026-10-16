@@ -106,7 +106,7 @@ export interface PricedDay {
   foodSubtotal: number;
   deliveryFee: number;
   total: number;
-  /** `max(0, minimumOrder - foodSubtotal)` for delivery, otherwise 0. Not a priced line. */
+  /** `max(0, minimumOrderOn(deliveryDate) - foodSubtotal)` for delivery, otherwise 0. Not a priced line. */
   missingToMinimum: number;
 }
 

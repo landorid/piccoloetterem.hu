@@ -1,4 +1,4 @@
-import { parseIsoDate } from '../calendar';
+import { isWeekendPrice, parseIsoDate } from '../calendar';
 import type { RestaurantConfig } from '../config/types';
 import { priceFor } from '../menu/price';
 import type { PublicMenu } from '../menu/types';
@@ -78,6 +78,15 @@ export function priceMenu(
   return { items, adjustments, price };
 }
 
+/** The minimum food subtotal for a delivery on `deliveryDate` (an ISO date). */
+export function minimumOrderOn(
+  deliveryDate: string,
+  config: Pick<RestaurantConfig, 'timezone' | 'pricing'>,
+): number {
+  const { weekday, weekend } = config.pricing.minimumOrder;
+  return isWeekendPrice(parseIsoDate(deliveryDate, config.timezone)) ? weekend : weekday;
+}
+
 export function priceDay(day: DayDraft, publicMenu: PublicMenu, config: PricingConfig): PricedDay {
   const menus = day.menus.map((menu) => priceMenu(menu, publicMenu, day.deliveryDate, config));
   const extras: PricedExtra[] = [];
@@ -99,7 +108,9 @@ export function priceDay(day: DayDraft, publicMenu: PublicMenu, config: PricingC
     extras.reduce((sum, extra) => sum + extra.total, 0);
   const deliveryFee = day.fulfilment === 'delivery' ? config.pricing.deliveryFee : 0;
   const missingToMinimum =
-    day.fulfilment === 'delivery' ? Math.max(0, config.pricing.minimumOrder - foodSubtotal) : 0;
+    day.fulfilment === 'delivery'
+      ? Math.max(0, minimumOrderOn(day.deliveryDate, config) - foodSubtotal)
+      : 0;
   return {
     menus,
     extras,

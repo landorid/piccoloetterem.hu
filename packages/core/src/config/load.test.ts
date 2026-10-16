@@ -52,7 +52,7 @@ describe('the Piccolo instance', () => {
       noSoupDiscount: 100,
       soupPrice: 650,
       deliveryFee: 150,
-      minimumOrder: 2200,
+      minimumOrder: { weekday: 2200, weekend: 2590 },
     });
     expect(config.extras.map((extra) => extra.key)).toEqual([
       'doboz',

@@ -27,7 +27,9 @@ describe('Landing', () => {
     render(<DeliveryCard config={publicConfig} orderHref="/megrendeles" />);
     const card = screen.getByRole('region', { name: text.delivery.title });
     expect(value(card, text.delivery.fee)).toBe(text.delivery.feeValue(forint(150)));
-    expect(value(card, text.delivery.minimum)).toBe(text.delivery.minimumValue(forint(2200)));
+    expect(value(card, text.delivery.minimum)).toBe(
+      text.delivery.minimumValue(strings.common.minimumWithWeekend(forint(2200), forint(2590))),
+    );
     expect(within(card).getByRole('link', { name: text.delivery.order }).getAttribute('href')).toBe(
       '/megrendeles',
     );

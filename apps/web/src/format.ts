@@ -10,6 +10,13 @@ export function forint(amount: number): string {
   return strings.common.forint(number.format(amount));
 }
 
+/** The minimum order for a sentence: one amount, or the weekday one with Saturday's after it. */
+export function minimumOrder({ weekday, weekend }: { weekday: number; weekend: number }): string {
+  return weekday === weekend
+    ? forint(weekday)
+    : strings.common.minimumWithWeekend(forint(weekday), forint(weekend));
+}
+
 /** A price adjustment: `+650 Ft`, `−100 Ft`, and `0 Ft` for none. */
 export function signedForint(amount: number): string {
   if (amount > 0) return strings.common.plus(forint(amount));
