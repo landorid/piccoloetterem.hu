@@ -2,6 +2,7 @@
 import { forint } from '../format';
 import type { PublicConfig } from '../lib/api';
 import { strings } from '../strings';
+import HonlapvarazsloLogo from './HonlapvarazsloLogo.astro';
 
 interface Props {
   config: PublicConfig | null;
@@ -10,22 +11,37 @@ interface Props {
 const { config } = Astro.props;
 ---
 
-{
-  config && (
-    <footer class="footer">
-      <p>
-        <b>{strings.footer.openingTitle}</b> · {config.contact.openingHours}
-      </p>
-      <p>
-        <b>{strings.footer.deliveryTitle}</b> ·{' '}
-        {strings.footer.delivery(
-          forint(config.pricing.deliveryFee),
-          forint(config.pricing.minimumOrder),
-        )}
-      </p>
-      <p>
-        <b>{strings.footer.contactTitle}</b> · {config.contact.phone} · {config.contact.address}
-      </p>
-    </footer>
-  )
-}
+<footer class="footer">
+  {
+    config && (
+      <>
+        <p>
+          <b>{strings.footer.openingTitle}</b> · {config.contact.openingHours}
+        </p>
+        <p>
+          <b>{strings.footer.deliveryTitle}</b> ·{' '}
+          {strings.footer.delivery(
+            forint(config.pricing.deliveryFee),
+            forint(config.pricing.minimumOrder),
+          )}
+        </p>
+        <p>
+          <b>{strings.footer.contactTitle}</b> · {config.contact.phone} · {config.contact.address}
+        </p>
+      </>
+    )
+  }
+  <p class="footer-credit">
+    <span>{strings.footer.credit.years(new Date().getFullYear())} {strings.siteName}</span>
+    <a
+      class="footer-credit-link"
+      href="https://honlapvarazslo.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      title={strings.footer.credit.linkLabel}
+      aria-label={strings.footer.credit.linkLabel}
+    >
+      <HonlapvarazsloLogo />
+    </a>
+  </p>
+</footer>

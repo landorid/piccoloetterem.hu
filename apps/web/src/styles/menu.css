@@ -12,6 +12,44 @@
   scroll-margin-top: calc(var(--header-h) + var(--s-4));
 }
 
+/* Why the week on show cannot be ordered. Informational, so brand-tinted rather than a warning. */
+.week-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--radius-lg);
+  background: var(--brand-50);
+  border: 1px solid var(--brand-100);
+  color: var(--ink-700);
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+.week-notice-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+.week-notice-text {
+  min-width: 0;
+  padding-top: 1px;
+}
+.week-notice-title {
+  font-weight: 700;
+  color: var(--brand-800);
+  margin-bottom: 2px;
+}
+.week-notice a {
+  color: var(--brand-700);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 /* --- dishes ------------------------------------------------------------------------------------ */
 .menu-card {
   overflow: hidden;
@@ -103,8 +141,10 @@
   font-size: var(--t-sm);
   color: var(--ink-700);
 }
+/* Closes the card when no dishes follow it. */
+.menu-closed:last-child,
 .menu-empty {
-  margin-bottom: var(--s-3);
+  margin-bottom: var(--s-6);
 }
 .menu-footnote {
   padding: 0 var(--s-6) var(--s-4);

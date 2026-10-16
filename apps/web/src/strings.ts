@@ -87,6 +87,8 @@ export const strings = {
     extrasSubtotal: 'Kiegészítők',
     emptyMenu: 'Válassz legalább egy fogást.',
     noSoupDiscount: 'Leves nélkül',
+    /** On a daily main whose price leaves the soup out. */
+    withoutSoup: 'Levest nem tartalmaz',
     soupSurcharge: 'Leves felár',
     soupSurchargeWhy: 'A leves csak a napi főételek árában van benne.',
     priceTotal: 'Menü ára',
@@ -228,6 +230,10 @@ export const strings = {
     delivery: (fee: string, minimum: string) =>
       `${fee} / cím / nap. Minimum ${minimum} ételérték naponta.`,
     contactTitle: 'Elérhetőség',
+    credit: {
+      years: (current: number) => `2015–${current}`,
+      linkLabel: 'Stresszmentes weboldalkészítés kisvállalkozásoknak Szombathelyen',
+    },
   },
   /** `/`: the week's menu and the permanent menu, to read. Ordering is on /megrendeles. */
   menuPage: {
@@ -243,6 +249,8 @@ export const strings = {
     /** In place of a daily soup's price, which the menu's price includes. */
     soupIncluded: 'egy választott levest a menü ára tartalmaz',
     withSoup: '+ választott leves',
+    /** On a daily main whose price leaves the soup out, against the mains hint above it. */
+    withoutSoup: 'Levest nem tartalmaz',
     withSide: '+ választott köret',
     variations: (names: readonly string[]) => `Választható: ${names.join(', ')}`,
     sections: {
@@ -255,11 +263,11 @@ export const strings = {
     sidesHint: 'A köretes főételekhez egy köret felár nélkül jár.',
     /** The page shows this week because the API has no orderable week now. */
     notices: {
-      nextWeekTitle: 'A jövő heti menü még nem érhető el',
+      nextWeekTitle: 'A jövő heti menü hamarosan érkezik',
       nextWeekBody:
-        'A következő hét menüjét vasárnap este vagy hétfő reggel töltjük fel. Addig az e heti menüt látod.',
+        'Vasárnap este vagy hétfő reggel töltjük fel, akkor rendelhetsz is. Addig az e heti kínálatot mutatjuk.',
       closedTitle: 'Erre a hétre már nem tudsz online rendelni',
-      closedBody: 'Telefonon szívesen segítünk.',
+      closedBody: 'Telefonon szívesen segítünk:',
     },
     prices: {
       title: 'Árak és extrák',

@@ -83,6 +83,17 @@ describe('MenuPage', () => {
     expect(soldOut?.textContent).toContain(strings.dish.soldOut);
   });
 
+  it('says so on a daily main whose price leaves the soup out, and only there', async () => {
+    const menu = structuredClone(openMenu);
+    const lasagne = menu.menu.days[3].mains.find((main) => main.name === 'Lasagne');
+    if (!lasagne) throw new Error('no Lasagne');
+    lasagne.soupIncluded = false;
+    answers['/api/menu'] = () => Response.json(menu);
+    await renderPage();
+    expect(within(row('Lasagne')).getByText(text.withoutSoup)).toBeTruthy();
+    expect(within(panel()).getAllByText(text.withoutSoup)).toHaveLength(1);
+  });
+
   it('lists the featured and permanent sections with their weekday price', async () => {
     await renderPage();
     for (const title of Object.values(text.sections)) {
@@ -188,7 +199,7 @@ describe('MenuPage', () => {
     };
     await renderPage(sunday);
     expect(screen.getByRole('status').textContent).toBe(
-      text.notices.closedTitle + text.notices.closedBody,
+      `${text.notices.closedTitle + text.notices.closedBody} ${publicConfig.contact.phone}`,
     );
   });
 
@@ -207,6 +218,28 @@ describe('MenuPage', () => {
     fireEvent.click(thursday);
     expect(panel().textContent).toContain(strings.errors.closedDay);
     expect(within(panel()).getByText('Milánói makaróni')).toBeTruthy();
+  });
+
+  it('says only that a closed day without dishes cannot be ordered', async () => {
+    answers = {
+      '/api/menu': () =>
+        Response.json({
+          ...openMenu,
+          menu: {
+            ...openMenu.menu,
+            days: {
+              ...openMenu.menu.days,
+              4: { ...openMenu.menu.days[4], soups: [], mains: [] },
+            },
+          },
+          orderableDates: ['2026-09-09', '2026-09-11', '2026-09-12'],
+          closedDates: ['2026-09-10'],
+        }),
+    };
+    await renderPage();
+    fireEvent.click(screen.getByRole('tab', { name: /^Csütörtök/ }));
+    expect(panel().textContent).toContain(strings.errors.closedDay);
+    expect(panel().textContent).not.toContain(strings.menuPage.emptyDay);
   });
 
   it('says so when no week is published', async () => {

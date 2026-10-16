@@ -164,6 +164,7 @@ function PickerOption({
 }) {
   const amountId = useId();
   const soldOut = item?.soldOut === true;
+  const withoutSoup = item?.category === 'daily_main' && !item.soupIncluded;
   return (
     <div className={cls('pickrow option', picked && 'is-picked', soldOut && 'is-disabled')}>
       {tile && <Tile item={item} />}
@@ -186,9 +187,10 @@ function PickerOption({
             {amount}
           </span>
         )}
-        {item && (item.description || item.allergens.length > 0) && (
+        {item && (item.description || item.allergens.length > 0 || withoutSoup) && (
           <span className="psub">
             {item.description}
+            {withoutSoup && <span>{strings.composer.withoutSoup}</span>}
             <AllergenChips codes={item.allergens} />
           </span>
         )}
