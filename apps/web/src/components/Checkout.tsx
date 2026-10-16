@@ -102,6 +102,7 @@ export function Checkout({
   const website = useRef<HTMLInputElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const noticeRef = useRef<HTMLDivElement>(null);
+  const fieldTookFocus = useRef(false);
   const inputs = useRef<Partial<Record<ContactField, HTMLInputElement | HTMLTextAreaElement>>>({});
 
   useEffect(() => {
@@ -126,7 +127,9 @@ export function Checkout({
 
   const focusFirst = (found: ContactErrors) => {
     const first = asked.find((field) => found[field]);
-    if (first) inputs.current[first]?.focus();
+    if (!first) return false;
+    inputs.current[first]?.focus();
+    return true;
   };
 
   const submit = async (event?: { preventDefault(): void }) => {
@@ -141,6 +144,7 @@ export function Checkout({
     }
     setShowSummary(false);
     setNotice(null);
+    fieldTookFocus.current = false;
     inFlight.current = true;
     setSubmitting(true);
     const sent = days;
@@ -161,7 +165,7 @@ export function Checkout({
         if (Object.keys(marked).length > 0) {
           setFieldErrors(marked);
           setShowSummary(true);
-          focusFirst(marked);
+          fieldTookFocus.current = focusFirst(marked);
         }
         if (cutoff.length > 0 || closed.length > 0) removeDays([...cutoff, ...closed]);
         if (cutoff.length + closed.length + items.length > 0) {
@@ -183,9 +187,10 @@ export function Checkout({
     }
   };
 
-  // A notice is announced by its role; focus follows it only when no field took it.
+  // A notice is announced by its role; focus follows it unless a refused field took focus. The
+  // field the guest last typed in still holds focus, so focus is what brings the banner on screen.
   useEffect(() => {
-    if (notice && !document.activeElement?.closest('.field')) noticeRef.current?.focus();
+    if (notice && !fieldTookFocus.current) noticeRef.current?.focus();
   }, [notice]);
 
   const phone = config.contact.phone;

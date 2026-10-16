@@ -239,10 +239,6 @@ test.describe('ordering on a phone', () => {
     test(`shows the guest at the submit button why ${refusal} stopped the order`, async ({
       page,
     }) => {
-      // Known bug: the button keeps focus in the last field, and Checkout moves focus to the
-      // banner only when no field has it, so the banner stays above the screen. Remove this line
-      // with the fix.
-      test.fail();
       const api = await stubApi(page);
       await openOrderPage(page);
       await addSoupOnlyMenu(page);
