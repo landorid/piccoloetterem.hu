@@ -100,7 +100,7 @@ API_PID=$API_PID
 WEB_PID=$WEB_PID
 ADMIN_PID=$ADMIN_PID
 STAFF_TOKEN_FILE=$RUN/state/staff.jwt
-ORDER_EMAIL=verify+$RUN_ID@example.com
+ORDER_EMAIL=verify+$RUN_ID@inbox.piccoloetterem.hu
 EOF
 ln -sfn "runs/$RUN_ID" "$REPO/.verify/latest"
 

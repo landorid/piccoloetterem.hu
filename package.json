@@ -14,7 +14,7 @@
     "format": "biome check --write .",
     "test": "vitest run",
     "build:packages": "pnpm -r --stream --filter \"./packages/*\" build",
-    "build:apps": "pnpm --filter @piccolo/web --filter @piccolo/admin build && pnpm --filter @piccolo/api build",
+    "build:apps": "pnpm --filter @piccolo/web --filter @piccolo/admin build && pnpm --filter @piccolo/api --filter @piccolo/test-inbox build",
     "build": "pnpm run build:packages && pnpm run build:apps",
     "db:generate": "pnpm --filter @piccolo/db db:generate",
     "db:migrate": "pnpm --filter @piccolo/db db:migrate",

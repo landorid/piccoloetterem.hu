@@ -47,12 +47,14 @@ export VERIFY_RUN=<the path it prints>     # or rely on .verify/latest
   (`VERIFY_TIMEOUT`). First the API answers `/api/health`, then the web answers `/megrendeles`,
   then the admin answers `/`.
 - **Writes `$VERIFY_RUN/run.env`:** `API_URL`, `WEB_URL`, `ADMIN_URL`, the three PIDs (each also
-  its process group), `GIT_HEAD`, `STAFF_TOKEN_FILE`, `ORDER_EMAIL` (`verify+<RUN_ID>@example.com`)
+  its process group), `GIT_HEAD`, `STAFF_TOKEN_FILE`, `ORDER_EMAIL` (`verify+<RUN_ID>@inbox.piccoloetterem.hu`, the test inbox)
   and `EVIDENCE`. Run `source "$VERIFY_RUN/run.env"` in each shell where you need them.
 - **Servers log to** `$VERIFY_RUN/logs/{api,web,admin}.log`. The API log has one line per
   request: `[wrangler:info] POST /api/… 200 OK`.
-- **No secret is copied except `DATABASE_URL`.** The Clerk keys are generated, and `SENTRY_DSN` is
-  left out, so errors from verification never reach Sentry.
+- **The only secrets copied are `DATABASE_URL` and, when the root `.env` has all three, the
+  `SES_*` keys.** The SES keys always come with `EMAIL_ALLOWED_RECIPIENT_DOMAINS=inbox.piccoloetterem.hu`,
+  so the run mails only the test inbox. `up.sh` prints which case applies (`e-mail: …`). The Clerk
+  keys are generated, and `SENTRY_DSN` is left out, so errors from verification never reach Sentry.
 
 Do not use `pnpm dev` for verification. It binds fixed ports (8787, 4321, 5173) that other
 sessions often hold, and it needs a real Clerk sign-in for the admin.
@@ -160,7 +162,7 @@ Standards:
 - **Stops the run's own process groups.** It never kills by name, and never touches a server it
   did not start. That includes the user's `pnpm dev`, and other runs.
 - **Deletes this run's orders and customers,** by the e-mail pattern
-  `verify+<RUN_ID>%@example.com`, and logs what it deleted to `$EVIDENCE/cleanup.txt`.
+  `verify+<RUN_ID>%@%`, and logs what it deleted to `$EVIDENCE/cleanup.txt`.
 - **Removes `state/`:** the keys, the token, the copied `DATABASE_URL` and Miniflare's KV.
 
 It keeps `evidence/` and `logs/`. It does **not** undo other database writes. Restore your
@@ -177,6 +179,7 @@ evidence.
 | `scripts/doctor.sh [--db]` | Read-only health of the run |
 | `scripts/api.sh [--anon] [--save NAME] [--form NAME=@FILE]… [--out FILE] METHOD PATH [BODY\|@FILE]` | Call the API as the web or the admin; multipart bodies, binary responses |
 | `scripts/sql.mjs "<sql>" [param…]` | Query the run's database |
+| `scripts/inbox.mjs <address> [--since <ISO>]` | Wait for an e-mail in the test inbox, save it as evidence, check DKIM |
 | `scripts/shot.sh URL NAME [WxH]` | PNG of a page into `$EVIDENCE` |
 | `scripts/down.sh` | Tear the run down, keep the evidence |
 | `scripts/prepare.mjs`, `clerk-stub.js`, `admin-vite.config.mjs`, `lib.sh` | Used by `up.sh` and the others; not called directly |

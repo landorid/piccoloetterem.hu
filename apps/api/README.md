@@ -361,6 +361,11 @@ Every Hungarian word is in `src/strings.ts`.
 - **Off the frontends' type path.** `src/index.ts` installs the listener with `setOrderEvents`
   instead of `app.ts` importing it. The frontends typecheck everything `app.ts` imports
   (`@piccolo/api/types`), and they have no JSX setting for the template.
+- **Allowlist.** With `EMAIL_ALLOWED_RECIPIENT_DOMAINS` set (comma-separated), a recipient on any
+  other domain is logged (`… not sent: <domain> is not in EMAIL_ALLOWED_RECIPIENT_DOMAINS`) and
+  skipped, and the submission stays unmarked (`src/email/allowlist.ts`). Every deployed environment
+  leaves it unset. A verify run sets it to `inbox.piccoloetterem.hu`, the test inbox
+  (`apps/test-inbox`), so a run that holds the SES keys can mail nothing else.
 - **SES** (`src/email/ses.ts`): SES v2 `SendEmail` over HTTPS, signed with SigV4 by `aws4fetch`.
   No AWS SDK, and SendOps is not in the path (docs/STACK.md rule 7). A 5xx or 429 is retried twice.
 - **Always sent.** Every environment sends through SES, `wrangler dev` included. A sent e-mail logs

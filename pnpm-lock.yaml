@@ -173,6 +173,22 @@ importers:
         specifier: 4.129.0
         version: 4.129.0(@cloudflare/workers-types@5.20260906.1)
 
+  apps/test-inbox:
+    dependencies:
+      postal-mime:
+        specifier: 4.0.2
+        version: 4.0.2
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 5.20260906.1
+        version: 5.20260906.1
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      wrangler:
+        specifier: 4.129.0
+        version: 4.129.0(@cloudflare/workers-types@5.20260906.1)
+
   apps/web:
     dependencies:
       '@astrojs/react':
@@ -3999,6 +4015,10 @@ packages:
     resolution: {integrity: sha512-qcJu88Q2IWqJsDD529JKMdwGm/dvInW4HvQnRwiH9JtihJvzGOscDtHE3x1pBKeUOTysQ8kVmLnJ2kJu7yhcGA==}
     engines: {node: '>=12'}
 
+  postal-mime@4.0.2:
+    resolution: {integrity: sha512-b/FqJGdS+Y+leh30r2ord1gWZNPfYcTiFBR1BIPvZYvQrKJjYYqGeECh9sQ5BpkWtcjSj39ngIAiE2w6XNfMjA==}
+    engines: {node: '>=20'}
+
   postcss@8.5.28:
     resolution: {integrity: sha512-RRuzqDtt5Y9h3quz5hWhK+TPnsmVs6WwSU6LkJMeY4HstUEDuYTG8UJSdawMRzmzAtV+KEoG8N3Qg2qLy5vM/A==}
     engines: {node: ^10 || ^12 || >=14}
@@ -4377,10 +4397,6 @@ packages:
   undici@7.29.0:
     resolution: {integrity: sha512-IDxfleLmmbSskfWSUATiN1nfn2rDuvnMOqb5CWR92iIfojA0Ud+ulOAAEQ57LPr9rWmsreUyf5lwyao+7GNNVw==}
     engines: {node: '>=20.18.1'}
-
-  undici@8.10.2:
-    resolution: {integrity: sha512-/y4/bH9YNU5hi9NIrpOuvGXFcxrj3CMrV+/AYpowAYTpHn8gX/XPFjNy766FPoYY0miQhdW977JFWKGNhBdwyQ==}
-    engines: {node: '>=22.19.0'}
 
   undici@8.11.2:
     resolution: {integrity: sha512-u4UB2/IrKdU6lFxumHmmo1a3fCQO5tzQllRorfoRS63txhrB7xTpSn1PftwC4qEHkOaqP95fCWW4lJzwErwzhQ==}
@@ -8145,6 +8161,8 @@ snapshots:
 
   picomatch@4.0.7: {}
 
+  postal-mime@4.0.2: {}
+
   postcss@8.5.28:
     dependencies:
       nanoid: 3.3.18
@@ -8595,8 +8613,6 @@ snapshots:
 
   undici@7.29.0: {}
 
-  undici@8.10.2: {}
-
   undici@8.11.2: {}
 
   unenv@2.0.0-rc.24:
@@ -8617,7 +8633,7 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
       ohash: 2.0.12
-      undici: 8.10.2
+      undici: 8.11.2
 
   unist-util-is@6.0.1:
     dependencies:

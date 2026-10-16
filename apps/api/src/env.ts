@@ -69,6 +69,11 @@ export interface Bindings {
   SES_ACCESS_KEY_ID?: string;
   /** That access key's secret. A secret. */
   SES_SECRET_ACCESS_KEY?: string;
+  /**
+   * Comma-separated domains the confirmation e-mail may go to (`src/email/allowlist.ts`). Unset in
+   * every deployed environment: no restriction. A verify run sets it to the test inbox's domain.
+   */
+  EMAIL_ALLOWED_RECIPIENT_DOMAINS?: string;
 }
 
 /** A member of `CLERK_ORG_ID`, set by the `/api/admin/*` middleware. */

@@ -3,6 +3,7 @@ import { createDb } from '@piccolo/db';
 import type { Bindings } from '../env';
 import { databaseUrl } from '../middleware';
 import type { OrderEvents } from '../orders/events';
+import { disallowedRecipientDomain } from './allowlist';
 import { sendEmail } from './ses';
 import { loadSubmissionForEmail, markConfirmationSent } from './submission';
 import { renderOrderConfirmation } from './templates/OrderConfirmation';
@@ -30,6 +31,13 @@ export async function sendConfirmation(env: Bindings, submissionId: string): Pro
       return;
     }
     const { view, ...email } = confirmationEmail(submission, loadConfig(env));
+    const refused = disallowedRecipientDomain(email.to, env.EMAIL_ALLOWED_RECIPIENT_DOMAINS);
+    if (refused) {
+      console.log(
+        `Confirmation for submission ${submissionId} not sent: ${refused} is not in EMAIL_ALLOWED_RECIPIENT_DOMAINS`,
+      );
+      return;
+    }
     const { html, text } = await renderOrderConfirmation(view);
     const { messageId } = await sendEmail(env, { ...email, html, text });
     console.log(

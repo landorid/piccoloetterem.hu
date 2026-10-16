@@ -32,9 +32,10 @@ Preconditions:
 
 - **For `order-201`:** the menu state is `open`. Take the date from `orderableDates` and the item
   ids from `menu`.
-- **E-mail:** every submission uses an address matching `verify+$RUN_ID…@example.com`. Use
-  `$ORDER_EMAIL`, or `verify+$RUN_ID-2@example.com` for a second customer. `down.sh` deletes
-  exactly those.
+- **E-mail:** every submission uses an address starting with `verify+$RUN_ID`. Use
+  `$ORDER_EMAIL` (`verify+$RUN_ID@inbox.piccoloetterem.hu`, the test inbox), or
+  `verify+$RUN_ID-2@inbox.piccoloetterem.hu` for a second customer. `down.sh` deletes exactly
+  those.
 
 - **Write the body.** Fill `$EVIDENCE/order.json` from a fresh `api.sh GET /api/menu`. For one
   day, with one menu (that day's soup and main) and one box, it looks like this, with real ids:
@@ -64,9 +65,10 @@ Preconditions:
   same two statements `down.sh` uses, and give that run's id.
 - `sold_out` and `date_closed` are read inside the transaction. To prove them, change the item or
   the date through the admin first (snapshot and restore). Do not use SQL for that.
-- Every stored submission also tries to send its confirmation e-mail through SES. A run has no
-  `SES_*` secrets, so it fails and logs `OrderEvents failed`; never add them, because `example.com`
-  must never be mailed. See [order-confirmation-email.md](./order-confirmation-email.md).
+- Every stored submission also sends its confirmation e-mail through SES, and the run lets it go
+  only to `@inbox.piccoloetterem.hu` (`EMAIL_ALLOWED_RECIPIENT_DOMAINS`). Use the inbox addresses
+  above, so the e-mail lands in the test inbox and nowhere else. See
+  [order-confirmation-email.md](./order-confirmation-email.md).
 - Loopback is exempt from the rate limit. `order-limits` 429 cannot be produced locally. Prove it
   with the unit tests, and say so.
 - `website` is optional: leaving it out is the same as empty (checked 2026-10-09). Only a
