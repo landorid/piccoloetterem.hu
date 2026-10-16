@@ -131,7 +131,6 @@ export const strings = {
     title: 'Rendelés véglegesítése',
     back: 'Vissza a menühöz',
     contact: 'Elérhetőség',
-    cartValue: 'Kosár értéke',
     name: 'Név',
     namePlaceholder: 'Teljes név',
     phone: 'Telefonszám',
