@@ -202,9 +202,7 @@ describe('checkout', () => {
     expect(await screen.findByRole('heading', { name: success.title })).toBe(
       document.activeElement,
     );
-    expect(screen.getByText(success.lead('anna@example.hu'))).toBeTruthy();
-    expect(screen.getByText(success.orderId('order-1'))).toBeTruthy();
-    expect(screen.getByText(success.orderId('order-2'))).toBeTruthy();
+    expect(screen.getByText(success.steps.mail.body('anna@example.hu'))).toBeTruthy();
     expect(screen.getByText(spaced(forint(4321)))).toBeTruthy();
     expect(JSON.parse(localStorage.getItem(customerStorageKey) ?? '{}')).toEqual({
       name: 'Kovács Anna',

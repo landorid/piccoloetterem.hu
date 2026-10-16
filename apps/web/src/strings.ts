@@ -165,12 +165,27 @@ export const strings = {
     },
   },
   success: {
+    // TODO(copy): Dávid to confirm the kicker, the lead and the three steps.
+    kicker: 'Jó étvágyat!',
     title: 'Köszönjük, megkaptuk a rendelésed!',
-    lead: (email: string) =>
-      `A visszaigazolást elküldtük a ${email} címre. Ha pár percen belül nem érkezik meg, nézd meg a levélszemét mappát is.`,
+    lead: 'Minden rendben, a többi már a mi dolgunk.',
+    stepsLabel: 'Mi történik most?',
+    steps: {
+      mail: {
+        title: 'Visszaigazolás e-mailben',
+        body: (email: string) =>
+          `Elküldtük a ${email} címre. Ha pár percen belül nem érkezik meg, nézd meg a levélszemét mappát is.`,
+      },
+      cook: {
+        title: 'Frissen főzzük',
+        body: 'A rendelt napokon frissen készítjük el az ebédedet.',
+      },
+      deliver: {
+        title: 'Házhoz visszük',
+        body: 'Fizetés a futárnál, átvételkor.',
+      },
+    },
     daysTitle: 'Amit rendeltél',
-    orderId: (id: string) => `Azonosító: ${id}`,
-    payNote: 'Fizetés a futárnál, kiszállításkor.',
     questions: 'Kérdésed van? Hívj minket:',
     newOrder: 'Új rendelés indítása',
   },
