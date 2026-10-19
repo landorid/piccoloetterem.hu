@@ -112,15 +112,11 @@ CLERK_AUTHORIZED_PARTIES = "https://admin.piccoloetterem.hu"
 
 [[env.production.hyperdrive]]
 binding = "HYPERDRIVE"
-# Placeholder. Replace with the id printed by `wrangler hyperdrive create piccolo-production`
-# for the production Neon branch (manual issue #40).
-id = "11111111111111111111111111111111"
+id = "8b9490c680864389a554754d7e38a0ff" # piccolo-production (manual issue #40)
 
 [[env.production.kv_namespaces]]
 binding = "MENU_CACHE"
-# Placeholder. Replace with the id printed by
-# `wrangler kv namespace create piccolo-menu-cache-production` (manual issue #40).
-id = "33333333333333333333333333333333"
+id = "1b7b18f6f83b41c7ae24fe5e917494f2" # piccolo-menu-cache-production
 
 [[env.production.r2_buckets]]
 binding = "ITEM_IMAGES"
