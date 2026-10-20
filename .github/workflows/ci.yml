@@ -64,12 +64,37 @@ jobs:
     if: github.event_name == 'push' && (github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: ${{ github.ref_name == 'main' && 'production' || 'development' }}
+    permissions:
+      # main pushes its release commit and tag, then merges them back into develop.
+      contents: write
     env:
       # production matches [env.production] in each wrangler.toml.
       # develop deploys the top-level config (piccolo-api, piccolo-web, piccolo-admin).
       WRANGLER_ENV: ${{ github.ref_name == 'main' && 'production' || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: ${{ github.ref_name == 'main' && 0 || 1 }}
+
+      # Every push to main is a release: bump the minor version (scripts/bump-version.mjs), commit
+      # and tag it on main, and deploy that commit. Pushes made with GITHUB_TOKEN start no
+      # workflow, so this does not loop. A re-run after the push reuses the release it made.
+      - name: Release
+        id: release
+        if: github.ref_name == 'main'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898283+github-actions[bot]@users.noreply.github.com'
+          git fetch --tags origin main
+          if [ "$(git rev-parse origin/main^)" = "$GITHUB_SHA" ] && git describe --exact-match --tags --match 'v*' origin/main; then
+            git checkout origin/main
+          else
+            version=$(node scripts/bump-version.mjs)
+            git commit -am "Release v$version"
+            git tag "v$version"
+            git push --atomic origin HEAD:main "v$version"
+          fi
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - uses: pnpm/action-setup@v4
 
@@ -130,3 +155,12 @@ jobs:
         run: curl -f "$WORKER_URL/api/health"
         env:
           WORKER_URL: ${{ vars.WORKER_URL }}
+
+      # Carries the version bump back to develop, so the next release counts on from it.
+      - name: Merge the release into develop
+        if: github.ref_name == 'main'
+        run: |
+          git fetch origin develop
+          git switch -C develop origin/develop
+          git merge --no-edit "${{ steps.release.outputs.sha }}"
+          git push origin develop

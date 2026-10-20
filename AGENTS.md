@@ -64,6 +64,9 @@ Run a single workspace with `pnpm --filter @piccolo/core <script>` and a single 
 ## Branch policy
 
 - `develop` is the integration branch. `main` is production.
+- Every push to `main` is a release: CI bumps the minor version in every `package.json`, commits
+  and tags it (`v0.1.0`, …) on `main`, deploys it, and merges it back into `develop`. Never edit
+  `version` by hand.
 - Every issue is built on its own branch, `feat/<key>-<issue number>`, cut from `develop`
   (e.g. `feat/f3-18`).
 - **Agents never push to `develop` or `main`** and never merge anything. Work lands through a pull
