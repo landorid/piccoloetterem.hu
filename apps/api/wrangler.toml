@@ -105,9 +105,9 @@ routes = [{ pattern = "api.piccoloetterem.hu", custom_domain = true }]
 [env.production.vars]
 ENVIRONMENT = "production"
 RESTAURANT = "piccolo"
-# The public site is tested on prod.piccoloetterem.hu before it moves to piccoloetterem.hu; both
+# The public site is tested on uj.piccoloetterem.hu before it moves to piccoloetterem.hu; both
 # are allowed so the move needs no API change.
-CORS_ORIGINS = "https://prod.piccoloetterem.hu,https://piccoloetterem.hu,https://admin.piccoloetterem.hu"
+CORS_ORIGINS = "https://uj.piccoloetterem.hu,https://piccoloetterem.hu,https://admin.piccoloetterem.hu"
 CLERK_AUTHORIZED_PARTIES = "https://admin.piccoloetterem.hu"
 
 [[env.production.hyperdrive]]

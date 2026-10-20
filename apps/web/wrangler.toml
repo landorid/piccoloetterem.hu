@@ -22,4 +22,4 @@ routes = []
 [env.production]
 name = "piccolo-web-production"
 # Moves to piccoloetterem.hu once it has been tested there.
-routes = [{ pattern = "prod.piccoloetterem.hu", custom_domain = true }]
+routes = [{ pattern = "uj.piccoloetterem.hu", custom_domain = true }]
