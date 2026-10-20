@@ -1,0 +1,34 @@
+---
+import Footer from '../components/Footer.astro';
+import { OrderingApp } from '../components/OrderingApp';
+import SiteHeader from '../components/SiteHeader.astro';
+import Layout from '../layouts/Layout.astro';
+import { apiOrigin, createWebApi, loadPublicConfig, type PublicConfig } from '../lib/api';
+import { strings } from '../strings';
+import '../styles/order.css';
+
+// Runs at build time (`output: 'static'`) and per request under `astro dev`. The public config
+// changes only when the API is deployed, and CI builds the web right after that, so it is baked
+// into the page. A build without PUBLIC_API_URL (the CI checks job) renders without it.
+const baseUrl = apiOrigin();
+let config: PublicConfig | null = null;
+if (baseUrl) {
+  const api = createWebApi(baseUrl, (input, init) =>
+    // An unreachable API fails the build instead of stalling it.
+    fetch(input, { ...init, signal: AbortSignal.timeout(10_000) }),
+  );
+  try {
+    config = await loadPublicConfig(api);
+  } catch (error) {
+    throw new Error(`GET ${baseUrl}/api/config/public failed`, { cause: error });
+  }
+}
+---
+
+<Layout title={strings.meta.title} description={strings.meta.description} apiOrigin={baseUrl}>
+  <SiteHeader config={config} page="order" />
+  <main class="page">
+    <OrderingApp client:load initial={{ config }} />
+  </main>
+  <Footer config={config} />
+</Layout>

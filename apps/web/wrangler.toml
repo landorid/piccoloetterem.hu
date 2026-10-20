@@ -1,0 +1,25 @@
+# The public site, at <domain>: an assets-only Worker serving the Astro build. The API is a
+# separate Worker (apps/api, api.<domain>); see docs/STACK.md §1.
+name = "piccolo-web"
+compatibility_date = "2026-09-01"
+
+# The development Worker (deployed from `develop`). Cloudflare creates the DNS record and the
+# certificate on deploy. The workers.dev URL stays on as well.
+workers_dev = true
+routes = [{ pattern = "dev.piccoloetterem.hu", custom_domain = true }]
+
+[assets]
+directory = "./dist"
+# An unknown path gets the nearest 404.html of the build, or a plain 404 while there is none
+# (a src/pages/404.astro becomes that page).
+not_found_handling = "404-page"
+
+[env.staging]
+name = "piccolo-web-staging"
+# `routes` is inherited: without this, staging would claim the development domain.
+routes = []
+
+[env.production]
+name = "piccolo-web-production"
+# Moves to piccoloetterem.hu once it has been tested there.
+routes = [{ pattern = "uj.piccoloetterem.hu", custom_domain = true }]

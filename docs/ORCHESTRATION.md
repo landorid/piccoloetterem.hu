@@ -6,18 +6,25 @@ one has merged. Decided 2026-09-06; it revises the process bullets in [PLAN.md](
 
 ## Rules
 
-1. **Concurrency 1.** Exactly one worker is in flight at a time. Never launch the next issue while
-   an earlier one still has an open PR.
+1. **Concurrency 1 by default.** One worker in flight at a time; do not launch the next issue while
+   an earlier one still has an open PR. Dávid may authorise an exception (he did on 2026-09-06, for
+   #53 alongside #30). When he does, the heartbeat treats *every* open PR as in-flight — health-check
+   each one, and warn both workers about the files they can collide on. Never raise concurrency on
+   your own judgement.
 2. **PR per issue.** A worker branches `feat/<key>-<issue>` from `develop`, opens a draft PR into
    `develop`, and marks it ready when acceptance passes.
 3. **Never auto-merge.** Neither the worker nor the orchestrator merges anything, ever. Dávid merges
-   the PR and GitHub closes the issue via `Closes #<n>`. That merge is the only signal that the next
-   issue may start.
-4. **Blockers are merge-gated.** An issue is startable only when every issue in its `Blocked by`
+   the PR. That merge is the only signal that the next issue may start.
+4. **The orchestrator closes the issue.** `Closes #<n>` does **not** fire here: GitHub auto-closes a
+   linked issue only when the PR merges into the repository's *default* branch (`main`), and our PRs
+   target `develop`. After confirming a PR merged, the orchestrator closes the issue by hand with a
+   comment naming the merge commit. Without this every issue stays open and the blocker gate below
+   deadlocks.
+5. **Blockers are merge-gated.** An issue is startable only when every issue in its `Blocked by`
    list is *closed* — an open PR does not count.
-5. **Manual issues are Dávid's.** Issues labelled `manual` (#39–#43) are never given to a worker.
+6. **Manual issues are Dávid's.** Issues labelled `manual` (#39–#43) are never given to a worker.
    The orchestrator only reminds when one becomes unblocked.
-6. **#30 needs review.** O2 is a design mockup labelled `needs-review`. Its dependent #34 stays
+7. **#30 needs review.** O2 is a design mockup labelled `needs-review`. Its dependent #34 stays
    blocked until Dávid has approved the mockup, not merely until the PR merged.
 
 ## The order
@@ -28,27 +35,28 @@ Strict serial order, already checked against every `Blocked by` list. Run top to
 |---|---|---|---|---|
 | 1 | #16 | F1 | — | Creates `develop`. Everything waits on it. |
 | 2 | #30 | O2 | — | Design mockup. Run early: Dávid's review has latency and #34 needs it. |
-| 3 | #17 | F2 | 16 | Unblocks manual #41 on merge. |
-| 4 | #18 | F3 | 16 | |
-| 5 | #19 | F4 | 16, 18 | |
-| 6 | #20 | F5 | 19 | |
-| 7 | #21 | F6 | 19 | |
-| 8 | #22 | F7 | 19 | Unblocks manual #40 on merge. |
-| 9 | #23 | M1 | 17 | |
-| 10 | #24 | M2 | 18, 21, 23 | |
-| 11 | #25 | M3 | 24 | |
-| 12 | #26 | M4 | 20, 21 | |
-| 13 | #27 | M5 | 24, 26 | |
-| 14 | #28 | M6 | 24, 26 | |
-| 15 | #29 | O1 | 23 | |
-| 16 | #31 | O3 | 18, 25, 29 | |
-| 17 | #32 | O4 | 31 | Unblocks manual #39 on merge. |
-| 18 | #33 | O5 | 20, 25 | |
-| 19 | #34 | O6 | 29, 30, 33 | Also needs Dávid's sign-off on the #30 mockup. |
-| 20 | #35 | O7 | 31, 34 | |
-| 21 | #36 | S1 | 31, 21 | |
-| 22 | #37 | S2 | 36, 26 | |
-| 23 | #38 | S3 | 36, 26 | |
+| 3 | #53 | F1a | — | Wiring defects found reviewing PR #52. Must land before #18 and #19. |
+| 4 | #17 | F2 | 16 | Unblocks manual #41 on merge. |
+| 5 | #18 | F3 | 16, 53 | **Chip posted 2026-09-14 after #61 merged; do not post it again.** (Dávid chose not to run it in parallel with #23.) The Neon `dev` branch exists and was verified. Add to the chip prompt: `DATABASE_URL` (pooled) is in `/Users/landoridavid/Workplace/piccoloetterem.hu/.env`, which is gitignored and not copied into the worktree, so load it by that absolute path and never print or commit it; there is no `DATABASE_URL_UNPOOLED`, derive the direct URL for `drizzle-kit migrate` by dropping `-pooler` from the host; `psql` is at `/opt/homebrew/opt/libpq/bin/psql` (not on PATH); Docker is available for the local `postgres://` acceptance check; `menu_items.description` and `price_weekend` are nullable to match M1. |
+| 6 | #19 | F4 | 16, 18, 53 | **Chip posted 2026-09-14 after #62 merged; do not post it again.** `SENTRY_DSN` added to the root `.env` by Dávid; local `wrangler dev` validation only, no deploy. |
+| 7 | #20 | F5 | 19 | |
+| 8 | #21 | F6 | 19 | |
+| 9 | #22 | F7 | 19 | Unblocks manual #40 on merge. |
+| 10 | #23 | M1 | 17 | Ran early while #18 waited for a database (PR #61). |
+| 11 | #24 | M2 | 18, 21, 23 | |
+| 12 | #25 | M3 | 24 | |
+| 13 | #26 | M4 | 20, 21 | |
+| 14 | #27 | M5 | 24, 26 | |
+| 15 | #28 | M6 | 24, 26 | |
+| 16 | #29 | O1 | 23 | |
+| 17 | #31 | O3 | 18, 25, 29 | |
+| 18 | #32 | O4 | 31 | Unblocks manual #39 on merge. |
+| 19 | #33 | O5 | 20, 25 | |
+| 20 | #34 | O6 | 29, 30, 33 | Also needs Dávid's sign-off on the #30 mockup. |
+| 21 | #35 | O7 | 31, 34 | |
+| 22 | #36 | S1 | 31, 21 | |
+| 23 | #37 | S2 | 36, 26 | |
+| 24 | #38 | S3 | 36, 26 | |
 
 Manual issues to remind Dávid about when their blocker closes: #41 (after #17), #40 (after #22),
 #39 (after #32), #43 (after #39), #42 (after #27, #28, #35, #38).
@@ -82,10 +90,13 @@ has none of the orchestrator's context. Template:
 
 Runs in the orchestrator session, once an hour. Each tick, in order:
 
-1. **Merged?** `gh pr list --state merged --limit 5` and `gh issue view <current> --json state`.
-   If the current issue is closed and its PR merged → the slot is free, go to step 5.
-2. **PR health.** For the open PR: `gh pr checks <n>` (CI), `gh pr view <n> --json reviewDecision,mergeable,comments,reviews`.
-   - CI red → tell the worker session which check failed and its log tail.
+1. **Merged?** `gh pr list --state merged --limit 5`. If the current PR merged, **close its issue
+   manually** (`gh issue close <n> --comment "Done: PR #<pr> merged into develop as <sha>."`) —
+   nothing closes it automatically. Then the slot is free, go to step 5.
+2. **PR health.** For each open PR: `gh pr checks <n>` (CI), `gh pr view <n> --json reviewDecision,mergeable,comments,reviews`.
+   - CI red → tell the worker session which check failed and its log tail. **Until #22 (F7) merges
+     there is no project CI** — only GitGuardian runs, so a green tick proves nothing and this
+     substep has nothing to read. Judge those PRs on the worker's pasted validation output instead.
    - `mergeable: CONFLICTING` → tell the worker to rebase onto `develop`.
    - Unresolved review comments → relay them to the worker.
    Reach the worker with `send_message` to its session. If the worker session is gone, post the
@@ -94,8 +105,8 @@ Runs in the orchestrator session, once an hour. Each tick, in order:
    it to Dávid rather than silently waiting.
 4. **Blocked on Dávid?** PR is ready for review, CI green, no conflicts → say so and stop nagging;
    the merge is his.
-5. **Next issue.** Only when no PR is open: take the next row of the order table whose blockers are
-   all closed, and post its task chip.
+5. **Next issue.** Only when no PR is open (or Dávid has authorised an exception): take the next
+   row of the order table whose blockers are all closed, and post its task chip.
 6. **Manual reminders.** Mention any `manual` issue whose blockers just closed.
 
 Never merge. Never push to `develop` or `main`. Never start a second worker.

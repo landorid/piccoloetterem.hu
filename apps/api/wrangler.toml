@@ -1,0 +1,123 @@
+# The API Worker, at api.<domain>. The public site (apps/web, <domain>) and the admin
+# (apps/admin, admin.<domain>) are separate assets-only Workers; see docs/STACK.md §1.
+name = "piccolo-api"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+# The development Worker (deployed from `develop`). Cloudflare creates the DNS record and the
+# certificate on deploy. The workers.dev URL stays on as well.
+workers_dev = true
+routes = [{ pattern = "api-dev.piccoloetterem.hu", custom_domain = true }]
+
+# Workers Logs: console output and one log per request, in the dashboard. Inherited by the named
+# environments.
+[observability.logs]
+enabled = true
+invocation_logs = true
+
+# The confirmation e-mail's renderer (@react-email/render) imports prettier only for its `pretty`
+# option, which the API never uses. Aliased to a stub, it costs nothing; bundled, it was 325 KiB of
+# the upload. See src/email/prettier-stub.ts.
+[alias]
+"prettier/standalone" = "./src/email/prettier-stub.ts"
+"prettier/plugins/html" = "./src/email/prettier-stub.ts"
+
+# The top level is local development (`wrangler dev`, http://localhost:8787) and the development
+# Worker that CI deploys from `develop` as `piccolo-api`.
+[vars]
+ENVIRONMENT = "development"
+RESTAURANT = "piccolo"
+# Browser origins allowed to call the API (CORS), comma-separated: the Astro and Vite dev servers
+# that `pnpm dev` starts.
+CORS_ORIGINS = "http://localhost:4321,http://localhost:5173,https://piccolo-web.honlapvarazslo.workers.dev,https://piccolo-admin.honlapvarazslo.workers.dev,https://dev.piccoloetterem.hu,https://admin-dev.piccoloetterem.hu"
+# Admin browser origins allowed to mint the Clerk session token (the azp claim).
+# Exact origin, including scheme and port. The public site is not an authorized party.
+# Empty is rejected by the API: Clerk skips the check when the list is empty.
+CLERK_AUTHORIZED_PARTIES = "http://localhost:5173,https://piccolo-admin.honlapvarazslo.workers.dev,https://admin-dev.piccoloetterem.hu"
+
+# The deployed development Worker's database. Locally `pnpm dev` (scripts/dev.mjs) hands wrangler
+# DATABASE_URL from .dev.vars as CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE.
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "7578b36062614eb78fbb76c441014493" # piccolo-development (manual issue #40)
+
+# The public menu cache (src/menu/cache.ts): entries never expire, the admin menu routes purge
+# them. Locally `wrangler dev` uses Miniflare's KV instead of this namespace.
+[[kv_namespaces]]
+binding = "MENU_CACHE"
+id = "810cc59518834d8ebb326b0f1fa6e3c8" # piccolo-menu-cache-development
+
+# Étlap item images (src/images/store.ts). Public, from the bucket's own custom domain
+# (img-dev.piccoloetterem.hu here); this Worker only writes it. Named environments do not inherit
+# `r2_buckets`, so each has its own block below. `remote`: `wrangler dev` writes the real
+# development bucket, like the shared development database it points items at, so a photo
+# uploaded locally shows on img-dev for everyone. It needs `wrangler login`.
+[[r2_buckets]]
+binding = "ITEM_IMAGES"
+bucket_name = "piccolo-menu-images-development"
+remote = true
+
+# Secrets are never written in this file. Set them per environment with
+#   wrangler secret put SENTRY_DSN --env <staging|production>
+#   wrangler secret put CLERK_SECRET_KEY --env <staging|production>
+#   wrangler secret put CLERK_PUBLISHABLE_KEY --env <staging|production>
+#   wrangler secret put CLERK_JWT_KEY --env <staging|production>
+#   wrangler secret put CLERK_ORG_ID --env <staging|production>
+#   wrangler secret put SES_REGION --env <staging|production>
+#   wrangler secret put SES_ACCESS_KEY_ID --env <staging|production>
+#   wrangler secret put SES_SECRET_ACCESS_KEY --env <staging|production>
+# Locally they live in .dev.vars. See README.md.
+
+[env.staging]
+name = "piccolo-api-staging"
+# `routes` is inherited: without this, staging would claim the development domain.
+routes = []
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+RESTAURANT = "piccolo"
+# Placeholder. Replace with the staging web and admin Workers' URLs (manual issue #40).
+CORS_ORIGINS = "https://piccolo-web-staging.<account>.workers.dev,https://piccolo-admin-staging.<account>.workers.dev"
+# Placeholder. The admin origin only. Replace together with CORS_ORIGINS (manual issue #40).
+CLERK_AUTHORIZED_PARTIES = "https://piccolo-admin-staging.<account>.workers.dev"
+
+[[env.staging.hyperdrive]]
+binding = "HYPERDRIVE"
+# Placeholder. Replace with the id printed by `wrangler hyperdrive create piccolo-staging`
+# for the staging Neon branch (manual issue #40).
+id = "00000000000000000000000000000000"
+
+[[env.staging.kv_namespaces]]
+binding = "MENU_CACHE"
+# Placeholder. Replace with the id printed by
+# `wrangler kv namespace create piccolo-menu-cache-staging` (manual issue #40).
+id = "22222222222222222222222222222222"
+
+[[env.staging.r2_buckets]]
+binding = "ITEM_IMAGES"
+bucket_name = "piccolo-menu-images-staging"
+
+[env.production]
+name = "piccolo-api-production"
+routes = [{ pattern = "api.piccoloetterem.hu", custom_domain = true }]
+
+[env.production.vars]
+ENVIRONMENT = "production"
+RESTAURANT = "piccolo"
+# The public site is tested on uj.piccoloetterem.hu before it moves to piccoloetterem.hu; both
+# are allowed so the move needs no API change.
+CORS_ORIGINS = "https://uj.piccoloetterem.hu,https://piccoloetterem.hu,https://admin.piccoloetterem.hu"
+CLERK_AUTHORIZED_PARTIES = "https://admin.piccoloetterem.hu"
+
+[[env.production.hyperdrive]]
+binding = "HYPERDRIVE"
+id = "8b9490c680864389a554754d7e38a0ff" # piccolo-production (manual issue #40)
+
+[[env.production.kv_namespaces]]
+binding = "MENU_CACHE"
+id = "1b7b18f6f83b41c7ae24fe5e917494f2" # piccolo-menu-cache-production
+
+[[env.production.r2_buckets]]
+binding = "ITEM_IMAGES"
+bucket_name = "piccolo-menu-images-production"

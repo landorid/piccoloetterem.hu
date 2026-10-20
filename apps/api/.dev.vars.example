@@ -1,0 +1,32 @@
+# Copy to apps/api/.dev.vars. `wrangler dev` reads that file. Never commit .dev.vars.
+# Comments only. No real values. See README.md, "Clerk on Workers".
+
+# Neon pooled URL. Quote it, because it contains `&`. Same value as DATABASE_URL in the repo-root .env.
+# `pnpm dev` also hands it to wrangler as the HYPERDRIVE binding's local connection string.
+DATABASE_URL=
+# A bare `wrangler dev` does not read the Hyperdrive string from this file: export
+# CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE in the shell or put it in apps/api/.env.
+
+# Optional. Without it, Sentry is disabled locally.
+SENTRY_DSN=
+
+# Clerk — staff authentication only. Customers never enter Clerk.
+# Dashboard → API keys. The secret key stays on the API Worker.
+CLERK_SECRET_KEY=
+# Same publishable key the admin bakes in as VITE_CLERK_PUBLISHABLE_KEY.
+CLERK_PUBLISHABLE_KEY=
+# PEM public key (Dashboard → API keys → Show JWT public key). Required for networkless verification.
+# Quote it; it is multi-line. Example: CLERK_JWT_KEY="-----BEGIN PUBLIC KEY-----\n…\n-----END PUBLIC KEY-----"
+CLERK_JWT_KEY=
+# Organization id (org_…) of this restaurant's staff. Membership is the only role.
+CLERK_ORG_ID=
+
+# Amazon SES, for the confirmation e-mail. Every environment sends for real, local dev included:
+# without these, a stored order's e-mail fails and is logged. See README.md, "E-mail".
+SES_REGION=
+SES_ACCESS_KEY_ID=
+SES_SECRET_ACCESS_KEY=
+
+# Optional. Comma-separated domains the confirmation e-mail may go to; others are logged and
+# skipped. Unset sends to anyone. A verify run sets inbox.piccoloetterem.hu (the test inbox).
+# EMAIL_ALLOWED_RECIPIENT_DOMAINS=inbox.piccoloetterem.hu

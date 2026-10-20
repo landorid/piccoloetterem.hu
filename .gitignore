@@ -1,4 +1,32 @@
+# The legacy CodeIgniter app: reference only, never part of this repository.
 ci_piccolo/
+
 node_modules/
+dist/
+.astro/
+.wrangler/
+coverage/
+
 .env
-.env.local
+.env.*
+!.env.example
+
+# Wrangler reads local secrets from .dev.vars; never commit it.
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+
+.pnpm-store/
+
+.DS_Store
+*.log
+
+# Verification runs (.claude/skills/verify): server state, logs and evidence.
+.verify/
+
+# `pnpm email:preview` output (apps/api/scripts/email-preview.ts).
+apps/api/.preview/
+
+# Playwright runs of apps/web/e2e: results, traces and the HTML report.
+test-results/
+playwright-report/

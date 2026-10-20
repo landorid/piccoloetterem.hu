@@ -1,0 +1,153 @@
+/*
+ * The menu island of `/`: its week bar, day strip, cards, tags, allergen chips and buttons come
+ * from order.css, repainted by landing.css. Only the dish list and the day block are new.
+ */
+
+/* The week's heading, the day strip and the day's card: one block of the page's grid. */
+.menu-day {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+  scroll-margin-top: calc(var(--header-h) + var(--s-4));
+}
+
+/* Why the week on show cannot be ordered. Informational, so brand-tinted rather than a warning. */
+.week-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  border-radius: var(--radius-lg);
+  background: var(--brand-50);
+  border: 1px solid var(--brand-100);
+  color: var(--ink-700);
+  font-size: var(--t-md);
+  line-height: 1.5;
+}
+.week-notice-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand-100);
+  color: var(--brand-700);
+}
+.week-notice-text {
+  min-width: 0;
+  padding-top: 1px;
+}
+.week-notice-title {
+  font-weight: 700;
+  color: var(--brand-800);
+  margin-bottom: 2px;
+}
+.week-notice a {
+  color: var(--brand-700);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* --- dishes ------------------------------------------------------------------------------------ */
+.menu-card {
+  overflow: hidden;
+}
+.dish-group-title {
+  padding: var(--s-3) var(--s-6) 0;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand-700);
+}
+.dish-group-hint {
+  padding: var(--s-1) var(--s-6) 0;
+  font-size: var(--t-sm);
+  color: var(--ink-500);
+}
+.dishes {
+  padding: var(--s-1) 0 var(--s-3);
+}
+.dish {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-3);
+  margin: 0 var(--s-6);
+  padding: var(--s-3) 0;
+  border-bottom: 1px solid var(--line);
+}
+.dish:last-child {
+  border-bottom: 0;
+}
+.dish-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.dish-title {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.dish-desc,
+.dish-note {
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+}
+.dish-note {
+  color: var(--ink-500);
+}
+.dish .achips {
+  margin-top: var(--s-1);
+}
+.dish-price {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.dish-amt {
+  font-weight: 500;
+  color: var(--ink-500);
+  white-space: nowrap;
+}
+/* The soup line is a phrase, not an amount: it wraps, balanced, in a narrow column. */
+.dish-included {
+  max-width: 10.5em;
+  font-size: var(--t-xs);
+  line-height: 1.35;
+  text-wrap: balance;
+  font-weight: 600;
+  color: var(--ok-700);
+}
+/* Struck through as well as greyed: the state is not carried by colour alone. */
+.dish.is-soldout :is(.dish-title, .dish-desc, .dish-amt) {
+  color: var(--ink-500);
+}
+.dish.is-soldout .dish-title {
+  text-decoration: line-through;
+}
+.menu-closed,
+.menu-empty {
+  margin: var(--s-3) var(--s-6) 0;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--radius-sm);
+  background: var(--ground);
+  font-size: var(--t-sm);
+  color: var(--ink-700);
+}
+/* Closes the card when no dishes follow it. */
+.menu-closed:last-child,
+.menu-empty {
+  margin-bottom: var(--s-6);
+}
+.menu-footnote {
+  padding: 0 var(--s-6) var(--s-4);
+  font-size: var(--t-xs);
+  color: var(--ink-500);
+}

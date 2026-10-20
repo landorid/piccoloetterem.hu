@@ -1,0 +1,245 @@
+/*
+ * The layout of `/`: the photo, the lede, the restaurant's blocks and the menu island's blocks in
+ * one grid. The palette, the cards and the header are the site's (global.css, order.css).
+ */
+/* --- layout ------------------------------------------------------------------------------------ */
+/* One column on a phone, in source order: photo, lede, the menu, then the restaurant. */
+.lp-main {
+  --lp-gap: var(--s-6);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--lp-gap);
+  width: 100%;
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding: var(--s-2) var(--page-gutter) var(--s-10);
+}
+
+/* --- type and photos --------------------------------------------------------------------------- */
+.lp-lede {
+  font-size: 1.75rem;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--brand-600);
+  text-wrap: balance;
+}
+.lp-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  scroll-margin-top: calc(var(--header-h) + var(--s-4));
+}
+.lp-section h2 {
+  font-size: var(--t-xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  color: var(--ink-700);
+}
+.lp-about p {
+  font-size: var(--t-md);
+  line-height: 1.65;
+}
+.lp-photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+  background: var(--fill-strong);
+}
+.lp-hero {
+  aspect-ratio: 4 / 3;
+}
+.lp-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--s-4);
+}
+.lp-gallery .lp-photo {
+  aspect-ratio: 1;
+}
+.lp-textlink {
+  align-self: flex-start;
+  font-size: var(--t-md);
+  font-weight: 600;
+  color: var(--ink-700);
+  text-underline-offset: 3px;
+}
+
+/* Label, rule, value: the template's opening-hours and location lines. */
+.lp-leaders {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  margin: 0;
+  font-size: var(--t-md);
+}
+.lp-leaders > div {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+}
+.lp-leaders dt {
+  flex: 1;
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-2);
+  white-space: nowrap;
+}
+.lp-leaders dt::after {
+  content: '';
+  flex: 1;
+  min-width: var(--s-4);
+  border-bottom: 1px solid var(--line-strong);
+}
+.lp-leaders dd {
+  margin: 0;
+  max-width: 62%;
+  text-align: right;
+}
+.lp-leaders a {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+/* On a phone the value would wrap into a sliver beside its label, so the rule runs across and the
+   value sits under it. */
+@media (max-width: 599px) {
+  .lp-leaders > div {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+  }
+  .lp-leaders dd {
+    max-width: none;
+    text-align: left;
+  }
+}
+
+/* The template's testimonial card, here the call to order. */
+.lp-delivery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  padding: var(--s-6);
+  border-radius: var(--radius-lg);
+  background: var(--brand-100);
+}
+.lp-delivery h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--brand-700);
+}
+.lp-delivery .btn {
+  align-self: flex-start;
+}
+.lp-delivery-phone {
+  font-size: var(--t-md);
+}
+.lp-delivery-phone a {
+  font-weight: 600;
+  color: var(--ink-900);
+}
+
+/* --- the menu island ------------------------------------------------------------------------- */
+/* The week bar and the day strip sit inside the day block, not across the page. */
+.lp-main :is(.weekbar, .daybar) {
+  padding: 0;
+}
+/* The order page's desktop strip has fixed 84 px days; half a page is too narrow for that. */
+.lp-main .daylist {
+  grid-template-columns: repeat(var(--daycols, 6), minmax(0, 1fr));
+  padding: var(--s-1) 0 0;
+}
+.lp-main .day {
+  justify-self: center;
+}
+
+@media (min-width: 900px) {
+  /*
+   * Two columns, each block placed by the table below: its column, and its place in that column.
+   * `dense` lets a block fill its column from the top, whatever the other column holds. Without
+   * script the rows stay aligned across the columns; lib/masonry.ts switches to short rows that
+   * each block spans by its height, which packs every column tight.
+   */
+  .lp-main {
+    --lp-gap: var(--s-8);
+    --lp-unit: 4px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-flow: dense;
+    align-items: start;
+    padding: var(--s-4) var(--s-8) var(--s-10);
+  }
+  .lp-main.is-masonry {
+    grid-auto-rows: var(--lp-unit);
+    row-gap: 0;
+  }
+  .lp-main [data-area] {
+    grid-column: 1;
+  }
+  .lp-main [data-area='hero'] {
+    order: 1;
+  }
+  .lp-main [data-area='about'] {
+    order: 2;
+  }
+  .lp-main [data-area='hours'] {
+    order: 3;
+  }
+  .lp-main [data-area='delivery'] {
+    order: 4;
+  }
+  .lp-main [data-area='all-week'] {
+    order: 5;
+  }
+  .lp-main [data-area='pickles'] {
+    order: 6;
+  }
+  .lp-main [data-area='sides'] {
+    order: 7;
+  }
+  .lp-main [data-area='prices'] {
+    order: 8;
+  }
+  .lp-main
+    :is(
+      [data-area='lede'],
+      [data-area='day'],
+      [data-area='featured'],
+      [data-area='gallery'],
+      [data-area='desserts'],
+      [data-area='contact']
+    ) {
+    grid-column: 2;
+  }
+  .lp-main [data-area='lede'] {
+    order: 1;
+  }
+  .lp-main [data-area='day'] {
+    order: 2;
+  }
+  .lp-main [data-area='featured'] {
+    order: 3;
+  }
+  .lp-main [data-area='gallery'] {
+    order: 4;
+  }
+  .lp-main [data-area='desserts'] {
+    order: 5;
+  }
+  .lp-main [data-area='contact'] {
+    order: 6;
+  }
+  /* The template sets its lede beside the photo, lower than the photo's top edge. */
+  .lp-lede {
+    padding-top: var(--s-10);
+    font-size: 2.75rem;
+  }
+  .lp-hero {
+    aspect-ratio: 6 / 5;
+  }
+}

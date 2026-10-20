@@ -1,0 +1,34 @@
+{
+  "name": "piccolo",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "pnpm -r --stream typecheck",
+    "lint": "biome check . && pnpm run lint:strings",
+    "lint:strings": "pnpm --filter @piccolo/admin --filter @piccolo/web lint:strings",
+    "format": "biome check --write .",
+    "test": "vitest run",
+    "build:packages": "pnpm -r --stream --filter \"./packages/*\" build",
+    "build:apps": "pnpm --filter @piccolo/web --filter @piccolo/admin build && pnpm --filter @piccolo/api --filter @piccolo/test-inbox build",
+    "build": "pnpm run build:packages && pnpm run build:apps",
+    "db:generate": "pnpm --filter @piccolo/db db:generate",
+    "db:migrate": "pnpm --filter @piccolo/db db:migrate",
+    "db:studio": "pnpm --filter @piccolo/db db:studio",
+    "db:seed:dev": "pnpm --filter @piccolo/db db:seed:dev",
+    "email:preview": "pnpm --filter @piccolo/api email:preview",
+    "email:test-send": "pnpm --filter @piccolo/api email:test-send",
+    "dev": "pnpm run build:packages && concurrently -n api,web,admin -c blue,green,magenta \"pnpm --filter @piccolo/api dev\" \"pnpm --filter @piccolo/web dev\" \"pnpm --filter @piccolo/admin dev\""
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.12",
+    "@types/node": "22.20.0",
+    "concurrently": "10.0.5",
+    "typescript": "5.9.3",
+    "vitest": "5.0.0"
+  }
+}

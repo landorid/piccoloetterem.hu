@@ -23,11 +23,24 @@ to make the first build small. The old site keeps running untouched.
 
 | In | Out (backlog, see §7) |
 |---|---|
-| `/megrendeles` — the weekly menu **is** the order page (Astro page + React island) | `/`, `/galeria`, `/elerhetoseg`, `/adatkezeles`, apex cutover |
+| `/megrendeles` — the order page: day strip, order form, the day's order, summary, checkout (Astro page + React island); `/` — the public menu page (revised 2026-10-11) | `/galeria`, `/elerhetoseg`, `/adatkezeles`, apex cutover |
 | Order composition, group ordering, multi-day cart, extras, checkout, confirmation email | "My orders" magic link, customer self-cancel |
 | Admin: weekly menu grid, permanent items with allergens, draft → publish | "Ordering paused" runtime toggle |
 | Admin: orders per day, search, detail, `received → processed`, cancel, kitchen summary, delivery list, print | Order editing in admin, staff notifications |
 | Clerk-protected admin, Sentry, SES, SendOps | Analytics, Playwright e2e, Neon consumption monitor |
+
+Revised 2026-09-13: `/megrendeles` no longer lists the browsable weekly menu below the order form;
+the weekly menu gets a public page of its own. Every dish is still chosen in the order form, with
+its allergens (§2 "Menu"). Decided by Dávid while reviewing the O2 mockup (#30, #58). Revised
+2026-10-09: the weekly menu page is **not in release 1**. It is backlog, together with `/` and the
+other public pages (§7, #46), and #46 plans `/` as the weekly menu landing page, as in the old app.
+Until it lands, no public page shows the menu outside the order form. Decided by Dávid (#58). Revised
+2026-10-11: the public menu page **is in release 1**, at `/`, replacing the redirect to
+`/megrendeles`. It shows the week's daily soups and mains on Monday–Saturday tabs, then the
+featured and permanent sections, prices as core computes them, allergens per dish, and the
+delivery and ordering info from the public config. It takes no orders; it links to
+`/megrendeles`. `/galeria`, `/elerhetoseg` and `/adatkezeles` stay in the backlog (#46).
+Decided by Dávid; it reverses the 2026-10-09 decision recorded on #58.
 
 ## 2. Decisions (from the planning interview, 2026-09-06)
 
@@ -54,17 +67,35 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 - Accounts (Cloudflare, Neon, Clerk, AWS, Sentry) already exist. Issues labelled `manual` are for
   Dávid, not for agents.
 
+**Hosting** (revised 2026-09-14)
+
+- Three Workers per customer, each on its own hostname: `apps/api` (Hono) at `api.<domain>`, and
+  assets-only Workers for `apps/web` at `<domain>` and `apps/admin` at `admin.<domain>`. The
+  frontends call the API cross-origin: the API sends CORS headers only to the origins in
+  `CORS_ORIGINS`, and the admin sends the Clerk session as `Authorization: Bearer`. Decided by
+  Dávid during F4 (#19); it replaces the single same-origin Worker in STACK.md §1.
+
 **Ordering rules — unchanged from the old system, now configuration**
 
 - Cutoff **09:30** Europe/Budapest, enforced by the server. Before cutoff Mon–Fri the first
   orderable day is today; after cutoff Mon–Thu it is tomorrow; Friday after cutoff, Saturday and
   Sunday roll to next week's Monday — only if next week is published. Orderable days run from the
   first orderable day to Saturday of that week. Sunday is never orderable.
+- Closed dates: staff mark single dates as not orderable in the admin. They are stored in the
+  `closed_dates` table, not in config, so a closure needs no deploy. The order page leaves them
+  out, `POST /api/orders` rejects them, and orders already placed for such a date stay valid.
+  There is no holiday calendar. Revised 2026-09-13: the original `RestaurantConfig` carried a
+  pre-filled `holidays` list; Dávid replaced it while reviewing PR #59 (#17), recorded in #60. The
+  same decision moved `allergenNotice` and `messages` out of `RestaurantConfig`: guest-facing copy
+  lives in each app's `strings.ts`.
 - When the roll-over hits an unpublished next week, the page shows a message: come back Sunday
   evening or Monday morning.
 - One submission may cover several days. It creates **one `order` per delivery day**, joined by a
   `submission_id`.
-- Group ordering: several composed menus per day, each with an optional `recipient_name`.
+- Group ordering: several composed menus per day. A composed menu belongs to no one: the day's
+  order numbers its menus (`1. menü`, `2. menü`) and stores no recipient name. Revised
+  2026-09-07: the original decision gave each menu an optional `recipient_name`; Dávid dropped it
+  while reviewing the O2 mockup (#30), recorded in #56.
 - A composed menu has five slots: soup, main (+ required variation if the dish has variations),
   side (only when the main requires one), pickle, dessert. All optional except as stated.
 - Pricing: a daily main includes one soup. No soup with such a main → **−100 Ft**. A soup with no
@@ -72,8 +103,16 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
   price chosen by the **delivery date** (Saturday is weekend).
 - Extras (box 100, bread 50, ketchup/tartar 400) are orderable per day with a quantity.
 - Delivery fee **150 Ft per order (address per day)**, shown as its own line.
-- Minimum **2200 Ft per order on the food subtotal** (extras included, fee excluded). Below it the
-  submission is rejected, client and server.
+- Minimum **2200 Ft per order on the food subtotal** (extras included, fee excluded), so per
+  delivery day. It never blocks: below it the submission is accepted, and checkout shows the
+  day's difference to the minimum, which the guest pays on delivery. `packages/core` exposes it
+  as `PricedDay.missingToMinimum`. Revised 2026-09-13: the original decision rejected the
+  submission, client and server; Dávid reversed it while reviewing the O2 mockup (#30), recorded
+  in #57. Revised 2026-10-09: the difference is **a checkout notice only**, as in the old app. It
+  is not a priced line and is not stored on the order. The admin delivery list and order detail
+  do not show it, and the confirmation e-mail does not mention it. Decided by Dávid (#57).
+  Revised 2026-10-16: the minimum is **2590 Ft on Saturday**, chosen by the delivery date like
+  the weekend price; weekdays stay 2200 Ft. Decided by Dávid.
 - Pickup exists behind a config flag: no fee, no minimum, no address. **Off for Piccolo.**
 - No payment method selection, no online payment. Cash on delivery is implied.
 - "Sold out" is a manual per-item switch, enforced server-side at submission. No stock counting.
@@ -85,11 +124,38 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 
 - One `menu_items` model with a category from config: `daily_soup`, `daily_main`, `featured`
   (weekly), and `all_week`, `dessert`, `pickle`, `side`, `side_extra` (permanent).
+- A plain side (`side`, alap köret) is always free: its price is 0. Only a `side_extra` (feláras
+  köret) carries a price. `validateMenuItem` enforces it the way it enforces a daily soup's 0.
+  Revised 2026-10-09: M6 (#28) already hid a side's price, but core did not enforce 0 and the dev
+  seed priced both sides. Decided by Dávid, as in the old app, where a köret had a name and no
+  price field (LEGACY-INVENTORY.md §2, "Étlap"); recorded in PR #87.
 - Weekly items are scheduled to an ISO week and day (1–6; featured items have no day).
+- A week has any number of featured items: no five-item cap as in the old app, since the week's
+  menu card usually lists seven and the import keeps them all. Decided by Dávid 2026-10-10.
 - A week is a draft until published (`published_at`). Publishing invalidates the public menu cache.
 - Editing a week upserts; it never deletes and recreates. Orders snapshot item name and price.
-- Allergens per item, EU list of 14, multi-select. Shown on the menu.
-- No entry helpers (no name parsing, no autocomplete, no copy-week), no images, no edit history.
+- The permanent menu is saved as a whole: one `PUT /api/admin/menu/items` carries every permanent
+  item, and an item left out is set inactive, never deleted. Revised 2026-10-08: it replaces the
+  per-item create, edit, deactivate and reorder routes; decided by Dávid during M2 (#24, PR #71).
+- Allergens per item, EU list of 14, multi-select. They stay on `/megrendeles` as chips on every
+  choice row and on the main-course picker: for a distance sale, EU Regulation 1169/2011 Art. 14
+  requires allergen information before the purchase is concluded (#58).
+- No entry helpers other than the menu card import (no autocomplete, no copy-week), no images, no
+  edit history. Revised 2026-10-10: the week's Word menu card (.docx) can pre-fill the weekly menu
+  form, splitting each dish into name and description and reading a soy alternative as two
+  variations; staff review the grid and save it as usual. The original decision ruled out any name
+  parsing. Decided by Dávid.
+  Revised 2026-10-11: permanent (étlap) items may carry one image each; weekly items never do. It
+  is stored in Cloudflare R2 behind the API Worker (a private bucket, served by
+  `GET /api/images/<item>/<version>/<rendition>`), in two renditions, a large one (at most 1200 px)
+  and a square thumbnail (192 px), both made in the admin browser before the upload. The image is
+  uploaded, replaced and removed at once, outside the permanent menu's save. Guests see it only on
+  `/megrendeles`, not on `/`. Decided by Dávid.
+  Revised 2026-10-15: the images bucket is public on its own custom domain (`img.<domain>`,
+  `img-dev.<domain>` for development) and served by Cloudflare's CDN; `GET /api/images/*` is
+  removed. A Transform Rule sets the safety and cache headers the route used to send. Signed URLs
+  were rejected: the photos are public, and expiring URLs would break the menu cache and the
+  year-long image cache. Decided by Dávid.
 
 **Staff**
 
@@ -112,33 +178,38 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 customers            id, email_key UNIQUE, email, name, phone, address, last_order_at
 menu_items           id, category, name, description, price_weekday, price_weekend,
                      variations[], allergens[], soup_included, requires_side, sold_out,
-                     active, sort_order
+                     active, sort_order, image_version (NULL | uuid; permanent items only)
 menu_weeks           iso_year, iso_week (PK), published_at
 menu_schedule        iso_year, iso_week, day (1–6 | NULL for featured), menu_item_id, sort_order
 orders               id, submission_id, customer_id, delivery_date, fulfilment (delivery|pickup),
                      status (received|processed|cancelled), name, phone, email, address, note,
                      food_subtotal, delivery_fee, total, created_at, processed_at, cancelled_at
-order_menus          id, order_id, position, recipient_name, price
+order_menus          id, order_id, position, price
 order_items          id, order_menu_id, slot (soup|main|side|pickle|dessert), menu_item_id,
                      name, variation, unit_price          -- snapshot, never joined for display
 order_extras         id, order_id, extra_key, name, quantity, unit_price
+closed_dates         date (PK, YYYY-MM-DD), created_at    -- set by staff, no ordering that day
 ```
 
-`RestaurantConfig` (TypeScript, one instance per deployment):
+`RestaurantConfig` (TypeScript, one instance per deployment; the type is
+`packages/core/src/config/types.ts`):
 
 ```ts
 {
   name, timezone: 'Europe/Budapest',
   cutoff: '09:30', operatingDays: [1,2,3,4,5,6], lastSameWeekOrderDay: 5,
-  categories: {...}, allergenNotice: string,
-  pricing: { noSoupDiscount: 100, soupPrice: 650, deliveryFee: 150, minimumOrder: 2200 },
+  pricing: { noSoupDiscount: 100, soupPrice: 650, deliveryFee: 150, minimumOrder: { weekday: 2200, weekend: 2590 } },
   extras: [{ key, name, price }],
   pickupEnabled: false,
-  messages: { nextWeekNotPublished: string },
   email: { from: 'rendeles@…', replyTo: 'info@…' },
-  holidays: string[]   // ISO dates the restaurant is closed
+  contact: { address, phone, openingHours,
+             intakeWindow: { from: '07:30', until: '09:30' } }   // until must equal cutoff
 }
 ```
+
+The categories and the EU-14 allergen codes are constants next to the type, not per-deployment
+values. Closed dates live in `closed_dates` and guest-facing copy in each app's `strings.ts`
+(#60), so neither is in the config.
 
 Everything time-related is computed in `packages/core` from an injected `now` and the config.
 HTTP handlers never contain domain logic (STACK.md rule 6).
@@ -146,9 +217,9 @@ HTTP handlers never contain domain logic (STACK.md rule 6).
 ## 4. Repository layout
 
 ```
-apps/web      Astro + React island        → served at /
-apps/admin    Vite + React + shadcn/ui    → served at /admin/*
-apps/api      Hono on Cloudflare Workers  → /api/*, also serves both static builds
+apps/web      Astro + React island        → assets-only Worker at <domain>
+apps/admin    Vite + React + shadcn/ui    → assets-only Worker at admin.<domain>
+apps/api      Hono on Cloudflare Workers  → api.<domain>/api/*
 packages/core        domain logic, config type, pure TypeScript, Vitest
 packages/api-client  typed client from Hono RPC, used by both apps
 packages/db          Drizzle schema, migrations, query helpers
@@ -168,7 +239,7 @@ Strict order. Each issue is one agent session. `→` marks blockers. Issues live
 | F1 [#16](https://github.com/landorid/piccoloetterem.hu/issues/16) | Scaffold the pnpm monorepo, tooling, and the agent guide (AGENTS.md) | infra |
 | F2 [#17](https://github.com/landorid/piccoloetterem.hu/issues/17) | `packages/core`: `RestaurantConfig` type, Piccolo instance, calendar utilities → F1 | core |
 | F3 [#18](https://github.com/landorid/piccoloetterem.hu/issues/18) | `packages/db`: Drizzle schema and migrations for the domain model → F1 | db |
-| F4 [#19](https://github.com/landorid/piccoloetterem.hu/issues/19) | `apps/api`: Hono on Workers, static assets, `/admin` SPA fallback, Hyperdrive, health, Sentry → F1 F3 | api |
+| F4 [#19](https://github.com/landorid/piccoloetterem.hu/issues/19) | `apps/api`: Hono API Worker, web and admin Workers, CORS, Hyperdrive, health, Sentry → F1 F3 | api |
 | F5 [#20](https://github.com/landorid/piccoloetterem.hu/issues/20) | `packages/api-client`: Hono RPC typed client → F4 | api |
 | F6 [#21](https://github.com/landorid/piccoloetterem.hu/issues/21) | Clerk: admin sign-in and `/api/admin/*` middleware → F4 | admin api |
 | F7 [#22](https://github.com/landorid/piccoloetterem.hu/issues/22) | GitHub Actions: checks + staging deploy from `develop`, production from `main` → F4 | infra |
@@ -193,7 +264,7 @@ Strict order. Each issue is one agent session. `→` marks blockers. Issues live
 | O3 [#31](https://github.com/landorid/piccoloetterem.hu/issues/31) | `POST /api/orders`: validate, snapshot, upsert customer, one order per day → F3 M3 O1 | api |
 | O4 [#32](https://github.com/landorid/piccoloetterem.hu/issues/32) | Confirmation email: SES on Workers, React Email template, sent after commit → O3 | email |
 | O5 [#33](https://github.com/landorid/piccoloetterem.hu/issues/33) | `apps/web`: Astro scaffold, `/megrendeles` page shell, menu loading → F5 M3 | web |
-| O6 [#34](https://github.com/landorid/piccoloetterem.hu/issues/34) | React island: menu browsing, composing menus, group cart, extras, live price → O1 O2 O5 | web |
+| O6 [#34](https://github.com/landorid/piccoloetterem.hu/issues/34) | React island: order form, group cart, extras, live price → O1 O2 O5 | web |
 | O7 [#35](https://github.com/landorid/piccoloetterem.hu/issues/35) | React island: checkout form, prefill, submit, confirmation and error states → O3 O6 | web |
 
 ### M3 Staff operations
@@ -256,8 +327,20 @@ Manual issues (label `manual`) are Dávid's and skip the guardrail and stop sect
 
 - "My orders" for customers: magic link, `verified_at`, cancel before cutoff.
 - "Ordering paused" runtime toggle with message (small `settings` table).
-- Remaining public pages (`/`, `/galeria`, `/elerhetoseg`, `/adatkezeles`), SEO/JSON-LD, apex cutover.
+- Remaining public pages (`/galeria`, `/elerhetoseg`, `/adatkezeles`), SEO/JSON-LD, apex cutover.
 - Cookie-free analytics (Cloudflare Web Analytics).
 - Playwright smoke test of the ordering flow.
 - Neon consumption monitor (STACK.md §2).
 - Order editing in admin; staff notifications (daily digest).
+
+## 8. CI secrets
+
+`.github/workflows/ci.yml` checks pull requests and pushes to `develop` and `main`. A push deploys:
+`develop` uses the `development` GitHub Environment and the top-level Wrangler config, `main` uses
+`production`. Create this list on each environment. Values stay out of the repo. Cloudflare and Neon
+resources are P2 (#40).
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+- `DATABASE_URL` (per environment)
+- `WORKER_URL` (per environment, the API origin)
