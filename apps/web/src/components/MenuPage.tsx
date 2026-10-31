@@ -2,7 +2,7 @@ import type { MenuItem } from '@piccolo/core';
 import { CalendarClock, Phone } from 'lucide-react';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import { dayFull, forint, signedForint, telHref } from '../format';
-import { apiOrigin, createWebApi, type PublicConfig, type PublicMenu, thumbSrc } from '../lib/api';
+import { apiOrigin, createWebApi, type PublicConfig, thumbSrc } from '../lib/api';
 import {
   dayPrice,
   initialDate,
@@ -232,45 +232,58 @@ function Week({
           )}
         </section>
       </div>
-      <Section area="featured" title={text.sections.featured} items={menu.featured} menu={menu} />
+      <Section
+        area="featured"
+        title={text.sections.featured}
+        items={menu.featured}
+        date={day.date}
+      />
       <Section
         area="all-week"
         title={text.sections.allWeek}
         items={permanent.allWeek}
-        menu={menu}
+        date={day.date}
       />
       <Section
         area="desserts"
         title={text.sections.desserts}
         items={permanent.desserts}
-        menu={menu}
+        date={day.date}
       />
-      <Section area="pickles" title={text.sections.pickles} items={permanent.pickles} menu={menu} />
+      <Section
+        area="pickles"
+        title={text.sections.pickles}
+        items={permanent.pickles}
+        date={day.date}
+      />
       <Section
         area="sides"
         title={text.sections.sides}
         hint={text.sidesHint}
         items={[...permanent.sides, ...permanent.sideExtras]}
-        menu={menu}
+        date={day.date}
       />
       <PriceCard config={config} />
     </>
   );
 }
 
-/** A featured or permanent section; left out when staff listed nothing in it. */
+/**
+ * A featured or permanent section, priced for the selected day (`date`); left out when staff
+ * listed nothing in it.
+ */
 function Section({
   area,
   title,
   hint,
   items,
-  menu,
+  date,
 }: {
   area: string;
   title: string;
   hint?: string;
   items: readonly MenuItem[];
-  menu: PublicMenu;
+  date: IsoDate;
 }) {
   if (items.length === 0) return null;
   return (
@@ -278,7 +291,7 @@ function Section({
       <div className="card-head">
         <h2>{title}</h2>
       </div>
-      <DishList items={items} hint={hint} price={(item) => weekPrice(item, menu)} />
+      <DishList items={items} hint={hint} price={(item) => weekPrice(item, date)} />
     </section>
   );
 }

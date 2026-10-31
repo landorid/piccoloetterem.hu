@@ -50,13 +50,14 @@ describe('dayPrice', () => {
 });
 
 describe('weekPrice', () => {
-  it('lists a featured or permanent item at its weekday price, not the Saturday one', () => {
-    expect(weekPrice(dish('cordon-bleu'), menu)).toEqual({ kind: 'price', amount: 1690 });
-    expect(weekPrice(dish('somloi'), menu)).toEqual({ kind: 'price', amount: 690 });
+  it('lists a featured or permanent item at the price core charges on the given day', () => {
+    expect(weekPrice(dish('cordon-bleu'), '2026-09-07')).toEqual({ kind: 'price', amount: 1690 });
+    expect(weekPrice(dish('cordon-bleu'), '2026-09-12')).toEqual({ kind: 'price', amount: 1790 });
+    expect(weekPrice(dish('somloi'), '2026-09-12')).toEqual({ kind: 'price', amount: 690 });
   });
 
   it('lists a plain side as free', () => {
-    expect(weekPrice(dish('hasabburgonya'), menu)).toEqual({ kind: 'free' });
+    expect(weekPrice(dish('hasabburgonya'), '2026-09-12')).toEqual({ kind: 'free' });
   });
 });
 
