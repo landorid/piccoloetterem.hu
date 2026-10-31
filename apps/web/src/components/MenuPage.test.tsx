@@ -105,6 +105,17 @@ describe('MenuPage', () => {
     expect(row('Hasábburgonya').querySelector('.dish-price')).toBeNull();
   });
 
+  it('lists the featured and permanent sections at their weekend price on Saturday', async () => {
+    await renderPage();
+    fireEvent.click(screen.getByRole('tab', { name: /^Szombat/ }));
+    expect(row('Cordon bleu').querySelector('.dish-price')?.textContent).toBe(forint(1790));
+    expect(row('Rántott trapista sajt').querySelector('.dish-price')?.textContent).toBe(
+      forint(1390),
+    );
+    // No weekend price of its own: the weekday one applies.
+    expect(row('Somlói galuska').querySelector('.dish-price')?.textContent).toBe(forint(690));
+  });
+
   it('lists the paid sides with their price in the sides card, after the free ones', async () => {
     await renderPage();
     const sides = screen.getByRole('region', { name: text.sections.sides });

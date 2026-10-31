@@ -81,8 +81,8 @@ export function dayPrice(item: MenuItem, date: IsoDate, soupPrice: number): List
   return { kind: 'price', amount: unitPrice(item, date) };
 }
 
-/** A featured or permanent item, orderable on every day of `menu`'s week. */
-export function weekPrice(item: MenuItem, menu: PublicMenu): ListedPrice {
+/** A featured or permanent item, orderable on every day of the week, delivered on `date`. */
+export function weekPrice(item: MenuItem, date: IsoDate): ListedPrice {
   if (item.category === 'side') return { kind: 'free' };
-  return { kind: 'price', amount: unitPrice(item, menu.days[1].date) };
+  return { kind: 'price', amount: unitPrice(item, date) };
 }
