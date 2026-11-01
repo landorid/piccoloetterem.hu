@@ -34,7 +34,6 @@ export interface ItemRow {
   priceWeekend: string;
   variations: readonly string[];
   allergens: readonly AllergenCode[];
-  /** Not edited on this page; kept as stored. */
   soupIncluded: boolean;
   requiresSide: boolean;
   /** Shown, never saved with the rest: it has its own immediate route. */
@@ -51,6 +50,7 @@ export type ItemField =
   | 'priceWeekday'
   | 'priceWeekend'
   | 'variations'
+  | 'soupIncluded'
   | 'requiresSide'
   | 'allergens';
 

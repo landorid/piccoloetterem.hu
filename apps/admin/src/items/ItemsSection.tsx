@@ -64,9 +64,9 @@ function FieldError({ id, code }: { id: string; code: string | undefined }) {
   );
 }
 
-/** A side has no price, and only the all-week mains can require a side. */
+/** A side has no price, and only the all-week mains can include soup or require a side. */
 function fieldsOf(section: PermanentSection) {
-  return { priced: section !== 'sides', sideChoice: section === 'allWeek' };
+  return { priced: section !== 'sides', main: section === 'allWeek' };
 }
 
 type RowProps = Pick<
@@ -116,13 +116,14 @@ function EditableRow({
   onImageRemove,
 }: RowProps) {
   const id = useId();
-  const { priced, sideChoice } = fieldsOf(section);
+  const { priced, main } = fieldsOf(section);
   const shown = new Set<string>(['name', 'description', 'variations', 'allergens']);
   if (priced) {
     shown.add('priceWeekday');
     shown.add('priceWeekend');
   }
-  if (sideChoice) {
+  if (main) {
+    shown.add('soupIncluded');
     shown.add('requiresSide');
   }
   // Errors on what has no input here (`id`, a side's hidden price) show under the row.
@@ -136,6 +137,22 @@ function EditableRow({
     <FieldError id={`${id}-${field}-error`} code={errors[field]} />
   );
   const dim = row.active ? undefined : 'opacity-60';
+  const checkbox = (field: 'soupIncluded' | 'requiresSide') => (
+    <div className={cn('grid gap-1', cell.toggle, dim)}>
+      <div className="flex h-8 items-center gap-2 @4xl:justify-center">
+        <Checkbox
+          id={`${id}-${field}`}
+          checked={row[field]}
+          onCheckedChange={(checked) => onEdit(row.key, { [field]: checked === true })}
+          {...invalid(field)}
+        />
+        <Label htmlFor={`${id}-${field}`} className="font-normal text-xs @4xl:sr-only">
+          {t.columns[field]}
+        </Label>
+      </div>
+      {error(field)}
+    </div>
+  );
 
   return (
     <fieldset
@@ -236,21 +253,11 @@ function EditableRow({
           />
           {error('allergens')}
         </div>
-        {sideChoice && (
-          <div className={cn('grid gap-1', cell.toggle, dim)}>
-            <div className="flex h-8 items-center gap-2 @4xl:justify-center">
-              <Checkbox
-                id={`${id}-requiresSide`}
-                checked={row.requiresSide}
-                onCheckedChange={(checked) => onEdit(row.key, { requiresSide: checked === true })}
-                {...invalid('requiresSide')}
-              />
-              <Label htmlFor={`${id}-requiresSide`} className="font-normal text-xs @4xl:sr-only">
-                {t.columns.requiresSide}
-              </Label>
-            </div>
-            {error('requiresSide')}
-          </div>
+        {main && (
+          <>
+            {checkbox('soupIncluded')}
+            {checkbox('requiresSide')}
+          </>
         )}
         <div
           className={cn('flex h-8 items-center gap-2', cell.toggle, dim)}
@@ -355,7 +362,7 @@ function EditableRow({
  * (a container at 4xl); narrower, each field says what it is on its own.
  */
 function ItemsHeader({ section }: { section: PermanentSection }) {
-  const { priced, sideChoice } = fieldsOf(section);
+  const { priced, main } = fieldsOf(section);
   const title = (text: string, width: string, extra?: string) => (
     <span className={cn('truncate', width, extra)}>{text}</span>
   );
@@ -374,7 +381,8 @@ function ItemsHeader({ section }: { section: PermanentSection }) {
       {priced && title(t.columns.priceWeekend, cell.priceWeekend, 'text-right')}
       {title(t.columns.variations, cell.variations)}
       {title(t.columns.allergens, cell.allergens)}
-      {sideChoice && toggle(t.columns.requiresSide)}
+      {main && toggle(t.columns.soupIncluded)}
+      {main && toggle(t.columns.requiresSide)}
       {toggle(t.columns.soldOut)}
       {toggle(t.columns.active)}
       <span className="w-24 shrink-0" />
