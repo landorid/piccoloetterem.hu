@@ -418,6 +418,7 @@ export const strings = {
       priceWeekday: 'Hétköznapi ár',
       priceWeekend: 'Hétvégi ár',
       variations: 'Variációk',
+      soupIncluded: 'Levessel',
       requiresSide: 'Köret kötelező',
       allergens: 'Allergének',
       soldOut: 'Elfogyott',
