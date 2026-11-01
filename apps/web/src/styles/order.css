@@ -860,10 +860,18 @@
   background: var(--paper);
   border-top: 1px solid var(--line);
 }
-.cf-foot .error {
+.cf-foot .error,
+.choice-block .error {
   font-size: var(--t-sm);
   font-weight: 600;
   color: var(--danger-700);
+}
+.choice-block .error {
+  margin: calc(var(--s-1) * -1) 0 var(--s-2);
+  padding-inline: calc(var(--s-4) + 1px);
+}
+.composer-form .error:focus {
+  outline: none;
 }
 .choice-block {
   min-width: 0;
@@ -1147,6 +1155,21 @@
   border-radius: var(--radius);
   background: var(--paper);
   overflow: hidden;
+}
+/* A block the guest was sent to: the ring holds while the page scrolls there, then fades. */
+.choicerows.is-flagged {
+  animation: flag-ring 2.4s ease-out forwards;
+}
+@keyframes flag-ring {
+  0%,
+  35% {
+    border-color: var(--danger-700);
+    box-shadow: 0 0 0 2px var(--danger-700);
+  }
+  100% {
+    border-color: var(--line-strong);
+    box-shadow: 0 0 0 2px transparent;
+  }
 }
 .choicerow {
   gap: var(--s-3);

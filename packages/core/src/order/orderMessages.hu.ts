@@ -13,7 +13,7 @@ export const orderMessagesHu: Readonly<Record<OrderErrorCode, string>> = {
   unknown_item: 'Ismeretlen tétel.',
   variation_required: 'Válassz változatot.',
   invalid_variation: 'Ismeretlen változat.',
-  side_required: 'Ehhez a főételhez köret jár.',
+  side_required: 'Ehhez a főételhez köret jár. Válassz!',
   not_allowed: 'Ez nem választható.',
   cutoff_passed: 'Erre a napra már nem lehet rendelni.',
   pickup_disabled: 'A személyes átvétel nem elérhető.',

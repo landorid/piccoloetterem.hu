@@ -135,6 +135,8 @@ export interface FormStatus {
   canAdd: boolean;
   /** Why the form cannot be added yet; `null` when it can be. The page shows it after a try. */
   message: string | null;
+  /** The block the message belongs to; absent, it sits by the add button. */
+  slot?: 'side';
 }
 
 /** Field errors of `validateMenu`, most specific first: the footer shows one. */
@@ -167,7 +169,10 @@ export function formStatus(form: MenuForm, publicMenu: PublicMenu, date: string)
   if (canAdd) return { canAdd, message: null };
   const field = fieldOrder.find((key) => errors[key] !== undefined);
   const code: OrderErrorCode | undefined = field && errors[field];
-  if (code) return { canAdd, message: orderMessagesHu[code] };
+  if (code) {
+    const message = orderMessagesHu[code];
+    return field === 'sideId' ? { canAdd, message, slot: 'side' } : { canAdd, message };
+  }
   if (!soupAnswered) return { canAdd, message: strings.composer.unanswered };
   if (!mainAnswered) return { canAdd, message: strings.composer.mainUnanswered };
   return { canAdd, message: strings.composer.emptyMenu };
