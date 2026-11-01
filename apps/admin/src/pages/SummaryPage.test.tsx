@@ -65,11 +65,13 @@ function listOf(day: string): DeliveryList {
 
 let summary: (day: string) => DaySummary;
 let list: (day: string) => DeliveryList;
+let pickupEnabled: boolean;
 const requests: string[] = [];
 
 beforeEach(() => {
   summary = summaryOf;
   list = listOf;
+  pickupEnabled = false;
   vi.stubGlobal(
     'fetch',
     vi.fn(async (input: RequestInfo | URL) => {
@@ -80,7 +82,7 @@ beforeEach(() => {
         ? summary(day)
         : url.pathname.endsWith('/delivery-list')
           ? list(day)
-          : { name: 'Piccolo Club Étterem' };
+          : { name: 'Piccolo Club Étterem', pickupEnabled };
       return new Response(JSON.stringify(body), {
         headers: { 'Content-Type': 'application/json' },
       });
@@ -162,6 +164,25 @@ describe('SummaryPage', () => {
     expect(cards).toContain(`${strings.summary.cards.fulfilment}2 / 1`);
     expect(cards).toContain(`${strings.summary.cards.revenue}${strings.summary.money(12_345)}`);
     expect(requests).toContain(`/api/admin/orders/summary?date=${date}`);
+  });
+
+  it('counts deliveries alone where pickup is off and no pickup was taken', async () => {
+    summary = (day) => ({ ...summaryOf(day), pickupCount: 0 });
+    renderPage(`?date=${date}`);
+
+    await screen.findByRole('region', { name: strings.summary.slots.main });
+    const cards = document.body.textContent ?? '';
+    expect(cards).toContain(`${strings.summary.cards.delivery}2`);
+    expect(cards).not.toContain(strings.summary.cards.fulfilment);
+  });
+
+  it('counts pickups beside deliveries where pickup is on, even at zero', async () => {
+    summary = (day) => ({ ...summaryOf(day), pickupCount: 0 });
+    pickupEnabled = true;
+    renderPage(`?date=${date}`);
+
+    await screen.findByText(`2 / 0`);
+    expect(document.body.textContent).toContain(`${strings.summary.cards.fulfilment}2 / 0`);
   });
 
   it('lists deliveries by the API order, with a phone and a note column on screen', async () => {

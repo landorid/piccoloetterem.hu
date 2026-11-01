@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/table';
 import { LoadFailed } from '@/pages/summary/LoadFailed';
 import { type DaySummary, daySummaryQuery } from '@/pages/summary/queries';
+import { configQuery } from '@/queries';
 import { strings } from '@/strings';
 
 /** The kitchen cooks mains first, so they lead; the API's `slots` order is soup first. */
@@ -76,7 +77,7 @@ function CountTable({
   );
 }
 
-function SummaryContent({ summary }: { summary: DaySummary }) {
+function SummaryContent({ summary, pickup }: { summary: DaySummary; pickup: boolean }) {
   if (summary.orderCount === 0) {
     return (
       <EmptyState
@@ -91,10 +92,14 @@ function SummaryContent({ summary }: { summary: DaySummary }) {
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4 print:grid-cols-4 print:gap-2">
         <Stat label={strings.summary.cards.orders} value={String(summary.orderCount)} />
         <Stat label={strings.summary.cards.menus} value={String(summary.menuCount)} />
-        <Stat
-          label={strings.summary.cards.fulfilment}
-          value={`${summary.deliveryCount} / ${summary.pickupCount}`}
-        />
+        {pickup ? (
+          <Stat
+            label={strings.summary.cards.fulfilment}
+            value={`${summary.deliveryCount} / ${summary.pickupCount}`}
+          />
+        ) : (
+          <Stat label={strings.summary.cards.delivery} value={String(summary.deliveryCount)} />
+        )}
         <Stat
           label={strings.summary.cards.revenue}
           value={strings.summary.money(summary.revenue)}
@@ -122,9 +127,12 @@ function SummaryContent({ summary }: { summary: DaySummary }) {
 /** The kitchen summary tab: the day's counts, then each slot's dishes, most ordered first. */
 export function KitchenSummary({ date }: { date: string }) {
   const summary = useQuery(daySummaryQuery(date));
+  const config = useQuery(configQuery);
 
   if (summary.data) {
-    return <SummaryContent summary={summary.data} />;
+    // A pickup taken before the flag was switched off still shows.
+    const pickup = config.data?.pickupEnabled === true || summary.data.pickupCount > 0;
+    return <SummaryContent summary={summary.data} pickup={pickup} />;
   }
   if (summary.isError) {
     return <LoadFailed onRetry={() => void summary.refetch()} />;

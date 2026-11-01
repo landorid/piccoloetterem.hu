@@ -64,8 +64,12 @@ export const app = new Hono<AppEnv>()
   // Every staff route. `requireStaff` runs before the handler and before notFound,
   // so an unknown `/api/admin/*` path is still 401 without a session.
   .use('/admin/*', requireStaff)
-  // The admin shell's top bar shows the restaurant name. Reads the config, never the database.
-  .get('/admin/config', withConfig, (c) => c.json({ name: c.get('config').name }))
+  // The admin shell's top bar shows the restaurant name; the kitchen summary counts pickups only
+  // where pickup is offered. Reads the config, never the database.
+  .get('/admin/config', withConfig, (c) => {
+    const { name, pickupEnabled } = c.get('config');
+    return c.json({ name, pickupEnabled });
+  })
   .get('/admin/ping', (c) => c.json({ userId: c.get('staff').userId }))
   .route('/admin/menu', adminMenuRoutes(menuCacheFor))
   // Working the orders of a delivery date: list, detail, status changes, kitchen summary, delivery list.
