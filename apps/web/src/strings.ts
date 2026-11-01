@@ -203,6 +203,10 @@ export const strings = {
     retry: 'Újrapróbálom',
     unavailableTitle: 'Az online rendelés most nem érhető el',
     unavailableBody: 'Próbáld újra később.',
+    // TODO(O2): not in the handover: the ordering island crashed while rendering.
+    crashTitle: 'Hiba történt az oldalon',
+    crashBody: 'Töltsd újra az oldalt. Ha most sem megy, telefonon is leadhatod a rendelésed.',
+    reload: 'Újratöltöm az oldalt',
     cutoffTitle: 'Lejárt a rendelési határidő',
     cutoffBody: (day: string, time: string) =>
       `${day} ${time}-kor lezárult a rendelésfelvétel, ezért ezt a napot kivettük a kosaradból. A többi nap megmaradt.`,

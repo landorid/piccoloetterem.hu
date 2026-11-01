@@ -3,6 +3,8 @@ import { orderMessagesHu } from '@piccolo/core';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forint } from '../format';
+import { ApiError } from '../lib/api';
+import { reportSubmitFailure } from '../lib/sentry';
 import { customerStorageKey } from '../order/checkout';
 import { storageKey } from '../order/store';
 import { strings } from '../strings';
@@ -10,6 +12,11 @@ import { openMenu, publicConfig } from '../test/fixtures';
 import { OrderingApp } from './OrderingApp';
 
 const { checkout, errors, success } = strings;
+
+vi.mock('../lib/sentry', async (original) => ({
+  ...(await original<typeof import('../lib/sentry')>()),
+  reportSubmitFailure: vi.fn(),
+}));
 
 let menuAnswer: unknown;
 /** What `POST /api/orders` answers next; each call takes the next reply, the last one repeats. */
@@ -31,6 +38,7 @@ const stored = (body: { days: Array<{ deliveryDate: string }> }) =>
   );
 
 beforeEach(() => {
+  vi.mocked(reportSubmitFailure).mockClear();
   menuAnswer = openMenu;
   orderBodies.length = 0;
   orderReplies = [];
@@ -280,6 +288,7 @@ describe('a refused submission', () => {
     await submit();
     expect(await screen.findByRole('heading', { name: success.title })).toBeTruthy();
     expect(orderBodies).toHaveLength(2);
+    expect(reportSubmitFailure).not.toHaveBeenCalled();
   });
 
   it('removes a day whose cutoff passed, says so, refetches the menu and keeps the rest', async () => {
@@ -305,6 +314,7 @@ describe('a refused submission', () => {
     // The refetch found nothing more to drop, so the menu screen has no second explanation.
     fireEvent.click(screen.getByRole('button', { name: new RegExp(checkout.back) }));
     expect(screen.queryByText(errors.cutoffTitle)).toBeNull();
+    expect(reportSubmitFailure).not.toHaveBeenCalled();
   });
 
   it('removes a day staff closed meanwhile with its own explanation', async () => {
@@ -382,6 +392,10 @@ describe('a refused submission', () => {
     expect(
       within(alert).getByText(errors.submitFailedBody(publicConfig.contact.phone)),
     ).toBeTruthy();
+    expect(reportSubmitFailure).toHaveBeenCalledOnce();
+    expect(vi.mocked(reportSubmitFailure).mock.calls[0]?.[0]).toMatchObject({
+      name: 'NetworkError',
+    });
 
     fireEvent.click(within(alert).getByRole('button', { name: errors.resubmit }));
     expect(await screen.findByRole('heading', { name: success.title })).toBeTruthy();
@@ -396,6 +410,19 @@ describe('a refused submission', () => {
     await submit();
     expect(screen.getByText(errors.rateLimitedTitle)).toBeTruthy();
     expect(submitButton()).toHaveProperty('disabled', false);
+    expect(reportSubmitFailure).not.toHaveBeenCalled();
+  });
+
+  it('reports an answer the API should never give to Sentry', async () => {
+    await checkoutWith([{ soup: 'Brokkolikrémleves' }]);
+    orderReplies = [
+      async () => Response.json({ error: 'internal', message: 'x' }, { status: 500 }),
+    ];
+    await submit();
+    expect(screen.getByText(errors.submitFailedTitle)).toBeTruthy();
+    const [error] = vi.mocked(reportSubmitFailure).mock.calls[0] ?? [];
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error).toMatchObject({ status: 500 });
   });
 
   it('says the cart cannot be accepted when nothing in the form can fix it', async () => {
@@ -409,6 +436,7 @@ describe('a refused submission', () => {
     ];
     await submit();
     expect(screen.getByText(errors.rejectedTitle)).toBeTruthy();
+    expect(reportSubmitFailure).not.toHaveBeenCalled();
   });
 });
 

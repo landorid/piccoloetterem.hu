@@ -3,6 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { dayFull, forint, minimumOrder, timeOfDay } from '../format';
 import { type PublicConfig, type SubmittedOrder, submitOrder, type WebApi } from '../lib/api';
+import { reportSubmitFailure } from '../lib/sentry';
 import {
   browserStorage,
   buildSubmission,
@@ -158,6 +159,8 @@ export function Checkout({
       onSubmitted({ response, email: contact.email.trim(), days: sentPriced });
     } catch (error) {
       const rejection = readRejection(error, sent);
+      // Refusals the guest can act on are expected; only the "submit failed" banner is a fault.
+      if (rejection.kind === 'failed') reportSubmitFailure(error);
       if (rejection.kind !== 'invalid') {
         setNotice(rejection);
       } else {

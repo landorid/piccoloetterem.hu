@@ -15,6 +15,11 @@
 # - VITE_API_URL (the API origin, for the admin)
 # - PUBLIC_API_URL (the API origin, for the web; /megrendeles calls it at build time)
 # - VITE_IMAGES_URL, PUBLIC_IMAGES_URL (the dish photos' origin, https://img.<domain>, for each app)
+#
+# Repository secret (optional; the web reports no browser errors without it):
+#
+# - PUBLIC_SENTRY_DSN (the Sentry DSN of the public site, inlined into its bundle; the deploy job
+#   tags each build's events with the environment it deploys to)
 
 name: CI
 
@@ -111,6 +116,8 @@ jobs:
         env:
           PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
           PUBLIC_IMAGES_URL: ${{ vars.PUBLIC_IMAGES_URL }}
+          PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
+          PUBLIC_ENVIRONMENT: ${{ github.ref_name == 'main' && 'production' || 'development' }}
 
       - name: Deploy web
         working-directory: apps/web
