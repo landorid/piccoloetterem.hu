@@ -178,14 +178,14 @@ describe('GET /api/admin/config', () => {
     expect(await res.json()).toEqual({ error: 'unauthenticated' });
   });
 
-  it('returns the restaurant name to a member of CLERK_ORG_ID', async () => {
+  it('returns the restaurant name and whether it offers pickup to a member of CLERK_ORG_ID', async () => {
     const res = await app.request(
       '/api/admin/config',
       { headers: { Authorization: 'Bearer member' } },
       { ...staffEnv, RESTAURANT: 'piccolo' },
     );
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ name: 'Piccolo Club Étterem' });
+    expect(await res.json()).toEqual({ name: 'Piccolo Club Étterem', pickupEnabled: false });
   });
 });
 
