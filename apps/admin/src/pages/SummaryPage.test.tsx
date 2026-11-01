@@ -166,14 +166,20 @@ describe('SummaryPage', () => {
     expect(requests).toContain(`/api/admin/orders/summary?date=${date}`);
   });
 
-  it('counts deliveries alone where pickup is off and no pickup was taken', async () => {
+  it('drops the fulfilment card where pickup is off and no pickup was taken', async () => {
     summary = (day) => ({ ...summaryOf(day), pickupCount: 0 });
     renderPage(`?date=${date}`);
 
     await screen.findByRole('region', { name: strings.summary.slots.main });
-    const cards = document.body.textContent ?? '';
-    expect(cards).toContain(`${strings.summary.cards.delivery}2`);
-    expect(cards).not.toContain(strings.summary.cards.fulfilment);
+    expect(
+      [...document.querySelectorAll('[data-slot="card-description"]')].map(
+        (label) => label.textContent,
+      ),
+    ).toEqual([
+      strings.summary.cards.orders,
+      strings.summary.cards.menus,
+      strings.summary.cards.revenue,
+    ]);
   });
 
   it('counts pickups beside deliveries where pickup is on, even at zero', async () => {
