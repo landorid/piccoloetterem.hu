@@ -1,3 +1,4 @@
+import { ErrorBoundary } from '@sentry/react';
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { telHref } from '../format';
 import {
@@ -8,6 +9,7 @@ import {
   type MenuResponse,
   type PublicConfig,
 } from '../lib/api';
+import { initSentry } from '../lib/sentry';
 import type { UnavailableItem } from '../order/checkout';
 import { pricingConfig } from '../order/pricing';
 import { createOrderStore, OrderStoreProvider } from '../order/store';
@@ -23,12 +25,26 @@ export type OrderingAppProps = {
   now?: () => Date;
 };
 
+// Before the island first renders, so a crash while hydrating is reported too. Not at build time,
+// where the server renders the skeleton.
+if (!import.meta.env.SSR) initSentry();
+
 /**
  * The ordering island of /megrendeles. The page is static, so the menu is fetched here, in the
  * browser, on load: the server-rendered HTML is the skeleton. It is fetched again whenever the
  * tab comes back into view, because the orderable days change at the cutoff.
+ *
+ * A render crash replaces the island with a message and is reported to Sentry.
  */
-export function OrderingApp({ initial, now = () => new Date() }: OrderingAppProps) {
+export function OrderingApp(props: OrderingAppProps) {
+  return (
+    <ErrorBoundary fallback={<Crashed config={props.initial.config} />}>
+      <Island {...props} />
+    </ErrorBoundary>
+  );
+}
+
+function Island({ initial, now = () => new Date() }: OrderingAppProps) {
   const baseUrl = apiOrigin();
   if (!baseUrl || !initial.config) {
     return (
@@ -255,6 +271,16 @@ function WeekSkeleton() {
         </div>
       </div>
     </>
+  );
+}
+
+function Crashed({ config }: { config: PublicConfig | null }) {
+  return (
+    <Message title={strings.errors.crashTitle} body={strings.errors.crashBody} config={config}>
+      <button type="button" className="btn btn-primary" onClick={() => window.location.reload()}>
+        {strings.errors.reload}
+      </button>
+    </Message>
   );
 }
 
