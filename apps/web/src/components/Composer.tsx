@@ -56,7 +56,11 @@ export function Composer({
    * so a menu added from the phone's bar moves the form past the message.
    */
   const [triedAt, setTriedAt] = useState<number | null>(null);
+  /** Counts the refused clicks: each one brings the message into view and focuses it. */
+  const [refusals, setRefusals] = useState(0);
   const mainButton = useRef<HTMLButtonElement>(null);
+  const messageRef = useRef<HTMLParagraphElement>(null);
+  const sideRows = useRef<HTMLDivElement>(null);
   const headingId = useId();
   const messageId = useId();
 
@@ -71,6 +75,26 @@ export function Composer({
   const { soupAnswered, mainAnswered } = formSteps(form, menu, date);
   const pristine = isPristine(form);
   const message = triedAt === menuNumber ? status.message : null;
+  /** The side's message sits on its block, once that block is open to the guest. */
+  const atSide = status.slot === 'side' && soupAnswered && mainAnswered;
+
+  useLayoutEffect(() => {
+    if (refusals === 0) return;
+    messageRef.current?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    messageRef.current?.focus({ preventScroll: true });
+    // The side's card rings red and fades; dropping the class first restarts it on every click.
+    const rows = sideRows.current;
+    if (!rows) return;
+    rows.classList.remove('is-flagged');
+    void rows.offsetWidth;
+    rows.classList.add('is-flagged');
+  }, [refusals]);
+
+  const messageElement = message && (
+    <p className="error" id={messageId} ref={messageRef} role="alert" tabIndex={-1}>
+      {message}
+    </p>
+  );
   const lines = priceLines(priced.menu);
   const mainLine = priced.menu.items.find((item) => item.slot === 'main');
 
@@ -186,6 +210,8 @@ export function Composer({
               label={composer.slots.side}
               selected={form.sideId ?? undefined}
               options={dishes([...sides, ...sideExtras])}
+              error={atSide ? messageElement : null}
+              rowsRef={atSide ? sideRows : undefined}
               onSelect={(id) => id && choose(date, { slot: 'side', id })}
             />
           )}
@@ -238,11 +264,7 @@ export function Composer({
             {forint(priced.total)}
           </span>
         </div>
-        {message && (
-          <p className="error" id={messageId} role="alert">
-            {message}
-          </p>
-        )}
+        {!atSide && messageElement}
         <div className="foot-actions">
           {!pristine && (
             <button
@@ -264,6 +286,7 @@ export function Composer({
             onClick={() => {
               if (!status.canAdd) {
                 setTriedAt(menuNumber);
+                setRefusals((n) => n + 1);
                 return;
               }
               setTriedAt(null);
@@ -326,6 +349,8 @@ function ChoiceBlock({
   name,
   label,
   hint = null,
+  error = null,
+  rowsRef,
   selected,
   options,
   onSelect,
@@ -333,6 +358,9 @@ function ChoiceBlock({
   name: string;
   label: string;
   hint?: string | null;
+  /** Why the block still needs an answer, shown under its label. */
+  error?: React.ReactNode;
+  rowsRef?: RefObject<HTMLDivElement | null>;
   /** `undefined` while nothing is chosen. */
   selected: string | null | undefined;
   options: ChoiceOption[];
@@ -345,7 +373,8 @@ function ChoiceBlock({
     <fieldset className="choice-block">
       <legend className="course-label">{label}</legend>
       {hint && <p className="block-hint">{hint}</p>}
-      <div className="choicerows">
+      {error}
+      <div className="choicerows" ref={rowsRef}>
         {options.map((option, index) => {
           const id = `${prefix}-${index}`;
           const checked = selected !== undefined && option.id === selected;

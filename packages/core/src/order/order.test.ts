@@ -298,7 +298,7 @@ describe('orderMessagesHu', () => {
   it('shares the sold-out, variation, side and phone wording', () => {
     expect(orderMessagesHu.sold_out).toBe('Elfogyott.');
     expect(orderMessagesHu.variation_required).toBe('Válassz változatot.');
-    expect(orderMessagesHu.side_required).toBe('Ehhez a főételhez köret jár.');
+    expect(orderMessagesHu.side_required).toBe('Ehhez a főételhez köret jár. Válassz!');
     expect(orderMessagesHu.invalid_phone).toBe('Ellenőrizd a telefonszámot.');
     expect(orderMessagesHu.cutoff_passed).toBe('Erre a napra már nem lehet rendelni.');
   });
