@@ -336,7 +336,9 @@ describe('/etlap', () => {
     expect(has('sides', 'textbox', strings.items.columns.priceWeekday)).toBe(false);
     expect(has('sides', 'textbox', strings.items.columns.priceWeekend)).toBe(false);
     expect(has('sideExtras', 'textbox', strings.items.columns.priceWeekend)).toBe(true);
+    expect(has('allWeek', 'checkbox', strings.items.columns.soupIncluded)).toBe(true);
     expect(has('allWeek', 'checkbox', strings.items.columns.requiresSide)).toBe(true);
+    expect(has('desserts', 'checkbox', strings.items.columns.soupIncluded)).toBe(false);
     expect(has('desserts', 'checkbox', strings.items.columns.requiresSide)).toBe(false);
 
     // An empty weekend price shows the weekday price as its placeholder.
@@ -357,6 +359,11 @@ describe('/etlap', () => {
     fireEvent.click(
       within(row('Cordon bleu')).getByRole('checkbox', {
         name: strings.items.columns.requiresSide,
+      }),
+    );
+    fireEvent.click(
+      within(row('Cordon bleu')).getByRole('checkbox', {
+        name: strings.items.columns.soupIncluded,
       }),
     );
     // Create
@@ -408,7 +415,11 @@ describe('/etlap', () => {
       { id: ids.cordon, name: 'Cordon bleu', active: true },
       { id: ids.porkolt, name: 'Régi pörkölt', active: true },
     ]);
-    expect(body.allWeek[1]).toMatchObject({ priceWeekend: 2850, requiresSide: false });
+    expect(body.allWeek[1]).toMatchObject({
+      priceWeekend: 2850,
+      soupIncluded: true,
+      requiresSide: false,
+    });
     expect(summary('desserts')).toEqual([
       { id: ids.palacsinta, name: 'Túrós palacsinta', active: true },
       { id: ids.somloi, name: 'Somlói galuska', active: false },
