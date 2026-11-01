@@ -23,7 +23,10 @@ the phone number. "Tovább a rendeléshez" opens checkout (O7, #35), a screen of
   main row ("Főétel: Válassz", opens the "Főétel választása" dialog), the variation and side
   blocks when the main needs them ("· KÖTELEZŐ"), pickle and dessert (start on "Nem kérek"), the
   Extra steppers ("Több: Doboz" / "Kevesebb: Doboz"), the price box, the live price, "Ürítés" and
-  "Hozzáadás" (disabled until the menu can be added; the reason shows above it).
+  "Hozzáadás" (a click on a menu that cannot be added shows the reason above it; a missing side
+  shows "Ehhez a főételhez köret jár. Válassz!" under "Köret" instead, scrolls there, focuses it
+  and rings the side card red until it fades). Every refused click scrolls to and focuses the
+  reason again.
 - `etlap-thumbs`: an étlap dish's 192 px photo (`GET /api/images/<id>/<version>/thumb`) leads its
   row in the side, pickle and dessert blocks and in the picker's "Egész héten rendelhető" group,
   and the chosen main's tile (hidden on a phone). Once one dish of a block or group has a photo,

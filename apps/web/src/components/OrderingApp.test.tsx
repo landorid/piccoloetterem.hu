@@ -109,7 +109,7 @@ describe('the order form', () => {
 
   it('says why a menu cannot be added only once "Hozzáadás" is clicked, then keeps it current', async () => {
     await renderOrderPage();
-    const message = () => composer().querySelector('.cf-foot .error')?.textContent ?? null;
+    const message = () => composer().querySelector('.error')?.textContent ?? null;
 
     fireEvent.click(addButton());
     expect(message()).toBe(strings.composer.unanswered);
@@ -196,7 +196,7 @@ describe('the order form', () => {
 });
 
 describe('what a guest selects', () => {
-  const message = () => composer().querySelector('.cf-foot .error')?.textContent ?? null;
+  const message = () => composer().querySelector('.error')?.textContent ?? null;
   const checked = (group: RegExp) =>
     within(block(group))
       .getAllByRole('radio')
@@ -217,6 +217,12 @@ describe('what a guest selects', () => {
     pickMain('Rántott szelet — Csirkemell');
     fireEvent.click(addButton());
     expect(message()).toBe(orderMessagesHu.side_required);
+    const sideMessage = within(block(/^Köret$/)).getByRole('alert');
+    expect(composer().querySelector('.cf-foot .error')).toBeNull();
+    expect(document.activeElement).toBe(sideMessage);
+    addButton().focus();
+    fireEvent.click(addButton());
+    expect(document.activeElement).toBe(sideMessage);
     expect(menusInCart()).toBe(0);
   });
 
@@ -528,7 +534,7 @@ describe("the phone's bar", () => {
 
   it("drops the form's message about a menu the bar added", async () => {
     await renderOrderPage();
-    const message = () => composer().querySelector('.cf-foot .error');
+    const message = () => composer().querySelector('.error');
     pickSoup('Brokkolikrémleves');
     fireEvent.click(addButton());
     expect(message()?.textContent).toBe(strings.composer.mainUnanswered);
