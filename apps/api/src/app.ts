@@ -14,6 +14,7 @@ import { publicMenuRoutes } from './menu/public.routes';
 import { withConfig, withDb } from './middleware';
 import { adminOrderRoutes } from './orders/admin.routes';
 import { publicOrderRoutes } from './orders/public.routes';
+import { adminStatsRoutes } from './stats/admin.routes';
 
 /** Parses `CORS_ORIGINS`: comma-separated exact origins, e.g. `https://admin.example.hu`. */
 export function parseOrigins(value: string | undefined): string[] {
@@ -73,7 +74,9 @@ export const app = new Hono<AppEnv>()
   .get('/admin/ping', (c) => c.json({ userId: c.get('staff').userId }))
   .route('/admin/menu', adminMenuRoutes(menuCacheFor))
   // Working the orders of a delivery date: list, detail, status changes, kitchen summary, delivery list.
-  .route('/admin/orders', adminOrderRoutes());
+  .route('/admin/orders', adminOrderRoutes())
+  // The statistics: the organization's admins only (`requireOrgAdmin` inside the group).
+  .route('/admin/stats', adminStatsRoutes());
 
 app.notFound((c) => c.json({ error: 'not_found', message: `No route for ${c.req.path}` }, 404));
 

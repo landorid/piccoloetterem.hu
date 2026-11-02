@@ -9,6 +9,14 @@ export const paths = {
   summary: '/osszesito',
   weeklyMenu: '/heti-menu',
   items: '/etlap',
+  /** The statistics, for `org:admin` only. */
+  stats: {
+    overview: '/statisztika',
+    dishes: '/statisztika/fogasok',
+    dish: '/statisztika/fogasok/:dishKey',
+    customers: '/statisztika/vevok',
+    customer: '/statisztika/vevok/:ref',
+  },
 } as const;
 
 /**

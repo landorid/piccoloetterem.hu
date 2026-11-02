@@ -1,10 +1,11 @@
 import { useAuth, useClerk, useOrganizationList } from '@clerk/react';
 import { LogOut, ShieldX } from 'lucide-react';
 import { type ReactNode, useEffect, useState } from 'react';
-import { Navigate, Outlet, useLocation } from 'react-router';
+import { Link, Navigate, Outlet, useLocation } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingState } from '@/components/LoadingState';
 import { Button } from '@/components/ui/button';
+import { useIsOrgAdmin } from '@/hooks/use-is-org-admin';
 import { loginPath, paths } from '@/paths';
 import { strings } from '@/strings';
 
@@ -110,4 +111,26 @@ export function RequireStaff() {
       <Outlet />
     </OrgGuard>
   );
+}
+
+/**
+ * The route element above the statistics, inside the staff layout. A member without the
+ * `org:admin` role gets `strings.noPermission` instead of the screen.
+ */
+export function RequireOrgAdmin() {
+  if (!useIsOrgAdmin()) {
+    return (
+      <EmptyState
+        icon={ShieldX}
+        title={strings.noPermission.title}
+        description={strings.noPermission.description}
+        action={
+          <Button variant="outline" asChild>
+            <Link to={paths.orders}>{strings.noPermission.back}</Link>
+          </Button>
+        }
+      />
+    );
+  }
+  return <Outlet />;
 }
