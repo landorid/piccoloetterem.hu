@@ -361,16 +361,16 @@ in parallel, and so do their pages (ST8, ST9) after ST7.
 
 | # | Issue | Area |
 |---|---|---|
-| ST1 #ST1 | `core`: `dishKey`, `customerRef`, `LegacyStatsFile`, rhythm and status, periods, `RestaurantConfig.statistics` | core |
-| ST2-P #ST2P | Private statistics R2 buckets per environment, read-only access to the old database | manual infra |
-| ST2 #ST2 | `scripts/legacy-stats`: old MySQL → legacy stats file → R2 → ST1 ST2-P | infra |
-| ST3 #ST3 | `org:admin` role: API middleware for `/api/admin/stats/*`, admin-only nav group and routes | api admin |
-| ST4 #ST4 | Statistics API foundation: `STATS_BUCKET`, legacy file loader, `GET /api/admin/stats/overview` → ST1 ST2-P ST3 | api |
-| ST5 #ST5 | Dish statistics API: `order_items.dish_key`, `GET /api/admin/stats/dishes[/:dishKey]` → ST4 | api db |
-| ST6 #ST6 | Customer statistics API: `GET /api/admin/stats/customers[/:ref]` → ST4 | api |
-| ST7 #ST7 | Admin: Áttekintés page, period selector and comparison, shadcn charts → ST4 | admin |
-| ST8 #ST8 | Admin: Fogások page and the dish page → ST5 ST7 | admin |
-| ST9 #ST9 | Admin: Vevők page and the customer page → ST6 ST7 | admin |
+| ST1 [#149](https://github.com/landorid/piccoloetterem.hu/issues/149) | `core`: `dishKey`, `customerRef`, `LegacyStatsFile`, rhythm and status, periods, `RestaurantConfig.statistics` | core |
+| ST2-P [#150](https://github.com/landorid/piccoloetterem.hu/issues/150) | Private statistics R2 buckets per environment, read-only access to the old database | manual infra |
+| ST2 [#152](https://github.com/landorid/piccoloetterem.hu/issues/152) | `scripts/legacy-stats`: old MySQL → legacy stats file → R2 → ST1 ST2-P | infra |
+| ST3 [#151](https://github.com/landorid/piccoloetterem.hu/issues/151) | `org:admin` role: API middleware for `/api/admin/stats/*`, admin-only nav group and routes | api admin |
+| ST4 [#153](https://github.com/landorid/piccoloetterem.hu/issues/153) | Statistics API foundation: `STATS_BUCKET`, legacy file loader, `GET /api/admin/stats/overview` → ST1 ST2-P ST3 | api |
+| ST5 [#154](https://github.com/landorid/piccoloetterem.hu/issues/154) | Dish statistics API: `order_items.dish_key`, `GET /api/admin/stats/dishes[/:dishKey]` → ST4 | api db |
+| ST6 [#155](https://github.com/landorid/piccoloetterem.hu/issues/155) | Customer statistics API: `GET /api/admin/stats/customers[/:ref]` → ST4 | api |
+| ST7 [#156](https://github.com/landorid/piccoloetterem.hu/issues/156) | Admin: Áttekintés page, period selector and comparison, shadcn charts → ST4 | admin |
+| ST8 [#157](https://github.com/landorid/piccoloetterem.hu/issues/157) | Admin: Fogások page and the dish page → ST5 ST7 | admin |
+| ST9 [#158](https://github.com/landorid/piccoloetterem.hu/issues/158) | Admin: Vevők page and the customer page → ST6 ST7 | admin |
 
 ## 6. How an agent issue is written and closed
 
