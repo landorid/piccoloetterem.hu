@@ -21,5 +21,5 @@ routes = []
 
 [env.production]
 name = "piccolo-web-production"
-# Moves to piccoloetterem.hu once it has been tested there.
-routes = [{ pattern = "uj.piccoloetterem.hu", custom_domain = true }]
+# www. and uj. (where the site was tested) redirect here with Cloudflare Redirect Rules.
+routes = [{ pattern = "piccoloetterem.hu", custom_domain = true }]
