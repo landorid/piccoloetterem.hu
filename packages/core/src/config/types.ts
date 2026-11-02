@@ -72,4 +72,15 @@ export interface RestaurantConfig {
     /** When orders are taken, `HH:mm`. `until` must equal `cutoff`; `loadConfig` enforces it. */
     intakeWindow: { from: string; until: string };
   };
+  /** Rhythm-and-status parameters of the statistics (`customerStatus`); positive integers. */
+  statistics: {
+    /** A customer is regular with at least this many order days … */
+    regularMinOrderDays: number;
+    /** … in this many months before today. */
+    regularWindowMonths: number;
+    /** A regular customer is slipping after this many median gaps without an order … */
+    slippingGapMultiplier: number;
+    /** … but never before this many open days. */
+    slippingMinDays: number;
+  };
 }

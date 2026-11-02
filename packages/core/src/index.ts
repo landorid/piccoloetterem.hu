@@ -166,3 +166,30 @@ export {
   validateMenu,
   validateSubmission,
 } from './order/validate';
+export { customerRef, dishKey } from './stats/keys';
+export { LegacyStatsFileError, parseLegacyStatsFile } from './stats/parse';
+export {
+  type ComparisonMode,
+  compareTotals,
+  comparisonRange,
+  type DateRange,
+  type Period,
+  type PeriodPreset,
+  resolvePeriod,
+} from './stats/period';
+export {
+  type CustomerRhythm,
+  type CustomerStatus,
+  customerStatus,
+  type OpenDayCalendar,
+  openDaysBetween,
+} from './stats/rhythm';
+export type {
+  CustomerDish,
+  CustomerHistory,
+  CustomerOrder,
+  DailyTotals,
+  DishDay,
+  LegacyStatsFile,
+  MonthlyActive,
+} from './stats/types';

@@ -36,4 +36,10 @@ export const piccolo: RestaurantConfig = {
     openingHours: 'Hétfő–szombat 11:00–16:00',
     intakeWindow: { from: '07:30', until: '09:30' },
   },
+  statistics: {
+    regularMinOrderDays: 8,
+    regularWindowMonths: 6,
+    slippingGapMultiplier: 3,
+    slippingMinDays: 14,
+  },
 };
