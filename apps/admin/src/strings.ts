@@ -349,8 +349,7 @@ export const strings = {
     cards: {
       orders: 'Rendelések',
       menus: 'Menük',
-      /** Where the restaurant offers no pickup the card counts deliveries alone. */
-      delivery: 'Kiszállítás',
+      /** Shown only where pickup is on, or a pickup was taken that day. */
       fulfilment: 'Kiszállítás / elvitel',
       revenue: 'Bevétel',
     },

@@ -27,7 +27,7 @@ flowchart LR
   clerk[Clerk<br/>staff auth]
   ses[Amazon SES<br/>confirmation e-mail]
   sendops[SendOps<br/>observes SES]
-  sentry[Sentry<br/>errors · DSN not set yet]
+  sentry[Sentry<br/>errors · api + web]
   neon[(Neon Postgres<br/>project per customer)]
   gha[GitHub Actions<br/>deploy · migrations]
 
@@ -44,6 +44,7 @@ flowchart LR
   api --> ses
   ses -.-> sendops
   api -.-> sentry
+  web -.-> sentry
   api -.-> logs
   ses -. verify runs .-> inbox
   gha --> cf
@@ -57,7 +58,9 @@ flowchart LR
   directly.
 - **SES** is called with `aws4fetch`, not the AWS SDK. SendOps watches deliveries and is not in the
   sending path.
-- **Sentry** is wired into the API (`@sentry/cloudflare`) but stays off until `SENTRY_DSN` is set.
+- **Sentry** receives errors from the API (`@sentry/cloudflare`, the `SENTRY_DSN` Worker secret) and
+  from the public site's React islands (`@sentry/react`, the `PUBLIC_SENTRY_DSN` repository secret
+  inlined at build). Each stays off without its DSN. The admin does not report to Sentry.
 - **test-inbox** is test tooling for the verify skill, one for the whole project, not deployed by
   CI. See [apps/test-inbox/README.md](apps/test-inbox/README.md).
 - **Google Maps** appears only as a directions link on the landing page.

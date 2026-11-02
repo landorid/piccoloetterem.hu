@@ -89,16 +89,19 @@ function SummaryContent({ summary, pickup }: { summary: DaySummary; pickup: bool
   }
   return (
     <div className="space-y-6 print:space-y-4">
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4 print:grid-cols-4 print:gap-2">
+      <div
+        className={`grid grid-cols-2 gap-4 print:gap-2 ${
+          pickup ? 'md:grid-cols-4 print:grid-cols-4' : 'md:grid-cols-3 print:grid-cols-3'
+        }`}
+      >
         <Stat label={strings.summary.cards.orders} value={String(summary.orderCount)} />
         <Stat label={strings.summary.cards.menus} value={String(summary.menuCount)} />
-        {pickup ? (
+        {/* Without pickup every order is a delivery, so the count would repeat the orders card. */}
+        {pickup && (
           <Stat
             label={strings.summary.cards.fulfilment}
             value={`${summary.deliveryCount} / ${summary.pickupCount}`}
           />
-        ) : (
-          <Stat label={strings.summary.cards.delivery} value={String(summary.deliveryCount)} />
         )}
         <Stat
           label={strings.summary.cards.revenue}

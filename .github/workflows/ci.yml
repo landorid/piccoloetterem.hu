@@ -79,7 +79,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: ${{ github.ref_name == 'main' && 0 || 1 }}
+          # main needs full history to merge into develop. 0 is falsy in expressions, so
+          # `main && 0 || 1` would always give 1: test the other way round.
+          fetch-depth: ${{ github.ref_name != 'main' && 1 || 0 }}
 
       # Every push to main is a release: bump the minor version (scripts/bump-version.mjs), commit
       # and tag it on main, and deploy that commit. Pushes made with GITHUB_TOKEN start no
