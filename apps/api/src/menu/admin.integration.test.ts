@@ -542,6 +542,41 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     expect(active).toHaveLength(1);
   });
 
+  it('deletes an inactive permanent item; its orders keep their snapshot', async () => {
+    const [, read] = await send('GET', '/items');
+    const [, saved] = await send('PUT', '/items', {
+      ...read,
+      pickles: [...read.pickles, sideContent('M2 teszt törlendő')],
+    });
+    const pickle: MenuItem = saved.pickles.at(-1);
+    const orderId = await placeOrder(mondayDate, [pickle]);
+    purges.length = 0;
+
+    expect(await send('DELETE', `/items/${pickle.id}`)).toEqual([
+      400,
+      { error: 'validation', fields: { item: 'active' } },
+    ]);
+    expect(await send('DELETE', `/items/${soup.id}`)).toEqual([
+      400,
+      { error: 'validation', fields: { item: 'not_permanent' } },
+    ]);
+
+    await send('PUT', '/items', { ...saved, pickles: saved.pickles.slice(0, -1) });
+    purges.length = 0;
+    expect(await send('DELETE', `/items/${pickle.id}`)).toEqual([200, { id: pickle.id }]);
+    expect(purges).toEqual([]);
+    const [, after] = await send('GET', '/items');
+    expect(after.pickles.map((item: MenuItem) => item.id)).not.toContain(pickle.id);
+    const lines = await db
+      .select({ menuItemId: orderItems.menuItemId, name: orderItems.name })
+      .from(orderItems)
+      .innerJoin(orderMenus, eq(orderItems.orderMenuId, orderMenus.id))
+      .where(eq(orderMenus.orderId, orderId));
+    expect(lines).toEqual([{ menuItemId: null, name: 'M2 teszt törlendő' }]);
+
+    expect((await send('DELETE', `/items/${pickle.id}`))[0]).toBe(404);
+  });
+
   it('keeps one schedule when two saves of the same week are in flight', async () => {
     // The race needs a saved week: a new week's row insert already makes the second writer wait.
     await send('PUT', `/weeks/${isoYear}/${weekB}`, { days: emptyDays(), featured: [] });

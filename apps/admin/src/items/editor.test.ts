@@ -9,6 +9,7 @@ import {
   errorCount,
   errorsByRow,
   isDirty,
+  menuWithoutItem,
   menuWithSoldOut,
   moveRow,
   newRow,
@@ -19,6 +20,7 @@ import {
   setSoldOut,
   updateRow,
   withoutError,
+  withoutItem,
 } from './editor';
 
 const item = (
@@ -260,6 +262,15 @@ describe('edits', () => {
     expect(setSoldOut(editorFromMenu(menu), 'd1', true).desserts[0]?.soldOut).toBe(true);
     expect(menuWithSoldOut(menu, 'd1', true).desserts[0]?.soldOut).toBe(true);
     expect(menuWithSoldOut(menu, 'd1', true).allWeek).toEqual(menu.allWeek);
+  });
+
+  it('drops a deleted item from the editor and the API shape, keeping other edits', () => {
+    const edited = updateRow(editorFromMenu(menu), 'allWeek', 'a1', { name: 'Rántott hal' });
+    const state = withoutItem(edited, 'a2');
+    expect(names(state, 'allWeek')).toEqual(['Rántott hal', 'Cordon bleu']);
+    expect(isDirty(state, editorFromMenu(menuWithoutItem(menu, 'a2')))).toBe(true);
+    expect(menuWithoutItem(menu, 'a2').allWeek.map((entry) => entry.id)).toEqual(['a1', 'a3']);
+    expect(withoutItem(edited, 'nope')).toBe(edited);
   });
 
   it('is dirty after an edit, not after an edit undone or a sold-out change', () => {

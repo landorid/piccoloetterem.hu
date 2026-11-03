@@ -330,3 +330,31 @@ export function menuWithSoldOut<T extends { id: string; soldOut: boolean }>(
     sideExtras: section('sideExtras'),
   };
 }
+
+/** Drops the stored item `id` after `DELETE /items/:id`, leaving every other edit as it is. */
+export function withoutItem(state: EditorState, id: string): EditorState {
+  const section = sections.find((name) => state[name].some((row) => row.id === id));
+  if (!section) {
+    return state;
+  }
+  return withSection(
+    state,
+    section,
+    state[section].filter((row) => row.id !== id),
+  );
+}
+
+/** The same, on the permanent menu as the API returns it (the query cache). */
+export function menuWithoutItem<T extends { id: string }>(
+  menu: Readonly<Record<PermanentSection, readonly T[]>>,
+  id: string,
+): Record<PermanentSection, T[]> {
+  const section = (name: PermanentSection) => menu[name].filter((item) => item.id !== id);
+  return {
+    allWeek: section('allWeek'),
+    desserts: section('desserts'),
+    pickles: section('pickles'),
+    sides: section('sides'),
+    sideExtras: section('sideExtras'),
+  };
+}

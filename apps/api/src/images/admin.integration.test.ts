@@ -24,6 +24,7 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
   const db = createDb(url ?? '');
   const dessertId = randomUUID();
   const soupId = randomUUID();
+  const doomedId = randomUUID();
 
   let bucket = memoryR2();
   let purgeFails = false;
@@ -118,7 +119,7 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
   });
 
   afterAll(async () => {
-    await db.delete(menuItems).where(inArray(menuItems.id, [dessertId, soupId]));
+    await db.delete(menuItems).where(inArray(menuItems.id, [dessertId, soupId, doomedId]));
     await db.$client.end();
   });
 
@@ -251,6 +252,21 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
       imageVersion: version,
     });
     expect(await versionOf(dessertId)).toBe(version);
+  });
+
+  it('deletes an inactive item with its image objects, and purges nothing', async () => {
+    await db.insert(menuItems).values(item(doomedId, 'dessert', 'IMG teszt törölt desszert'));
+    const [, uploaded] = await upload(doomedId);
+    const [, kept] = await upload(dessertId);
+    bucket.log.length = 0;
+
+    expect(await send('DELETE', `/items/${doomedId}`)).toEqual([200, { id: doomedId }]);
+    expect(await versionOf(doomedId)).toBeUndefined();
+    expect(keys()).toEqual(keysOf(dessertId, kept.item.imageVersion).sort());
+    expect(bucket.log).toEqual([
+      `delete ${doomedId}/${uploaded.item.imageVersion}/large`,
+      `delete ${doomedId}/${uploaded.item.imageVersion}/thumb`,
+    ]);
   });
 
   it('cannot give a weekly item an image or store a version that is not a UUID (CHECKs)', async () => {

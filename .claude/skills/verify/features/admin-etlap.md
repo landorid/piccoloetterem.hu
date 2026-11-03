@@ -18,8 +18,12 @@ removes the item's photo at once, with no save. Guests see the result in the pub
   "<n> hibás mező. Javítsd, majd mentsd újra."
 - `etlap-add`: "Új tétel" adds a row to that section. A new row's "Új tétel elvetése" removes it
   before saving.
-- `etlap-active`: the "Aktív" switch, and "Visszaaktiválás" for inactive rows. Items are never
-  deleted.
+- `etlap-active`: the "Aktív" switch, and "Visszaaktiválás" for inactive rows.
+- `etlap-delete`: a row saved inactive has "Tétel törlése" (trash icon) next to "Visszaaktiválás";
+  a row switched off but not saved yet has none. It asks "Törlöd a tételt?", then sends
+  `DELETE /api/admin/menu/items/<id>`; the toast says "A tétel törölve." and the row is gone,
+  also after a reload. Unsaved edits on other rows stay. The delete cannot be undone: on the
+  shared database, delete only an item this run created.
 - `etlap-order`: "Feljebb" / "Lejjebb" reorder rows within a section.
 - `etlap-discard`: "Változások elvetése" asks "Elveted a változásokat?" and restores the loaded
   values.

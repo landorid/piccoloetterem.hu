@@ -198,6 +198,23 @@ function respond(request: ApiRequest): Reply {
       ? { status: 200, body: { item } }
       : { status: 404, body: { error: 'item_not_found' } };
   }
+  const deleted = /^\/api\/admin\/menu\/items\/([^/]+)$/.exec(request.path);
+  if (deleted?.[1] && request.method === 'DELETE') {
+    const id = deleted[1];
+    const found = Object.values(server)
+      .flat()
+      .find((entry) => entry.id === id);
+    if (!found) {
+      return { status: 404, body: { error: 'item_not_found' } };
+    }
+    if (found.active) {
+      return { status: 400, body: { error: 'validation', fields: { item: 'active' } } };
+    }
+    server = Object.fromEntries(
+      Object.entries(server).map(([name, list]) => [name, list.filter((entry) => entry.id !== id)]),
+    ) as PermanentMenu;
+    return { status: 200, body: { id } };
+  }
   if (request.path === '/api/admin/menu/items' && request.method === 'GET') {
     return { status: 200, body: server };
   }
@@ -578,6 +595,35 @@ describe('/etlap', () => {
     fireEvent.click(within(newSide).getByRole('button', { name: strings.items.removeNewItem }));
     expect(namesIn('sides')).toEqual(['Hasábburgonya', 'Párolt rizs']);
     expect(saveButton().hasAttribute('disabled')).toBe(true);
+  });
+
+  it('deletes an item saved as inactive after a confirmation, keeping unsaved edits', async () => {
+    await renderLoaded();
+    const deleteButton = (name: string) =>
+      within(row(name)).queryByRole('button', { name: strings.items.deleteItem });
+
+    expect(deleteButton('Cordon bleu')).toBeNull();
+    // Switched off but not saved: still active on the server.
+    fireEvent.click(
+      within(row('Cordon bleu')).getByRole('switch', { name: strings.items.columns.active }),
+    );
+    expect(deleteButton('Cordon bleu')).toBeNull();
+    type(row('Steakburgonya'), strings.items.columns.name, 'Steak krumpli');
+
+    fireEvent.click(deleteButton('Régi pörkölt') as HTMLElement);
+    expect(await screen.findByText(/„Régi pörkölt” végleg törlődik/)).toBeTruthy();
+    expect(requests.filter((request) => request.method === 'DELETE')).toEqual([]);
+    fireEvent.click(
+      await screen.findByRole('button', { name: strings.items.deleteConfirm.confirm }),
+    );
+
+    await waitFor(() => expect(screen.queryByDisplayValue('Régi pörkölt')).toBeNull());
+    expect(requests.filter((request) => request.method === 'DELETE')).toEqual([
+      { method: 'DELETE', path: `/api/admin/menu/items/${ids.porkolt}`, body: undefined },
+    ]);
+    expect(namesIn('allWeek')).toEqual(['Rántott csirkemell', 'Cordon bleu']);
+    expect(screen.getByDisplayValue('Steak krumpli')).toBeTruthy();
+    expect(screen.getByText(strings.items.unsaved)).toBeTruthy();
   });
 
   it('discards the edits after a confirmation', async () => {

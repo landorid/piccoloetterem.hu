@@ -199,6 +199,33 @@ export async function swapItemImage(
   });
 }
 
+export type ItemDeletion =
+  | { ok: true; imageVersion: string | null }
+  | { ok: false; reason: 'item_not_found' | 'not_permanent' | 'active' };
+
+/**
+ * Deletes permanent item `id` if it is inactive, and returns the image version it pointed at so
+ * the caller can discard it. Its order lines keep their snapshot and lose the reference
+ * (`on delete set null`). Holds the row lock, so an image upload in flight either lands first and
+ * is returned here, or finds the item gone.
+ */
+export async function deletePermanentItem(db: Db, id: string): Promise<ItemDeletion> {
+  return db.transaction(async (tx) => {
+    const [row] = await tx.select().from(menuItems).where(eq(menuItems.id, id)).for('update');
+    if (!row) {
+      return { ok: false, reason: 'item_not_found' };
+    }
+    if (isWeeklyCategory(row.category)) {
+      return { ok: false, reason: 'not_permanent' };
+    }
+    if (row.active) {
+      return { ok: false, reason: 'active' };
+    }
+    await tx.delete(menuItems).where(eq(menuItems.id, id));
+    return { ok: true, imageVersion: row.imageVersion };
+  });
+}
+
 /** The weeks any of `ids` is scheduled on. */
 export async function weeksOfItems(db: Db, ids: readonly string[]): Promise<IsoWeek[]> {
   if (ids.length === 0) {

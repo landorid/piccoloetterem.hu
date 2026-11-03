@@ -432,6 +432,14 @@ export const strings = {
     moveUp: 'Feljebb',
     moveDown: 'Lejjebb',
     reactivate: 'Visszaaktiválás',
+    deleteItem: 'Tétel törlése',
+    deleted: 'A tétel törölve.',
+    deleteConfirm: {
+      title: 'Törlöd a tételt?',
+      description: (name: string) =>
+        `A(z) „${name}” végleg törlődik a képével együtt. A korábbi rendelésekben megmarad a neve és az ára.`,
+      confirm: 'Törlés',
+    },
     soldOutAfterSave: 'Mentés után állítható',
     save: 'Mentés',
     saving: 'Mentés…',

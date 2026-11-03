@@ -20,8 +20,8 @@ const t = strings.items;
 const actions = {
   /** Up, down and, for a new item, discard. */
   order: 'flex h-8 shrink-0 items-center @4xl:w-24',
-  /** What replaces the active switch and the arrows on an inactive row. */
-  reactivate: 'flex h-8 shrink-0 items-center @4xl:w-40',
+  /** What replaces the active switch and the arrows on an inactive row: reactivate and delete. */
+  reactivate: 'flex h-8 shrink-0 items-center gap-1 @4xl:w-[10.5rem]',
 };
 
 export type ItemsSectionProps = {
@@ -36,6 +36,8 @@ export type ItemsSectionProps = {
   imagePending: ReadonlySet<string>;
   /** The list is being saved: no image operation may start. */
   saving: boolean;
+  /** Stored items that are inactive as saved: only these can be deleted. */
+  deletable: ReadonlySet<string>;
   onEdit: (key: string, patch: Partial<Pick<ItemRow, ItemField>>) => void;
   onAdd: () => void;
   onRemove: (key: string) => void;
@@ -44,6 +46,8 @@ export type ItemsSectionProps = {
   onSoldOut: (id: string, soldOut: boolean) => void;
   onImagePick: (id: string, file: File) => void;
   onImageRemove: (id: string) => void;
+  /** The page confirms first, then deletes. */
+  onDelete: (id: string) => void;
 };
 
 function errorMessage(code: string): string {
@@ -78,6 +82,7 @@ type RowProps = Pick<
   | 'onSoldOut'
   | 'onImagePick'
   | 'onImageRemove'
+  | 'onDelete'
   | 'saving'
 > & {
   row: ItemRow;
@@ -89,12 +94,13 @@ type RowProps = Pick<
   soldOutPending: boolean;
   imageVersion: string | undefined;
   imagePending: boolean;
+  deletable: boolean;
 };
 
 /**
  * One item as one row, as in the weekly menu: name, description and prices, then the variations,
  * allergens and the switches. Inactive rows come last, greyed, with a reactivate button instead of
- * the active switch. The sold-out switch writes at once, so a new item has none until it is saved.
+ * the active switch, and a delete button once the item is saved inactive. The sold-out switch writes at once, so a new item has none until it is saved.
  */
 function EditableRow({
   row,
@@ -106,6 +112,7 @@ function EditableRow({
   soldOutPending,
   imageVersion,
   imagePending,
+  deletable,
   saving,
   onEdit,
   onRemove,
@@ -114,6 +121,7 @@ function EditableRow({
   onSoldOut,
   onImagePick,
   onImageRemove,
+  onDelete,
 }: RowProps) {
   const id = useId();
   const { priced, main } = fieldsOf(section);
@@ -342,6 +350,20 @@ function EditableRow({
             >
               {t.reactivate}
             </Button>
+            {deletable && row.id !== undefined && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground hover:text-destructive"
+                aria-label={t.deleteItem}
+                title={t.deleteItem}
+                disabled={saving || imagePending}
+                onClick={() => row.id !== undefined && onDelete(row.id)}
+              >
+                <Trash2Icon />
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -401,6 +423,7 @@ export function ItemsSection({
   soldOutPending,
   imageVersions,
   imagePending,
+  deletable,
   onAdd,
   ...handlers
 }: ItemsSectionProps) {
@@ -433,6 +456,7 @@ export function ItemsSection({
             soldOutPending={row.id !== undefined && soldOutPending.has(row.id)}
             imageVersion={row.id === undefined ? undefined : imageVersions.get(row.id)}
             imagePending={row.id !== undefined && imagePending.has(row.id)}
+            deletable={row.id !== undefined && deletable.has(row.id)}
             {...handlers}
           />
         ))}

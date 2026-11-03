@@ -107,6 +107,7 @@ week are saved as a whole, in one request: `planPermanentItems` and `planWeek` c
 | `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly and permanent items; 404 `item_not_found` for an unknown id |
 | `PUT /items/:id/image` | Multipart, one file per rendition (`large`, `thumb`) → `{ item }` with its new `imageVersion`. Permanent items only (400 `fields.item: 'not_permanent'`); 404 `item_not_found`; 413 `payload_too_large` over the sum of the caps |
 | `DELETE /items/:id/image` | → `{ item }` without `imageVersion`. Removing an image that is not there is 200 and changes nothing |
+| `DELETE /items/:id` | → `{ id }`. Deletes an inactive permanent item and its image; its order lines keep their snapshot and lose the reference. 400 `fields.item: 'active'` or `'not_permanent'`; 404 `item_not_found`. Purges nothing: guests never see an inactive item |
 | `GET /default-week` | `{ isoYear, isoWeek }`: the week of `firstOrderableDay` now, so next week after this week's last cutoff. The weekly menu editor opens on it. No database query |
 | `GET /weeks/:year/:week` | `{ week: { isoYear, isoWeek, publishedAt }, days: { 1…6: { soups, mains } }, featured }`; an empty draft if the week has no row |
 | `PUT /weeks/:year/:week` | The same shape (server-owned fields are ignored) → the week as `GET` returns it |
