@@ -30,10 +30,7 @@ const itemContent = z.object({
 
 export const itemParams = z.object({ id: z.uuid() });
 
-const permanentItem = itemContent.extend({
-  id: z.uuid().optional(),
-  active: z.boolean().optional(),
-});
+const permanentItem = itemContent.extend({ id: z.uuid().optional() });
 const permanentSection = z.array(permanentItem).readonly();
 
 /**

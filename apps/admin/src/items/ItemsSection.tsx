@@ -16,13 +16,8 @@ import { strings } from '@/strings';
 
 const t = strings.items;
 
-/** The row's own cells, next to the weekly menu's (`cell`) so the two screens line up. */
-const actions = {
-  /** Up, down and, for a new item, discard. */
-  order: 'flex h-8 shrink-0 items-center @4xl:w-24',
-  /** What replaces the active switch and the arrows on an inactive row. */
-  reactivate: 'flex h-8 shrink-0 items-center @4xl:w-40',
-};
+/** Up, down and delete: the row's own cell, next to the weekly menu's (`cell`). */
+const actions = 'flex h-8 shrink-0 items-center @4xl:w-24';
 
 export type ItemsSectionProps = {
   section: PermanentSection;
@@ -40,7 +35,6 @@ export type ItemsSectionProps = {
   onAdd: () => void;
   onRemove: (key: string) => void;
   onMove: (key: string, direction: -1 | 1) => void;
-  onActive: (key: string, active: boolean) => void;
   onSoldOut: (id: string, soldOut: boolean) => void;
   onImagePick: (id: string, file: File) => void;
   onImageRemove: (id: string) => void;
@@ -71,14 +65,7 @@ function fieldsOf(section: PermanentSection) {
 
 type RowProps = Pick<
   ItemsSectionProps,
-  | 'onEdit'
-  | 'onRemove'
-  | 'onMove'
-  | 'onActive'
-  | 'onSoldOut'
-  | 'onImagePick'
-  | 'onImageRemove'
-  | 'saving'
+  'onEdit' | 'onRemove' | 'onMove' | 'onSoldOut' | 'onImagePick' | 'onImageRemove' | 'saving'
 > & {
   row: ItemRow;
   section: PermanentSection;
@@ -93,8 +80,8 @@ type RowProps = Pick<
 
 /**
  * One item as one row, as in the weekly menu: name, description and prices, then the variations,
- * allergens and the switches. Inactive rows come last, greyed, with a reactivate button instead of
- * the active switch. The sold-out switch writes at once, so a new item has none until it is saved.
+ * allergens, the sold-out switch, and the buttons that move and delete it. The sold-out switch
+ * writes at once, so a new item has none until it is saved; deleting waits for the save.
  */
 function EditableRow({
   row,
@@ -110,7 +97,6 @@ function EditableRow({
   onEdit,
   onRemove,
   onMove,
-  onActive,
   onSoldOut,
   onImagePick,
   onImageRemove,
@@ -136,9 +122,8 @@ function EditableRow({
   const error = (field: ItemField) => (
     <FieldError id={`${id}-${field}-error`} code={errors[field]} />
   );
-  const dim = row.active ? undefined : 'opacity-60';
   const checkbox = (field: 'soupIncluded' | 'requiresSide') => (
-    <div className={cn('grid gap-1', cell.toggle, dim)}>
+    <div className={cn('grid gap-1', cell.toggle)}>
       <div className="flex h-8 items-center gap-2 @4xl:justify-center">
         <Checkbox
           id={`${id}-${field}`}
@@ -157,19 +142,13 @@ function EditableRow({
   return (
     <fieldset
       aria-label={label}
-      data-inactive={row.active ? undefined : ''}
       data-sold-out={row.soldOut || undefined}
       className={cn(
         'flex min-w-0 flex-wrap items-start gap-x-2 gap-y-2 border-b py-2 last:border-b-0 @4xl:flex-nowrap',
-        (!row.active || row.soldOut) && 'bg-muted/60',
+        row.soldOut && 'bg-muted/60',
       )}
     >
-      <div
-        className={cn(
-          'flex min-w-0 flex-[3_1_26rem] items-start gap-2 @4xl:contents',
-          dim && '[&>*]:opacity-60',
-        )}
-      >
+      <div className="flex min-w-0 flex-[3_1_26rem] items-start gap-2 @4xl:contents">
         <ItemImageCell
           id={row.id}
           version={imageVersion}
@@ -233,7 +212,7 @@ function EditableRow({
       </div>
 
       <div className="flex min-w-0 flex-[2_1_34rem] flex-wrap items-start gap-2 @4xl:contents">
-        <div className={cn('grid grid-cols-[minmax(0,1fr)] gap-1', cell.variations, dim)}>
+        <div className={cn('grid grid-cols-[minmax(0,1fr)] gap-1', cell.variations)}>
           <VariationsCell
             id={`${id}-variations`}
             value={row.variations}
@@ -243,7 +222,7 @@ function EditableRow({
           />
           {error('variations')}
         </div>
-        <div className={cn('grid grid-cols-[minmax(0,1fr)] gap-1', cell.allergens, dim)}>
+        <div className={cn('grid grid-cols-[minmax(0,1fr)] gap-1', cell.allergens)}>
           <AllergenSelect
             value={row.allergens}
             onChange={(allergens) => onEdit(row.key, { allergens })}
@@ -260,7 +239,7 @@ function EditableRow({
           </>
         )}
         <div
-          className={cn('flex h-8 items-center gap-2', cell.toggle, dim)}
+          className={cn('flex h-8 items-center gap-2', cell.toggle)}
           title={row.id === undefined ? t.soldOutAfterSave : undefined}
         >
           <Switch
@@ -278,72 +257,43 @@ function EditableRow({
             {t.columns.soldOut}
           </Label>
         </div>
-        {row.active ? (
-          <>
-            <div className={cn('flex h-8 items-center gap-2', cell.toggle)}>
-              <Switch
-                id={`${id}-active`}
-                size="sm"
-                checked
-                onCheckedChange={(active) => onActive(row.key, active)}
-              />
-              <Label htmlFor={`${id}-active`} className="font-normal text-xs @4xl:sr-only">
-                {t.columns.active}
-              </Label>
-            </div>
-            <div className={actions.order}>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground"
-                aria-label={t.moveUp}
-                title={t.moveUp}
-                disabled={isFirst}
-                onClick={() => onMove(row.key, -1)}
-              >
-                <ArrowUpIcon />
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="size-8 text-muted-foreground"
-                aria-label={t.moveDown}
-                title={t.moveDown}
-                disabled={isLast}
-                onClick={() => onMove(row.key, 1)}
-              >
-                <ArrowDownIcon />
-              </Button>
-              {row.id === undefined && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 text-muted-foreground hover:text-destructive"
-                  aria-label={t.removeNewItem}
-                  title={t.removeNewItem}
-                  onClick={() => onRemove(row.key)}
-                >
-                  <Trash2Icon />
-                </Button>
-              )}
-            </div>
-          </>
-        ) : (
-          // An inactive item has no place in the order; reactivating puts it last.
-          <div className={actions.reactivate}>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => onActive(row.key, true)}
-            >
-              {t.reactivate}
-            </Button>
-          </div>
-        )}
+        <div className={actions}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground"
+            aria-label={t.moveUp}
+            title={t.moveUp}
+            disabled={isFirst}
+            onClick={() => onMove(row.key, -1)}
+          >
+            <ArrowUpIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground"
+            aria-label={t.moveDown}
+            title={t.moveDown}
+            disabled={isLast}
+            onClick={() => onMove(row.key, 1)}
+          >
+            <ArrowDownIcon />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-8 text-muted-foreground hover:text-destructive"
+            aria-label={t.deleteItem}
+            title={t.deleteItem}
+            onClick={() => onRemove(row.key)}
+          >
+            <Trash2Icon />
+          </Button>
+        </div>
       </div>
 
       {other.length > 0 && (
@@ -384,15 +334,13 @@ function ItemsHeader({ section }: { section: PermanentSection }) {
       {main && toggle(t.columns.soupIncluded)}
       {main && toggle(t.columns.requiresSide)}
       {toggle(t.columns.soldOut)}
-      {toggle(t.columns.active)}
       <span className="w-24 shrink-0" />
     </div>
   );
 }
 
 /**
- * One permanent section as a card of rows, like a day of the weekly menu. Only the active rows
- * move; the inactive ones stay below them.
+ * One permanent section as a card of rows, like a day of the weekly menu.
  */
 export function ItemsSection({
   section,
@@ -405,7 +353,6 @@ export function ItemsSection({
   ...handlers
 }: ItemsSectionProps) {
   const headingId = useId();
-  const activeRows = rows.filter((row) => row.active).length;
 
   return (
     <section
@@ -429,7 +376,7 @@ export function ItemsSection({
             label={t.rowName(t.sections[section], index + 1)}
             errors={errors[row.key]}
             isFirst={index === 0}
-            isLast={index === activeRows - 1}
+            isLast={index === rows.length - 1}
             soldOutPending={row.id !== undefined && soldOutPending.has(row.id)}
             imageVersion={row.id === undefined ? undefined : imageVersions.get(row.id)}
             imagePending={row.id !== undefined && imagePending.has(row.id)}

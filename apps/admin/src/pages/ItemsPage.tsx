@@ -24,9 +24,8 @@ import {
   newRow,
   type RowErrors,
   type RowKeys,
-  removeNewRow,
+  removeRow,
   sections,
-  setActive,
   setSoldOut,
   updateRow,
   withoutError,
@@ -46,8 +45,8 @@ type SoldOutChange = { id: string; soldOut: boolean };
 
 /**
  * The permanent menu at `/etlap`: every section's items edited in place and saved together with
- * one `PUT /api/admin/menu/items`. The sold-out switch and the image act at once, on their own
- * routes.
+ * one `PUT /api/admin/menu/items`; a removed row is deleted by that save. The sold-out switch and
+ * the image act at once, on their own routes.
  */
 export function ItemsPage() {
   const queryClient = useQueryClient();
@@ -208,13 +207,11 @@ export function ItemsPage() {
       setFocusId(`${key}-name`);
     },
     onRemove: (key: string) => {
-      edit((current) => removeNewRow(current, section, key));
+      edit((current) => removeRow(current, section, key));
       setErrors(({ [key]: _, ...rest }) => rest);
     },
     onMove: (key: string, direction: -1 | 1) =>
       edit((current) => moveRow(current, section, key, direction)),
-    onActive: (key: string, active: boolean) =>
-      edit((current) => setActive(current, section, key, active)),
     onSoldOut: (id: string, soldOut: boolean) => markSoldOut.mutate({ id, soldOut }),
     onImagePick: images.upload,
     onImageRemove: setRemovingImage,
