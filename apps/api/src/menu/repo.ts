@@ -88,15 +88,12 @@ const inWeek = (isoYear: number, isoWeek: number) =>
 
 // ---- Items ------------------------------------------------------------------------------------
 
-/**
- * Every permanent item by category and `sort_order`. Rows left inactive from before permanent
- * items were deleted are not listed, so the next save deletes them.
- */
+/** Every permanent item by category and `sort_order`. */
 export async function listPermanentItems(db: Db): Promise<MenuItem[]> {
   const rows = await db
     .select()
     .from(menuItems)
-    .where(and(inArray(menuItems.category, [...permanentCategories]), eq(menuItems.active, true)))
+    .where(inArray(menuItems.category, [...permanentCategories]))
     .orderBy(asc(menuItems.category), asc(menuItems.sortOrder), asc(menuItems.id));
   return rows.map(toMenuItem);
 }
