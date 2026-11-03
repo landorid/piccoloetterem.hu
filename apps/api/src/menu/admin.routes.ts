@@ -19,7 +19,6 @@ import { validate, validationFailed } from '../validation';
 import type { MenuCache } from './cache';
 import {
   addClosedDate,
-  deletePermanentItem,
   getMenuItems,
   type IsoWeek,
   listClosedDates,
@@ -51,7 +50,6 @@ import {
  * - a weekly item's sold-out flag → every week it is scheduled on;
  * - saving the permanent menu, a permanent item's sold-out flag or its image → every week (once
  *   per request), because permanent items appear on every week's menu.
- * Deleting a permanent item purges nothing: only an inactive one can go, and guests never see it.
  * Purging is idempotent, so a repeated request purges again even when it changed nothing.
  *
  * `now` is the request time; tests pass a fixed clock.
@@ -78,8 +76,14 @@ export function adminMenuRoutes(
         if (!result.ok) {
           return validationFailed(c, result.fields);
         }
-        await writePermanentItems(db, result.plan);
+        const deleted = await writePermanentItems(db, result.plan);
         await cacheFor(c.env).purgeAll();
+        // After the purge, so no menu cached from now on names a deleted image.
+        for (const { id, imageVersion } of deleted) {
+          if (imageVersion !== null) {
+            await itemImagesFor(c.env).discard(id, imageVersion);
+          }
+        }
         return c.json(groupPermanentItems(await listPermanentItems(db)));
       })
 
@@ -104,22 +108,6 @@ export function adminMenuRoutes(
           return c.json({ item });
         },
       )
-
-      // An inactive permanent item only. Its image goes after the commit, best effort.
-      .delete('/items/:id', validate('param', itemParams), async (c) => {
-        const { id } = c.req.valid('param');
-        const deletion = await deletePermanentItem(c.get('db'), id);
-        if (!deletion.ok) {
-          if (deletion.reason === 'item_not_found') {
-            throw new HttpError(404, 'item_not_found', `No menu item ${id}`);
-          }
-          return validationFailed(c, { item: deletion.reason });
-        }
-        if (deletion.imageVersion !== null) {
-          await itemImagesFor(c.env).discard(id, deletion.imageVersion);
-        }
-        return c.json({ id });
-      })
 
       // A permanent item's image: its own immediate routes, never part of the save above.
       .route('/items', itemImageRoutes(cacheFor))

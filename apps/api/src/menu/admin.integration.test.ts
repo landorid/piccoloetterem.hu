@@ -253,16 +253,18 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
         await db.delete(menuItems).where(inArray(menuItems.id, doomed));
       }
       await db.delete(closedDates).where(eq(closedDates.date, closedDate));
-      for (const { id, ...row } of permanentBefore) {
-        const stamps = stampsBefore.get(id);
+      // An upsert: a save deletes the items it does not list, such as ones left inactive.
+      for (const row of permanentBefore) {
+        const stamps = stampsBefore.get(row.id);
+        const restored = {
+          ...row,
+          createdAt: sql`${stamps?.created}::timestamptz`,
+          updatedAt: sql`${stamps?.updated}::timestamptz`,
+        };
         await db
-          .update(menuItems)
-          .set({
-            ...row,
-            createdAt: sql`${stamps?.created}::timestamptz`,
-            updatedAt: sql`${stamps?.updated}::timestamptz`,
-          })
-          .where(eq(menuItems.id, id));
+          .insert(menuItems)
+          .values(restored)
+          .onConflictDoUpdate({ target: menuItems.id, set: restored });
       }
     } finally {
       await Promise.all(pending);
@@ -417,7 +419,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
 
   let steak: MenuItem;
 
-  it('saves the permanent menu in one request: create, rename, reorder, deactivate by omission, reactivate', async () => {
+  it('saves the permanent menu in one request: create, rename, reorder, delete by omission', async () => {
     // Send back what GET returns: valid as it is, and it numbers each section from 0.
     const [, read] = await send('GET', '/items');
     const [, base] = await send('PUT', '/items', read);
@@ -476,17 +478,10 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
       { ...steak, sortOrder: n + 1 },
     ]);
     steak = { ...steak, sortOrder: n + 1 };
-    // Left out is inactive, not deleted.
-    expect(second.desserts.slice(d)).toEqual([{ ...pancake, active: false }]);
-
-    // Reactivate the dessert.
-    const [, third] = await send('PUT', '/items', {
-      ...second,
-      desserts: second.desserts.map((item: MenuItem) =>
-        item.id === pancake.id ? { ...item, active: true } : item,
-      ),
-    });
-    expect(third.desserts.slice(d)).toEqual([pancake]);
+    // Left out is deleted.
+    expect(second.desserts.slice(d)).toEqual([]);
+    expect(await db.select().from(menuItems).where(eq(menuItems.id, pancake.id))).toEqual([]);
+    const third = second;
 
     // One invalid item rejects the whole save, including the valid new dessert.
     purges.length = 0;
@@ -542,7 +537,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     expect(active).toHaveLength(1);
   });
 
-  it('deletes an inactive permanent item; its orders keep their snapshot', async () => {
+  it('deletes an item left out of the save; its orders keep their snapshot', async () => {
     const [, read] = await send('GET', '/items');
     const [, saved] = await send('PUT', '/items', {
       ...read,
@@ -552,20 +547,12 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     const orderId = await placeOrder(mondayDate, [pickle]);
     purges.length = 0;
 
-    expect(await send('DELETE', `/items/${pickle.id}`)).toEqual([
-      400,
-      { error: 'validation', fields: { item: 'active' } },
-    ]);
-    expect(await send('DELETE', `/items/${soup.id}`)).toEqual([
-      400,
-      { error: 'validation', fields: { item: 'not_permanent' } },
-    ]);
-
-    await send('PUT', '/items', { ...saved, pickles: saved.pickles.slice(0, -1) });
-    purges.length = 0;
-    expect(await send('DELETE', `/items/${pickle.id}`)).toEqual([200, { id: pickle.id }]);
-    expect(purges).toEqual([]);
-    const [, after] = await send('GET', '/items');
+    const [status, after] = await send('PUT', '/items', {
+      ...saved,
+      pickles: saved.pickles.slice(0, -1),
+    });
+    expect(status).toBe(200);
+    expect(purges).toEqual(['all']);
     expect(after.pickles.map((item: MenuItem) => item.id)).not.toContain(pickle.id);
     const lines = await db
       .select({ menuItemId: orderItems.menuItemId, name: orderItems.name })
@@ -573,8 +560,28 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
       .innerJoin(orderMenus, eq(orderItems.orderMenuId, orderMenus.id))
       .where(eq(orderMenus.orderId, orderId));
     expect(lines).toEqual([{ menuItemId: null, name: 'M2 teszt törlendő' }]);
+  });
 
-    expect((await send('DELETE', `/items/${pickle.id}`))[0]).toBe(404);
+  it('does not list an item left inactive from before, and the next save deletes it', async () => {
+    const [legacy] = await db
+      .insert(menuItems)
+      .values({
+        ...sideContent('M2 teszt régi inaktív'),
+        allergens: [],
+        variations: [],
+        category: 'pickle',
+        active: false,
+        soldOut: false,
+        sortOrder: 99,
+      })
+      .returning();
+    if (!legacy) throw new Error('No item');
+    createdItems.add(legacy.id);
+
+    const [, read] = await send('GET', '/items');
+    expect(read.pickles.map((item: MenuItem) => item.id)).not.toContain(legacy.id);
+    await send('PUT', '/items', read);
+    expect(await db.select().from(menuItems).where(eq(menuItems.id, legacy.id))).toEqual([]);
   });
 
   it('keeps one schedule when two saves of the same week are in flight', async () => {

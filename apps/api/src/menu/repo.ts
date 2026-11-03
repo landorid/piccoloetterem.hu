@@ -88,12 +88,15 @@ const inWeek = (isoYear: number, isoWeek: number) =>
 
 // ---- Items ------------------------------------------------------------------------------------
 
-/** Every permanent item, active and inactive, by category and `sort_order`. */
+/**
+ * Every permanent item by category and `sort_order`. Rows left inactive from before permanent
+ * items were deleted are not listed, so the next save deletes them.
+ */
 export async function listPermanentItems(db: Db): Promise<MenuItem[]> {
   const rows = await db
     .select()
     .from(menuItems)
-    .where(inArray(menuItems.category, [...permanentCategories]))
+    .where(and(inArray(menuItems.category, [...permanentCategories]), eq(menuItems.active, true)))
     .orderBy(asc(menuItems.category), asc(menuItems.sortOrder), asc(menuItems.id));
   return rows.map(toMenuItem);
 }
@@ -109,14 +112,26 @@ export async function getMenuItems(db: Db, ids: readonly string[]): Promise<Menu
   return rows.map(toMenuItem);
 }
 
+/** A permanent item a save deleted, with the image version it pointed at, for the caller to discard. */
+export interface DeletedItem {
+  id: string;
+  imageVersion: string | null;
+}
+
 /**
  * Makes the permanent menu match `plan` in one transaction, holding a lock that serialises these
- * saves: inserts new items, updates changed ones, and sets every other active permanent item
- * inactive (never deleted, so orders keep their reference). `soldOut` and `imageVersion` are
- * left as they are.
+ * saves: inserts new items, updates changed ones, and deletes every other permanent item. Their
+ * order lines keep their snapshot and lose the reference (`on delete set null`). `soldOut` and
+ * `imageVersion` are left as they are. Returns the deleted items.
+ *
+ * An image upload in flight holds the item's row lock: if it commits first, its version is the
+ * one returned here; if the delete commits first, the upload finds no item.
  */
-export async function writePermanentItems(db: Db, plan: PermanentItemsPlan): Promise<void> {
-  await db.transaction(async (tx) => {
+export async function writePermanentItems(
+  db: Db,
+  plan: PermanentItemsPlan,
+): Promise<DeletedItem[]> {
+  return db.transaction(async (tx) => {
     // There is no row that stands for the permanent menu, so a transaction-scoped advisory lock
     // does: without it two saves in flight (a double click) would each keep their new items.
     await tx.execute(sql`select pg_advisory_xact_lock(hashtext('piccolo.permanent_items'))`);
@@ -130,7 +145,7 @@ export async function writePermanentItems(db: Db, plan: PermanentItemsPlan): Pro
               id: ids[index],
               category: item.category,
               soldOut: false,
-              active: item.active,
+              active: true,
               sortOrder: item.sortOrder,
             },
           ]
@@ -146,23 +161,22 @@ export async function writePermanentItems(db: Db, plan: PermanentItemsPlan): Pro
           .set({
             ...contentValues(item.content),
             category: item.category,
-            active: item.active,
+            active: true,
             sortOrder: item.sortOrder,
           })
           .where(eq(menuItems.id, item.id));
       }
     }
 
-    await tx
-      .update(menuItems)
-      .set({ active: false })
+    return tx
+      .delete(menuItems)
       .where(
         and(
           inArray(menuItems.category, [...permanentCategories]),
-          eq(menuItems.active, true),
           ids.length > 0 ? notInArray(menuItems.id, ids) : undefined,
         ),
-      );
+      )
+      .returning({ id: menuItems.id, imageVersion: menuItems.imageVersion });
   });
 }
 
@@ -196,33 +210,6 @@ export async function swapItemImage(
     }
     await tx.update(menuItems).set({ imageVersion }).where(eq(menuItems.id, id));
     return { ok: true, item: toMenuItem({ ...row, imageVersion }), previous: row.imageVersion };
-  });
-}
-
-export type ItemDeletion =
-  | { ok: true; imageVersion: string | null }
-  | { ok: false; reason: 'item_not_found' | 'not_permanent' | 'active' };
-
-/**
- * Deletes permanent item `id` if it is inactive, and returns the image version it pointed at so
- * the caller can discard it. Its order lines keep their snapshot and lose the reference
- * (`on delete set null`). Holds the row lock, so an image upload in flight either lands first and
- * is returned here, or finds the item gone.
- */
-export async function deletePermanentItem(db: Db, id: string): Promise<ItemDeletion> {
-  return db.transaction(async (tx) => {
-    const [row] = await tx.select().from(menuItems).where(eq(menuItems.id, id)).for('update');
-    if (!row) {
-      return { ok: false, reason: 'item_not_found' };
-    }
-    if (isWeeklyCategory(row.category)) {
-      return { ok: false, reason: 'not_permanent' };
-    }
-    if (row.active) {
-      return { ok: false, reason: 'active' };
-    }
-    await tx.delete(menuItems).where(eq(menuItems.id, id));
-    return { ok: true, imageVersion: row.imageVersion };
   });
 }
 

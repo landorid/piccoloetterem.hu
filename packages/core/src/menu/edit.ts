@@ -241,13 +241,10 @@ export type PermanentSection = keyof typeof permanentSections;
 
 const sectionNames = Object.keys(permanentSections) as PermanentSection[];
 
-/** Every permanent item, active or not, by section, each section in `sortOrder`. */
+/** Every permanent item by section, each section in `sortOrder`. */
 export type PermanentMenu = Record<PermanentSection, MenuItem[]>;
 
-/**
- * Groups items by permanent section, each section in `sortOrder` order. Weekly items are left
- * out; inactive ones are kept.
- */
+/** Groups items by permanent section, each section in `sortOrder` order. Weekly items are left out. */
 export function groupPermanentItems(items: readonly MenuItem[]): PermanentMenu {
   const sorted = items.toSorted((a, b) => a.sortOrder - b.sortOrder);
   const section = (name: PermanentSection) =>
@@ -261,13 +258,9 @@ export function groupPermanentItems(items: readonly MenuItem[]): PermanentMenu {
   };
 }
 
-/**
- * A permanent item as staff submit it. With `id` it is that stored permanent item; without, a new
- * one. `active` defaults to `true`: listing an item puts it on the menu unless it says otherwise.
- */
+/** A permanent item as staff submit it. With `id` it is that stored permanent item; without, a new one. */
 export interface PermanentItemDraft extends MenuItemContent {
   id?: string | undefined;
-  active?: boolean | undefined;
 }
 
 /** The whole permanent menu as staff submit it. The order of each section is the order guests see. */
@@ -279,7 +272,6 @@ export interface PlannedPermanentItem {
   /** Fixed by the section the item is listed in. */
   category: PermanentCategory;
   content: MenuItemContent;
-  active: boolean;
   /** The item's position within its section. */
   sortOrder: number;
   /** Whether the item must be written: always for a new one; for a stored one when anything differs. */
@@ -313,8 +305,8 @@ export type PermanentItemsResult =
  * `validateMenuItem` in that category. An `id` must be a stored permanent item (`stored` holds
  * every item the draft references), listed once in the whole draft.
  *
- * Stored permanent items missing from the draft are the caller's to set inactive: they are not
- * part of the plan.
+ * Stored permanent items missing from the draft are the caller's to delete: they are not part of
+ * the plan.
  */
 export function planPermanentItems(
   draft: PermanentItemsDraft,
@@ -328,8 +320,14 @@ export function planPermanentItems(
     const category = permanentSections[name];
     for (const [sortOrder, entry] of draft[name].entries()) {
       const at = `${name}.${sortOrder}`;
-      const { id, active = true, ...content } = entry;
-      const errors = validateMenuItem({ ...content, category, soldOut: false, active, sortOrder });
+      const { id, ...content } = entry;
+      const errors = validateMenuItem({
+        ...content,
+        category,
+        soldOut: false,
+        active: true,
+        sortOrder,
+      });
       for (const [field, code] of Object.entries(errors ?? {})) {
         fields[`${at}.${field}`] = code;
       }
@@ -338,7 +336,7 @@ export function planPermanentItems(
       }
 
       if (id === undefined) {
-        items.push({ id: null, category, content, active, sortOrder, changed: true });
+        items.push({ id: null, category, content, sortOrder, changed: true });
         continue;
       }
 
@@ -359,10 +357,10 @@ export function planPermanentItems(
 
       const changed =
         current.category !== category ||
-        current.active !== active ||
+        !current.active ||
         current.sortOrder !== sortOrder ||
         !sameContent(current, content);
-      items.push({ id, category, content, active, sortOrder, changed });
+      items.push({ id, category, content, sortOrder, changed });
     }
   }
 

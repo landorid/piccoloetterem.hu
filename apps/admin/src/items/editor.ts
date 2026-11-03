@@ -14,9 +14,9 @@ import {
  * `PUT /api/admin/menu/items`. Pure, so the page stays thin. The rules an item must pass are
  * core's (`planPermanentItems`); this module only turns rows into a draft and back.
  *
- * Within a section the rows are in the order guests see them: active rows first, inactive ones
- * after them. That order is also the payload's, so a row's index is its `sortOrder` and the
- * index in an error path (`sides.2.name`) points at the row.
+ * Within a section the rows are in the order guests see them. That order is also the payload's,
+ * so a row's index is its `sortOrder` and the index in an error path (`sides.2.name`) points at
+ * the row. A stored item whose row is removed is deleted by the save.
  */
 
 export const sections = Object.keys(permanentSections) as PermanentSection[];
@@ -38,7 +38,6 @@ export interface ItemRow {
   requiresSide: boolean;
   /** Shown, never saved with the rest: it has its own immediate route. */
   soldOut: boolean;
-  active: boolean;
 }
 
 export type EditorState = Readonly<Record<PermanentSection, readonly ItemRow[]>>;
@@ -73,16 +72,12 @@ function rowFromItem(item: MenuItem): ItemRow {
     soupIncluded: item.soupIncluded,
     requiresSide: item.requiresSide,
     soldOut: item.soldOut,
-    active: item.active,
   };
 }
 
 /** The editor's starting point: the permanent menu as `GET /items` returns it. */
 export function editorFromMenu(menu: PermanentMenu): EditorState {
-  const section = (name: PermanentSection) => {
-    const rows = menu[name].map(rowFromItem);
-    return [...rows.filter((row) => row.active), ...rows.filter((row) => !row.active)];
-  };
+  const section = (name: PermanentSection) => menu[name].map(rowFromItem);
   return {
     allWeek: section('allWeek'),
     desserts: section('desserts'),
@@ -120,7 +115,6 @@ function draftFromRow(row: ItemRow): PermanentItemDraft {
     allergens: row.allergens,
     soupIncluded: row.soupIncluded,
     requiresSide: row.requiresSide,
-    active: row.active,
   };
 }
 
@@ -213,12 +207,7 @@ export function newRow(section: PermanentSection, key: string): ItemRow {
     soupIncluded: false,
     requiresSide: false,
     soldOut: false,
-    active: true,
   };
-}
-
-function activeCount(rows: readonly ItemRow[]): number {
-  return rows.filter((row) => row.active).length;
 }
 
 function withSection(
@@ -229,11 +218,9 @@ function withSection(
   return { ...state, [section]: rows };
 }
 
-/** Adds a row at the end of the section's active items. */
+/** Adds a row at the end of the section. */
 export function addRow(state: EditorState, section: PermanentSection, row: ItemRow): EditorState {
-  const rows = [...state[section]];
-  rows.splice(activeCount(rows), 0, row);
-  return withSection(state, section, rows);
+  return withSection(state, section, [...state[section], row]);
 }
 
 export function updateRow(
@@ -249,20 +236,16 @@ export function updateRow(
   );
 }
 
-/** Drops a row that was never saved. A stored item is deactivated instead, never removed. */
-export function removeNewRow(
-  state: EditorState,
-  section: PermanentSection,
-  key: string,
-): EditorState {
+/** Drops a row: a new one is never sent, a stored one is deleted by the save. */
+export function removeRow(state: EditorState, section: PermanentSection, key: string): EditorState {
   return withSection(
     state,
     section,
-    state[section].filter((row) => row.key !== key || row.id !== undefined),
+    state[section].filter((row) => row.key !== key),
   );
 }
 
-/** Swaps an active row with its neighbour; inactive rows and the ends of the list stay put. */
+/** Swaps a row with its neighbour; the ends of the list stay put. */
 export function moveRow(
   state: EditorState,
   section: PermanentSection,
@@ -274,30 +257,11 @@ export function moveRow(
   const to = from + direction;
   const row = rows[from];
   const other = rows[to];
-  if (!row?.active || !other?.active) {
+  if (!row || !other) {
     return state;
   }
   rows[from] = other;
   rows[to] = row;
-  return withSection(state, section, rows);
-}
-
-/**
- * Deactivating moves a row to the top of the inactive items, reactivating to the end of the
- * active ones, so the active items keep their order and inactive ones stay at the bottom.
- */
-export function setActive(
-  state: EditorState,
-  section: PermanentSection,
-  key: string,
-  active: boolean,
-): EditorState {
-  const row = state[section].find((candidate) => candidate.key === key);
-  if (!row || row.active === active) {
-    return state;
-  }
-  const rows = state[section].filter((candidate) => candidate.key !== key);
-  rows.splice(activeCount(rows), 0, { ...row, active });
   return withSection(state, section, rows);
 }
 
@@ -322,34 +286,6 @@ export function menuWithSoldOut<T extends { id: string; soldOut: boolean }>(
 ): Record<PermanentSection, T[]> {
   const section = (name: PermanentSection) =>
     menu[name].map((item) => (item.id === id ? { ...item, soldOut } : item));
-  return {
-    allWeek: section('allWeek'),
-    desserts: section('desserts'),
-    pickles: section('pickles'),
-    sides: section('sides'),
-    sideExtras: section('sideExtras'),
-  };
-}
-
-/** Drops the stored item `id` after `DELETE /items/:id`, leaving every other edit as it is. */
-export function withoutItem(state: EditorState, id: string): EditorState {
-  const section = sections.find((name) => state[name].some((row) => row.id === id));
-  if (!section) {
-    return state;
-  }
-  return withSection(
-    state,
-    section,
-    state[section].filter((row) => row.id !== id),
-  );
-}
-
-/** The same, on the permanent menu as the API returns it (the query cache). */
-export function menuWithoutItem<T extends { id: string }>(
-  menu: Readonly<Record<PermanentSection, readonly T[]>>,
-  id: string,
-): Record<PermanentSection, T[]> {
-  const section = (name: PermanentSection) => menu[name].filter((item) => item.id !== id);
   return {
     allWeek: section('allWeek'),
     desserts: section('desserts'),

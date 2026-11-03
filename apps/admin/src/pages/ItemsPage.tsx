@@ -1,5 +1,5 @@
 import { ApiError, unwrap } from '@piccolo/api-client';
-import type { MenuItem, PermanentItemsDraft, PermanentSection } from '@piccolo/core';
+import type { PermanentItemsDraft, PermanentSection } from '@piccolo/core';
 import { useMutation, useMutationState, useQuery, useQueryClient } from '@tanstack/react-query';
 import { cn } from 'cn';
 import { TriangleAlertIcon } from 'lucide-react';
@@ -19,19 +19,16 @@ import {
   errorCount,
   errorsByRow,
   isDirty,
-  menuWithoutItem,
   menuWithSoldOut,
   moveRow,
   newRow,
   type RowErrors,
   type RowKeys,
-  removeNewRow,
+  removeRow,
   sections,
-  setActive,
   setSoldOut,
   updateRow,
   withoutError,
-  withoutItem,
 } from '@/items/editor';
 import { ItemsSection } from '@/items/ItemsSection';
 import { imageVersions } from '@/items/image/model';
@@ -48,8 +45,8 @@ type SoldOutChange = { id: string; soldOut: boolean };
 
 /**
  * The permanent menu at `/etlap`: every section's items edited in place and saved together with
- * one `PUT /api/admin/menu/items`. The sold-out switch, the image and deleting an inactive item
- * act at once, on their own routes.
+ * one `PUT /api/admin/menu/items`; a removed row is deleted by that save. The sold-out switch and
+ * the image act at once, on their own routes.
  */
 export function ItemsPage() {
   const queryClient = useQueryClient();
@@ -65,9 +62,6 @@ export function ItemsPage() {
   const images = useItemImages();
   const versions = useMemo(() => imageVersions(menu.data), [menu.data]);
   const [removingImage, setRemovingImage] = useState<string | null>(null);
-  // Kept after the dialog closes, so its text does not empty while it fades out.
-  const [deleting, setDeleting] = useState<MenuItem | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const state = edited ?? base;
   const dirty = edited !== null && base !== undefined && isDirty(edited, base);
@@ -147,32 +141,6 @@ export function ItemsPage() {
     onSuccess: ({ item }) => applySoldOut(item),
   });
 
-  // Not optimistic: the row goes once the API has deleted it, from the cache and from the edits.
-  const deleteItem = useMutation({
-    mutationFn: async ({ id }: { id: string }) =>
-      unwrap(await api.api.admin.menu.items[':id'].$delete({ param: { id } })),
-    onSuccess: ({ id }) => {
-      queryClient.setQueryData(
-        permanentItemsQuery.queryKey,
-        (current) => current && menuWithoutItem(current, id),
-      );
-      setEdited((current) => current && withoutItem(current, id));
-      setErrors(({ [id]: _, ...rest }) => rest);
-      toast.success(strings.items.deleted);
-    },
-  });
-
-  // Saved inactive: an item switched off but not saved yet is still active on the server.
-  const deletable = useMemo(
-    () =>
-      new Set(
-        sections.flatMap((section) =>
-          (menu.data?.[section] ?? []).filter((item) => !item.active).map((item) => item.id),
-        ),
-      ),
-    [menu.data],
-  );
-
   const soldOutPending = new Set(
     useMutationState({
       filters: { mutationKey: soldOutKey, status: 'pending' },
@@ -239,23 +207,14 @@ export function ItemsPage() {
       setFocusId(`${key}-name`);
     },
     onRemove: (key: string) => {
-      edit((current) => removeNewRow(current, section, key));
+      edit((current) => removeRow(current, section, key));
       setErrors(({ [key]: _, ...rest }) => rest);
     },
     onMove: (key: string, direction: -1 | 1) =>
       edit((current) => moveRow(current, section, key, direction)),
-    onActive: (key: string, active: boolean) =>
-      edit((current) => setActive(current, section, key, active)),
     onSoldOut: (id: string, soldOut: boolean) => markSoldOut.mutate({ id, soldOut }),
     onImagePick: images.upload,
     onImageRemove: setRemovingImage,
-    onDelete: (id: string) => {
-      const item = menu.data?.[section].find((entry) => entry.id === id);
-      if (item) {
-        setDeleting(item);
-        setConfirmDelete(true);
-      }
-    },
   });
   // A save's answer is the whole list as it was read; it must not land on a newer image.
   const imageBusy = images.pending.size > 0;
@@ -278,7 +237,6 @@ export function ItemsPage() {
               imageVersions={versions}
               imagePending={images.pending}
               saving={save.isPending}
-              deletable={deletable}
               {...handlers(section)}
             />
           ))}
@@ -334,15 +292,6 @@ export function ItemsPage() {
         confirmLabel={strings.items.image.removeConfirm.confirm}
         destructive
         onConfirm={() => removingImage !== null && images.remove(removingImage)}
-      />
-      <ConfirmDialog
-        open={confirmDelete}
-        onOpenChange={setConfirmDelete}
-        title={strings.items.deleteConfirm.title}
-        description={strings.items.deleteConfirm.description(deleting?.name ?? '')}
-        confirmLabel={strings.items.deleteConfirm.confirm}
-        destructive
-        onConfirm={() => deleting !== null && deleteItem.mutateAsync({ id: deleting.id })}
       />
     </>
   );
