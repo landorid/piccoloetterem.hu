@@ -120,8 +120,8 @@ interleave. A section fixes its items' category and an item's position in it is 
 An item with `id` updates that permanent item, written only if something changed; one without
 `id` is inserted. Every permanent item missing from the payload is deleted, and its image after
 the purge; its order lines keep their name and price snapshot and lose the reference
-(`menu_item_id` set null). Rows left inactive from before deletion existed (2026-11-03) are not
-listed by `GET`, so the next save deletes them. Each `id` must be a stored permanent item, listed
+(`menu_item_id` set null). A row still inactive from before (2026-11-03) is listed like any
+other; saving it lists it, which makes it active again. Each `id` must be a stored permanent item, listed
 once: otherwise `unknown_item`, `weekly_item` or `duplicate`. `soldOut` is not part of the save; it
 has its own route. This replaced the per-item routes of the issue's first scope (decided by Dávid
 on 2026-10-08), matching the old `/etlap` page.
