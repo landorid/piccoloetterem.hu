@@ -9,17 +9,18 @@ removes the item's photo at once, with no save. Guests see the result in the pub
 
 ## Sub-features
 
-- `etlap-load`: every section loads from `GET /api/admin/menu/items`, inactive items included.
+- `etlap-load`: every section loads from `GET /api/admin/menu/items`.
 - `etlap-sold-out`: the "Elfogyott" switch posts to `/api/admin/menu/items/<id>/sold-out`
   immediately. Guests see the item flagged `soldOut`. It is disabled on unsaved rows, which show
   "Mentés után állítható".
 - `etlap-save`: edits mark the page "Nem mentett változások." and enable "Mentés". Saving shows
   the toast "Az étlap elmentve." and the footer "Minden változás elmentve." Invalid fields show
   "<n> hibás mező. Javítsd, majd mentsd újra."
-- `etlap-add`: "Új tétel" adds a row to that section. A new row's "Új tétel elvetése" removes it
-  before saving.
-- `etlap-active`: the "Aktív" switch, and "Visszaaktiválás" for inactive rows. Items are never
-  deleted.
+- `etlap-add`: "Új tétel" adds a row to that section.
+- `etlap-delete`: every row has "Tétel törlése" (trash icon) after "Feljebb" / "Lejjebb". It
+  removes the row at once and marks the page unsaved; "Mentés" then deletes a stored item (its
+  image too), "Változások elvetése" brings it back. Once saved it cannot be undone: on the shared
+  database, delete only an item this run created.
 - `etlap-order`: "Feljebb" / "Lejjebb" reorder rows within a section.
 - `etlap-discard`: "Változások elvetése" asks "Elveted a változásokat?" and restores the loaded
   values.
@@ -48,7 +49,7 @@ Preconditions:
 
 - **Open.** Navigate to `$ADMIN_URL/etlap`. Five `region`s appear, each headed by its section
   name. Each row has textboxes "Név", "Leírás" and "Ár hétköznap (Ft)", a button
-  "Allergének: …", and switches "Elfogyott" and "Aktív".
+  "Allergének: …", and the switch "Elfogyott".
 - **Find the row.** `find` returns one "Elfogyott" switch per row, in page order, after each
   section's "Elfogyott" column header. To be sure which row a ref is, read the section's
   `Név` value with a read-only `javascript_tool` query on

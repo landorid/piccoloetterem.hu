@@ -13,6 +13,7 @@ import { Hono } from 'hono';
 import type { AppEnv, Bindings } from '../env';
 import { HttpError } from '../errors';
 import { itemImageRoutes } from '../images/admin.routes';
+import { itemImagesFor } from '../images/store';
 import { withConfig, withDb } from '../middleware';
 import { validate, validationFailed } from '../validation';
 import type { MenuCache } from './cache';
@@ -75,8 +76,14 @@ export function adminMenuRoutes(
         if (!result.ok) {
           return validationFailed(c, result.fields);
         }
-        await writePermanentItems(db, result.plan);
+        const deleted = await writePermanentItems(db, result.plan);
         await cacheFor(c.env).purgeAll();
+        // After the purge, so no menu cached from now on names a deleted image.
+        for (const { id, imageVersion } of deleted) {
+          if (imageVersion !== null) {
+            await itemImagesFor(c.env).discard(id, imageVersion);
+          }
+        }
         return c.json(groupPermanentItems(await listPermanentItems(db)));
       })
 

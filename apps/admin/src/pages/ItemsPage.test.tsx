@@ -81,7 +81,6 @@ function storedMenu(): PermanentMenu {
         id: ids.porkolt,
         category: 'all_week',
         name: 'Régi pörkölt',
-        active: false,
         sortOrder: 2,
       }),
     ],
@@ -116,7 +115,7 @@ function storedMenu(): PermanentMenu {
 
 /**
  * What `PUT /items` does to the stored menu, enough for these tests: a section fixes the category,
- * the position is the sortOrder, an item without id is inserted, an item left out is set inactive.
+ * the position is the sortOrder, an item without id is inserted, an item left out is deleted.
  */
 function applySave(stored: PermanentMenu, draft: PermanentItemsDraft): PermanentMenu {
   const byId = new Map(
@@ -124,29 +123,24 @@ function applySave(stored: PermanentMenu, draft: PermanentItemsDraft): Permanent
       .flat()
       .map((entry) => [entry.id, entry]),
   );
-  const listed = new Set<string>();
   let inserted = 0;
   const section = (name: PermanentSection) => {
     const saved = draft[name].map((entry: PermanentItemDraft, sortOrder): MenuItem => {
-      const { id, active = true, ...content } = entry;
+      const { id, ...content } = entry;
       const current = id === undefined ? undefined : byId.get(id);
       inserted += id === undefined ? 1 : 0;
       const savedId = id ?? `00000000-0000-4000-8000-${String(inserted).padStart(12, '0')}`;
-      listed.add(savedId);
       return {
         ...content,
         allergens: content.allergens as MenuItem['allergens'],
         id: savedId,
         category: permanentSections[name],
         soldOut: current?.soldOut ?? false,
-        active,
+        active: true,
         sortOrder,
       };
     });
-    const dropped = stored[name]
-      .filter((entry) => !listed.has(entry.id))
-      .map((entry) => ({ ...entry, active: false }));
-    return [...saved, ...dropped];
+    return saved;
   };
   return {
     allWeek: section('allWeek'),
@@ -315,7 +309,7 @@ const saveButton = () => screen.getByRole('button', { name: strings.items.save }
 const puts = () => requests.filter((request) => request.method === 'PUT');
 
 describe('/etlap', () => {
-  it('shows the five sections, inactive items last, prices hidden for sides', async () => {
+  it('shows the five sections, each in order, prices hidden for sides', async () => {
     await renderLoaded();
 
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
@@ -326,10 +320,6 @@ describe('/etlap', () => {
       strings.items.sections.sideExtras,
     ]);
     expect(namesIn('allWeek')).toEqual(['Rántott csirkemell', 'Cordon bleu', 'Régi pörkölt']);
-    expect(row('Régi pörkölt').hasAttribute('data-inactive')).toBe(true);
-    expect(
-      within(row('Régi pörkölt')).getByRole('button', { name: strings.items.reactivate }),
-    ).toBeTruthy();
 
     const has = (name: PermanentSection, role: 'textbox' | 'checkbox', label: string) =>
       within(section(name)).queryAllByRole(role, { name: label }).length > 0;
@@ -350,7 +340,7 @@ describe('/etlap', () => {
     expect(saveButton().hasAttribute('disabled')).toBe(true);
   });
 
-  it('saves edits, a new item, the order and (de)activation in one PUT; a reload shows them', async () => {
+  it('saves edits, a new item, the order and a deletion in one PUT; a reload shows them', async () => {
     const view = await renderLoaded();
 
     // Edit
@@ -392,15 +382,11 @@ describe('/etlap', () => {
     // Reorder
     fireEvent.click(within(row('Párolt rizs')).getByRole('button', { name: strings.items.moveUp }));
     expect(namesIn('sides')).toEqual(['Párolt rizs', 'Hasábburgonya']);
-    // Deactivate
+    // Delete
     fireEvent.click(
-      within(row('Somlói galuska')).getByRole('switch', { name: strings.items.columns.active }),
+      within(row('Somlói galuska')).getByRole('button', { name: strings.items.deleteItem }),
     );
-    // Reactivate
-    fireEvent.click(
-      within(row('Régi pörkölt')).getByRole('button', { name: strings.items.reactivate }),
-    );
-    expect(namesIn('allWeek')).toEqual(['Rántott csirkemell', 'Cordon bleu', 'Régi pörkölt']);
+    expect(namesIn('desserts')).toEqual(['Túrós palacsinta']);
 
     expect(screen.getByText(strings.items.unsaved)).toBeTruthy();
     fireEvent.click(saveButton());
@@ -409,21 +395,18 @@ describe('/etlap', () => {
     expect(puts()).toHaveLength(1);
     const body = puts()[0]?.body as PermanentItemsDraft;
     const summary = (name: PermanentSection) =>
-      body[name].map(({ id, name: itemName, active }) => ({ id, name: itemName, active }));
+      body[name].map(({ id, name: itemName }) => ({ id, name: itemName }));
     expect(summary('allWeek')).toEqual([
-      { id: ids.rantott, name: 'Rántott csirkemell', active: true },
-      { id: ids.cordon, name: 'Cordon bleu', active: true },
-      { id: ids.porkolt, name: 'Régi pörkölt', active: true },
+      { id: ids.rantott, name: 'Rántott csirkemell' },
+      { id: ids.cordon, name: 'Cordon bleu' },
+      { id: ids.porkolt, name: 'Régi pörkölt' },
     ]);
     expect(body.allWeek[1]).toMatchObject({
       priceWeekend: 2850,
       soupIncluded: true,
       requiresSide: false,
     });
-    expect(summary('desserts')).toEqual([
-      { id: ids.palacsinta, name: 'Túrós palacsinta', active: true },
-      { id: ids.somloi, name: 'Somlói galuska', active: false },
-    ]);
+    expect(summary('desserts')).toEqual([{ id: ids.palacsinta, name: 'Túrós palacsinta' }]);
     expect(body.desserts[0]).toMatchObject({ priceWeekday: 860 });
     expect(body.pickles[1]).toEqual({
       name: 'Vegyes savanyúság',
@@ -434,7 +417,6 @@ describe('/etlap', () => {
       allergens: [],
       soupIncluded: false,
       requiresSide: false,
-      active: true,
     });
     expect(summary('sides').map((entry) => entry.id)).toEqual([ids.rizs, ids.hasab]);
     // Sold-out is not part of the save.
@@ -450,9 +432,7 @@ describe('/etlap', () => {
     await renderLoaded();
     expect(namesIn('pickles')).toEqual(['Csemege uborka', 'Vegyes savanyúság']);
     expect(namesIn('sides')).toEqual(['Párolt rizs', 'Hasábburgonya']);
-    expect(namesIn('desserts')).toEqual(['Túrós palacsinta', 'Somlói galuska']);
-    expect(row('Somlói galuska').hasAttribute('data-inactive')).toBe(true);
-    expect(row('Régi pörkölt').hasAttribute('data-inactive')).toBe(false);
+    expect(namesIn('desserts')).toEqual(['Túrós palacsinta']);
     expect(screen.getByDisplayValue('860')).toBeTruthy();
     expect(within(row('Vegyes savanyúság')).getByText('kicsi')).toBeTruthy();
   });
@@ -575,7 +555,7 @@ describe('/etlap', () => {
       within(newSide).queryByRole('textbox', { name: strings.items.columns.priceWeekday }),
     ).toBeNull();
 
-    fireEvent.click(within(newSide).getByRole('button', { name: strings.items.removeNewItem }));
+    fireEvent.click(within(newSide).getByRole('button', { name: strings.items.deleteItem }));
     expect(namesIn('sides')).toEqual(['Hasábburgonya', 'Párolt rizs']);
     expect(saveButton().hasAttribute('disabled')).toBe(true);
   });

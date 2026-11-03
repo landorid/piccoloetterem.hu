@@ -102,7 +102,7 @@ week are saved as a whole, in one request: `planPermanentItems` and `planWeek` c
 
 | Route | Body → response |
 |---|---|
-| `GET /items` | `{ allWeek, desserts, pickles, sides, sideExtras }` (the keys of `PublicMenu.permanent`): every permanent item, active and inactive, each section by `sortOrder` |
+| `GET /items` | `{ allWeek, desserts, pickles, sides, sideExtras }` (the keys of `PublicMenu.permanent`): every permanent item, each section by `sortOrder` |
 | `PUT /items` | The same shape (server-owned fields are ignored) → the permanent menu as `GET` returns it |
 | `POST /items/:id/sold-out` | `{ soldOut }` → `{ item }`. Weekly and permanent items; 404 `item_not_found` for an unknown id |
 | `PUT /items/:id/image` | Multipart, one file per rendition (`large`, `thumb`) → `{ item }` with its new `imageVersion`. Permanent items only (400 `fields.item: 'not_permanent'`); 404 `item_not_found`; 413 `payload_too_large` over the sum of the caps |
@@ -118,8 +118,10 @@ week are saved as a whole, in one request: `planPermanentItems` and `planWeek` c
 **Permanent menu save.** One transaction, holding an advisory lock so two saves in flight cannot
 interleave. A section fixes its items' category and an item's position in it is its `sortOrder`.
 An item with `id` updates that permanent item, written only if something changed; one without
-`id` is inserted. `active` is optional and defaults to `true`. Every permanent item missing from
-the payload is set inactive, never deleted. Each `id` must be a stored permanent item, listed
+`id` is inserted. Every permanent item missing from the payload is deleted, and its image after
+the purge; its order lines keep their name and price snapshot and lose the reference
+(`menu_item_id` set null). A row still inactive from before (2026-11-03) is listed like any
+other; saving it lists it, which makes it active again. Each `id` must be a stored permanent item, listed
 once: otherwise `unknown_item`, `weekly_item` or `duplicate`. `soldOut` is not part of the save; it
 has its own route. This replaced the per-item routes of the issue's first scope (decided by Dávid
 on 2026-10-08), matching the old `/etlap` page.

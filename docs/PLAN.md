@@ -137,6 +137,11 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 - The permanent menu is saved as a whole: one `PUT /api/admin/menu/items` carries every permanent
   item, and an item left out is set inactive, never deleted. Revised 2026-10-08: it replaces the
   per-item create, edit, deactivate and reorder routes; decided by Dávid during M2 (#24, PR #71).
+  Revised 2026-11-03: permanent items have no inactive state any more. An item left out of the
+  save is deleted, with its image; its order lines keep their name and price snapshot and lose
+  the reference (`menu_item_id` set null). Rows still inactive from before show like any other;
+  staff delete the ones they do not want, and the save makes the rest active. Decided by Dávid:
+  the active switch was needless complexity.
 - Allergens per item, EU list of 14, multi-select. They stay on `/megrendeles` as chips on every
   choice row and on the main-course picker: for a distance sale, EU Regulation 1169/2011 Art. 14
   requires allergen information before the purchase is concluded (#58).

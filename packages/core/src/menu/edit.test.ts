@@ -381,11 +381,11 @@ describe('planPermanentItems — rule: the section fixes the category, the posit
     });
   });
 
-  it('inserts new items with their section category, their position, and active by default', () => {
+  it('inserts new items with their section category and their position', () => {
     const result = planPermanentItems(
       permanentDraft({
         allWeek: [side({ name: 'Rántott csirkemell', requiresSide: true })],
-        sides: [side(), side({ name: 'Párolt rizs', active: false })],
+        sides: [side(), side({ name: 'Párolt rizs' })],
         sideExtras: [side({ name: 'Steakburgonya' })],
         pickles: [side({ name: 'Csemege uborka' })],
         desserts: [side({ name: 'Palacsinta' })],
@@ -397,7 +397,6 @@ describe('planPermanentItems — rule: the section fixes the category, the posit
         id: null,
         category: 'all_week',
         content: { ...fries, name: 'Rántott csirkemell', requiresSide: true },
-        active: true,
         sortOrder: 0,
         changed: true,
       },
@@ -405,7 +404,6 @@ describe('planPermanentItems — rule: the section fixes the category, the posit
         id: null,
         category: 'dessert',
         content: { ...fries, name: 'Palacsinta' },
-        active: true,
         sortOrder: 0,
         changed: true,
       },
@@ -413,16 +411,14 @@ describe('planPermanentItems — rule: the section fixes the category, the posit
         id: null,
         category: 'pickle',
         content: { ...fries, name: 'Csemege uborka' },
-        active: true,
         sortOrder: 0,
         changed: true,
       },
-      { id: null, category: 'side', content: fries, active: true, sortOrder: 0, changed: true },
+      { id: null, category: 'side', content: fries, sortOrder: 0, changed: true },
       {
         id: null,
         category: 'side',
         content: { ...fries, name: 'Párolt rizs' },
-        active: false,
         sortOrder: 1,
         changed: true,
       },
@@ -430,7 +426,6 @@ describe('planPermanentItems — rule: the section fixes the category, the posit
         id: null,
         category: 'side_extra',
         content: { ...fries, name: 'Steakburgonya' },
-        active: true,
         sortOrder: 0,
         changed: true,
       },
@@ -442,7 +437,7 @@ describe('planPermanentItems — rule: stored items are updated, and only when s
   const current = storedItem('a', 'side', { ...fries, sortOrder: 1 });
   const other = storedItem('b', 'side', { ...fries, name: 'Párolt rizs', sortOrder: 0 });
 
-  it('leaves an item that is unchanged in content, section, position and active unwritten', () => {
+  it('leaves an item that is unchanged in content, section and position unwritten', () => {
     const result = planPermanentItems(
       permanentDraft({ sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a' })] }),
       stored(current, other),
@@ -471,12 +466,6 @@ describe('planPermanentItems — rule: stored items are updated, and only when s
         sideExtras: [side({ id: 'a' })],
       }),
     ],
-    [
-      'active',
-      permanentDraft({
-        sides: [side({ id: 'b', name: 'Párolt rizs' }), side({ id: 'a', active: false })],
-      }),
-    ],
   ])('writes an item when %s changed', (_change, draft) => {
     const result = planPermanentItems(draft, stored(current, other));
     expect(result.ok && result.plan.items.find((item) => item.id === 'a')?.changed).toBe(true);
@@ -493,20 +482,12 @@ describe('planPermanentItems — rule: stored items are updated, and only when s
     });
   });
 
-  it('reactivates an inactive item listed without `active`', () => {
+  it('writes a listed item that is stored inactive, which puts it back on the menu', () => {
     const result = planPermanentItems(
       permanentDraft({ sides: [side({ id: 'a' })] }),
       stored({ ...current, sortOrder: 0, active: false }),
     );
-    expect(result.ok && result.plan.items[0]).toMatchObject({ active: true, changed: true });
-  });
-
-  it('keeps an item listed with `active: false` inactive', () => {
-    const result = planPermanentItems(
-      permanentDraft({ sides: [side({ id: 'a', active: false })] }),
-      stored({ ...current, sortOrder: 0, active: false }),
-    );
-    expect(result.ok && result.plan.items[0]).toMatchObject({ active: false, changed: false });
+    expect(result.ok && result.plan.items[0]?.changed).toBe(true);
   });
 });
 
@@ -580,8 +561,8 @@ describe('permanentDraftIds', () => {
 });
 
 describe('groupPermanentItems', () => {
-  it('groups items by section in sortOrder, keeping inactive items and leaving weekly ones out', () => {
-    const rice = storedItem('rice', 'side', { sortOrder: 1, active: false });
+  it('groups items by section in sortOrder, leaving weekly ones out', () => {
+    const rice = storedItem('rice', 'side', { sortOrder: 1 });
     const chips = storedItem('chips', 'side', { sortOrder: 0 });
     const pancake = storedItem('pancake', 'dessert');
     const stewItem = storedItem('stew', 'daily_main');

@@ -1,8 +1,8 @@
 /*
  * An item's image against a real database, with the in-memory bucket. Runs only when
- * DATABASE_URL is set in the shell. It creates its own two items (an inactive dessert and a
- * weekly soup) and deletes them afterwards; the whole-list save it sends is the list it read, so
- * every other permanent item stays as it was.
+ * DATABASE_URL is set in the shell. It creates its own items (desserts and a weekly soup) and
+ * deletes them afterwards; the whole-list saves it sends are the list it read, less at most its own
+ * item, so every other permanent item stays as it was.
  */
 import { randomUUID } from 'node:crypto';
 import type { MenuItem } from '@piccolo/core';
@@ -24,6 +24,7 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
   const db = createDb(url ?? '');
   const dessertId = randomUUID();
   const soupId = randomUUID();
+  const doomedId = randomUUID();
 
   let bucket = memoryR2();
   let purgeFails = false;
@@ -97,7 +98,7 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
     soupIncluded: false,
     requiresSide: false,
     soldOut: false,
-    active: false,
+    active: true,
     sortOrder: 999,
   });
 
@@ -118,7 +119,7 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
   });
 
   afterAll(async () => {
-    await db.delete(menuItems).where(inArray(menuItems.id, [dessertId, soupId]));
+    await db.delete(menuItems).where(inArray(menuItems.id, [dessertId, soupId, doomedId]));
     await db.$client.end();
   });
 
@@ -251,6 +252,29 @@ describe.skipIf(!url)('item images against DATABASE_URL', () => {
       imageVersion: version,
     });
     expect(await versionOf(dessertId)).toBe(version);
+  });
+
+  it('deletes an item a save leaves out, and its image objects only after the purge', async () => {
+    await db.insert(menuItems).values(item(doomedId, 'dessert', 'IMG teszt törölt desszert'));
+    const [, uploaded] = await upload(doomedId);
+    const [, kept] = await upload(dessertId);
+    const [, menu] = await send('GET', '/items');
+    bucket.log.length = 0;
+
+    const [status, saved] = await send('PUT', '/items', {
+      ...menu,
+      desserts: menu.desserts.filter((dessert: MenuItem) => dessert.id !== doomedId),
+    });
+
+    expect(status).toBe(200);
+    expect(saved.desserts.map((dessert: MenuItem) => dessert.id)).not.toContain(doomedId);
+    expect(await versionOf(doomedId)).toBeUndefined();
+    expect(keys()).toEqual(keysOf(dessertId, kept.item.imageVersion).sort());
+    expect(bucket.log).toEqual([
+      'purge all',
+      `delete ${doomedId}/${uploaded.item.imageVersion}/large`,
+      `delete ${doomedId}/${uploaded.item.imageVersion}/thumb`,
+    ]);
   });
 
   it('cannot give a weekly item an image or store a version that is not a UUID (CHECKs)', async () => {
