@@ -562,7 +562,7 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     expect(lines).toEqual([{ menuItemId: null, name: 'M2 teszt törlendő' }]);
   });
 
-  it('does not list an item left inactive from before, and the next save deletes it', async () => {
+  it('lists an item left inactive from before; saving it makes it active again', async () => {
     const [legacy] = await db
       .insert(menuItems)
       .values({
@@ -579,9 +579,9 @@ describe.skipIf(!url)('admin menu API against DATABASE_URL', () => {
     createdItems.add(legacy.id);
 
     const [, read] = await send('GET', '/items');
-    expect(read.pickles.map((item: MenuItem) => item.id)).not.toContain(legacy.id);
-    await send('PUT', '/items', read);
-    expect(await db.select().from(menuItems).where(eq(menuItems.id, legacy.id))).toEqual([]);
+    expect(read.pickles.map((item: MenuItem) => item.id)).toContain(legacy.id);
+    const [, saved] = await send('PUT', '/items', read);
+    expect(saved.pickles.find((item: MenuItem) => item.id === legacy.id)?.active).toBe(true);
   });
 
   it('keeps one schedule when two saves of the same week are in flight', async () => {
