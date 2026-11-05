@@ -70,6 +70,22 @@ describe('core', () => {
     ]);
   });
 
+  it('exports the statistics domain', () => {
+    expect(Object.keys(core)).toEqual(
+      expect.arrayContaining([
+        'dishKey',
+        'customerRef',
+        'parseLegacyStatsFile',
+        'LegacyStatsFileError',
+        'openDaysBetween',
+        'customerStatus',
+        'resolvePeriod',
+        'comparisonRange',
+        'compareTotals',
+      ]),
+    );
+  });
+
   it('does not export the Piccolo instance directly', () => {
     expect(Object.keys(core)).not.toContain('piccolo');
   });

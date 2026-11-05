@@ -39,6 +39,22 @@ describe('loadConfig', () => {
       'RestaurantConfig "piccolo": contact.intakeWindow.until (10:00) must equal cutoff (09:30).',
     );
   });
+  it.each([
+    [{ slippingMinDays: 0 }, 'statistics.slippingMinDays (0) must be a positive integer.'],
+    [
+      { regularWindowMonths: 1.5 },
+      'statistics.regularWindowMonths (1.5) must be a positive integer.',
+    ],
+    [{ regularMinOrderDays: 1 }, 'statistics.regularMinOrderDays must be at least 2'],
+  ])('rejects statistics parameters %o', async (statistics, message) => {
+    vi.doMock('./piccolo', async (importOriginal) => {
+      const { piccolo } = await importOriginal<typeof import('./piccolo')>();
+      return { piccolo: { ...piccolo, statistics: { ...piccolo.statistics, ...statistics } } };
+    });
+    vi.resetModules();
+    const { loadConfig: loadMocked } = await import('./load');
+    expect(() => loadMocked({ RESTAURANT: 'piccolo' })).toThrow(message);
+  });
 });
 
 describe('the Piccolo instance', () => {
@@ -63,5 +79,14 @@ describe('the Piccolo instance', () => {
     expect(config.pickupEnabled).toBe(false);
     expect(config.contact.openingHours).toBe('Hétfő–szombat 11:00–16:00');
     expect(config.contact.intakeWindow).toEqual({ from: '07:30', until: config.cutoff });
+  });
+
+  it('carries the statistics parameters', () => {
+    expect(config.statistics).toEqual({
+      regularMinOrderDays: 8,
+      regularWindowMonths: 6,
+      slippingGapMultiplier: 3,
+      slippingMinDays: 14,
+    });
   });
 });
