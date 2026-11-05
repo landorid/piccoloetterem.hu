@@ -3,11 +3,15 @@ import { Check, X } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
 import { dayFull, forint } from '../format';
 import { thumbSrc } from '../lib/api';
+import { probeSheet } from '../lib/sheetProbe';
 import type { IsoDate } from '../order/cart';
 import { unitPrice } from '../order/pricing';
 import { strings } from '../strings';
 import { AllergenChips } from './Allergens';
 import { cls, SoldOut, Tile } from './parts';
+
+/** Past the sheet's 260 ms rise, so it is measured where it comes to rest. */
+const probeDelay = 500;
 
 interface MainPickerProps {
   open: boolean;
@@ -49,6 +53,23 @@ export function MainPicker({
       if (typeof el.close === 'function') el.close();
       else el.removeAttribute('open');
     }
+  }, [open]);
+
+  // Once the rise has settled, and again after each resize (a phone turned on its side).
+  useEffect(() => {
+    const el = dialog.current;
+    if (!open || !el) return;
+    const modal = typeof el.showModal === 'function';
+    let timer = window.setTimeout(() => probeSheet(el, modal), probeDelay);
+    const onResize = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => probeSheet(el, modal), probeDelay);
+    };
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
+    };
   }, [open]);
 
   const day = Object.values(menu.days).find((entry) => entry.date === date);
