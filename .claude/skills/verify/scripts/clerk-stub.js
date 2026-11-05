@@ -1,11 +1,13 @@
 // Stands in for `@clerk/react` in the admin under verification (admin-vite.config.mjs aliases it).
-// Signed in as a member of VITE_CLERK_ORG_ID; `getToken` hands the API the run's staff token, which
+// Signed in as a member of VITE_CLERK_ORG_ID with the role VITE_VERIFY_ORG_ROLE (prepare.mjs);
+// `getToken` hands the API the run's staff token, which
 // the real `requireStaff` verifies. Covers exactly the exports apps/admin imports; a new import
 // from `@clerk/react` fails the admin's build here until it is added.
 // No imports and no JSX: this file lives outside apps/admin, where `react` does not resolve.
 
 const orgId = import.meta.env.VITE_CLERK_ORG_ID;
 const token = import.meta.env.VITE_VERIFY_STAFF_TOKEN;
+const orgRole = import.meta.env.VITE_VERIFY_ORG_ROLE;
 
 const signOut = async () => {
   console.info('[verify] Clerk signOut called (stub: still signed in)');
@@ -23,6 +25,7 @@ export const useAuth = () => ({
   userId: 'user_verify',
   orgId,
   getToken,
+  has: ({ role }) => role === orgRole,
 });
 
 export const useClerk = () => ({ signOut });

@@ -25,7 +25,7 @@ function bearerToken(authorization: string | undefined): string | undefined {
  * Guards `/api/admin/*`. Staff and the API are on different origins, so the
  * session arrives as `Authorization: Bearer`. `authenticateRequest` reads that
  * header. No session → 401. A session whose `orgId` is not `CLERK_ORG_ID` → 403.
- * On success `c.get('staff')` is `{ userId, orgId }`.
+ * On success `c.get('staff')` is `{ userId, orgId, orgRole }`.
  *
  * `orgId` is taken from the session token only. Clerk omits it when the user
  * has no active organization, and an empty `authorizedParties` list makes Clerk
@@ -72,6 +72,20 @@ export const requireStaff = createMiddleware<AppEnv>(async (c, next) => {
     return c.json({ error: 'forbidden' as const }, 403);
   }
 
-  c.set('staff', { userId, orgId });
+  c.set('staff', { userId, orgId, orgRole: auth.orgRole ?? null });
+  await next();
+});
+
+/** The Clerk organization role that may see the statistics (docs/PLAN.md §2 "Staff"). */
+export const ORG_ADMIN_ROLE = 'org:admin';
+
+/**
+ * Guards a route group for the organization's admins only. Runs after `requireStaff`, so the
+ * session is already a member of `CLERK_ORG_ID`; any other role → 403.
+ */
+export const requireOrgAdmin = createMiddleware<AppEnv>(async (c, next) => {
+  if (c.get('staff').orgRole !== ORG_ADMIN_ROLE) {
+    return c.json({ error: 'forbidden' as const }, 403);
+  }
   await next();
 });

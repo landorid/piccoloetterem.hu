@@ -56,7 +56,7 @@ export interface Bindings {
    * Dashboard → API keys → Show JWT public key. Without it the Worker would fetch JWKS per request.
    */
   CLERK_JWT_KEY?: string;
-  /** Organization whose members are this restaurant's staff. The only role. */
+  /** Organization whose members are this restaurant's staff. Its `org:admin` role also sees the statistics. */
   CLERK_ORG_ID?: string;
   /**
    * Comma-separated admin origins allowed to mint the session token (`azp`).
@@ -80,6 +80,8 @@ export interface Bindings {
 export interface Staff {
   userId: string;
   orgId: string;
+  /** The session's organization role, e.g. `org:admin` or `org:member`. */
+  orgRole: string | null;
 }
 
 export interface AppEnv {

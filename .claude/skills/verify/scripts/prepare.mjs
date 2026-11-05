@@ -13,6 +13,9 @@
 // so it verifies the token below exactly as it verifies Clerk's (signature, azp, org). Nothing is
 // sent to Clerk, and the Clerk keys in .dev.vars are never read.
 //
+// The session's organization role is `org:admin`, or `org:member` with VERIFY_ORG_ROLE=member in
+// the environment of up.sh (the statistics are for `org:admin` only).
+//
 // Usage: node prepare.mjs <runDir> <apiUrl> <webUrl> <adminUrl> <devVars|-> <rootEnv|->
 import { createSign, generateKeyPairSync } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -22,6 +25,11 @@ const [runDir, apiUrl, webUrl, adminUrl, devVarsPath, rootEnvPath] = process.arg
 const state = join(runDir, 'state');
 const ORG_ID = 'org_verify';
 const USER_ID = 'user_verify';
+const ROLE = process.env.VERIFY_ORG_ROLE || 'admin';
+if (ROLE !== 'admin' && ROLE !== 'member') {
+  console.error(`VERIFY_ORG_ROLE must be admin or member, not ${ROLE}`);
+  process.exit(1);
+}
 
 /** `KEY=value` lines; quotes stripped. Multi-line values are skipped (only the Clerk PEM is one). */
 function readEnv(path) {
@@ -68,7 +76,7 @@ const claims = {
   sub: USER_ID,
   sts: 'active',
   v: 2,
-  o: { id: ORG_ID, rol: 'admin', slg: 'verify' },
+  o: { id: ORG_ID, rol: ROLE, slg: 'verify' },
 };
 const unsigned = `${base64url(JSON.stringify(header))}.${base64url(JSON.stringify(claims))}`;
 const signature = createSign('RSA-SHA256').update(unsigned).sign(privateKey).toString('base64url');
@@ -102,12 +110,14 @@ writeFileSync(
     `VITE_CLERK_ORG_ID=${ORG_ID}`,
     `VITE_API_URL=${apiUrl}`,
     `VITE_VERIFY_STAFF_TOKEN=${token}`,
+    `VITE_VERIFY_ORG_ROLE=org:${ROLE}`,
     '',
   ].join('\n'),
   { mode: 0o600 },
 );
 writeFileSync(join(state, 'staff.jwt'), token, { mode: 0o600 });
 writeFileSync(join(state, 'db.url'), databaseUrl, { mode: 0o600 });
+console.log(`staff: org:${ROLE}`);
 console.log(
   ses.length
     ? `e-mail: SES keys copied; the API sends only to @${INBOX_DOMAIN}`

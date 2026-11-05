@@ -12,13 +12,19 @@ const { authenticateRequest, createClerkClient } = vi.hoisted(() => {
     if (authorization === 'Bearer member') {
       return {
         isAuthenticated: true as const,
-        toAuth: () => ({ userId: 'user_member', orgId: 'org_piccolo' }),
+        toAuth: () => ({ userId: 'user_member', orgId: 'org_piccolo', orgRole: 'org:member' }),
+      };
+    }
+    if (authorization === 'Bearer admin') {
+      return {
+        isAuthenticated: true as const,
+        toAuth: () => ({ userId: 'user_admin', orgId: 'org_piccolo', orgRole: 'org:admin' }),
       };
     }
     if (authorization === 'Bearer stranger') {
       return {
         isAuthenticated: true as const,
-        toAuth: () => ({ userId: 'user_stranger', orgId: 'org_other' }),
+        toAuth: () => ({ userId: 'user_stranger', orgId: 'org_other', orgRole: 'org:admin' }),
       };
     }
     if (authorization === 'Bearer no-org') {
@@ -186,6 +192,52 @@ describe('GET /api/admin/config', () => {
     );
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ name: 'Piccolo Club Étterem', pickupEnabled: false });
+  });
+});
+
+describe('GET /api/admin/stats/access', () => {
+  it('returns 401 without a session', async () => {
+    const res = await app.request('/api/admin/stats/access', {}, staffEnv);
+    expect(res.status).toBe(401);
+    expect(await res.json()).toEqual({ error: 'unauthenticated' });
+  });
+
+  it('returns 403 to an org:member', async () => {
+    const res = await app.request(
+      '/api/admin/stats/access',
+      { headers: { Authorization: 'Bearer member' } },
+      staffEnv,
+    );
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'forbidden' });
+  });
+
+  it('returns 403 to an unknown stats path for an org:member', async () => {
+    const res = await app.request(
+      '/api/admin/stats/nope',
+      { headers: { Authorization: 'Bearer member' } },
+      staffEnv,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 403 to an org:admin of another organization', async () => {
+    const res = await app.request(
+      '/api/admin/stats/access',
+      { headers: { Authorization: 'Bearer stranger' } },
+      staffEnv,
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 204 to an org:admin of CLERK_ORG_ID', async () => {
+    const res = await app.request(
+      '/api/admin/stats/access',
+      { headers: { Authorization: 'Bearer admin' } },
+      staffEnv,
+    );
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe('');
   });
 });
 

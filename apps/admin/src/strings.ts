@@ -52,6 +52,12 @@ export const strings = {
     summary: 'Napi összesítő',
     weeklyMenu: 'Heti menü',
     items: 'Étlap',
+    stats: {
+      label: 'Statisztika',
+      overview: 'Áttekintés',
+      dishes: 'Fogások',
+      customers: 'Vevők',
+    },
   },
   sidebar: {
     toggle: 'Oldalsáv kinyitása vagy becsukása',
@@ -91,6 +97,11 @@ export const strings = {
       'Ez a fiók nem tagja az étterem személyzetének. Jelentkezz be egy másik fiókkal, vagy kérj meghívót.',
     activationFailed:
       'Nem sikerült megnyitni az étterem fiókját. Jelentkezz ki, majd próbáld újra.',
+  },
+  noPermission: {
+    title: 'Nincs jogosultságod',
+    description: 'Ezt az oldalt csak az étterem adminisztrátorai látják.',
+    back: 'Vissza a rendelésekhez',
   },
   confirm: {
     confirm: 'Megerősítés',

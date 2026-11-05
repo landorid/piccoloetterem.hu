@@ -12,13 +12,19 @@ const clerk = vi.hoisted(() => ({
   isLoaded: true,
   isSignedIn: true,
   orgId: 'org_piccolo' as string | null,
+  orgRole: 'org:member',
   memberships: [{ organization: { id: 'org_piccolo' } }],
   setActive: vi.fn(async (_params: { organization: string }) => {}),
   signOut: vi.fn(async (_options: { redirectUrl: string }) => {}),
 }));
 
 vi.mock('@clerk/react', () => ({
-  useAuth: () => ({ isLoaded: clerk.isLoaded, isSignedIn: clerk.isSignedIn, orgId: clerk.orgId }),
+  useAuth: () => ({
+    isLoaded: clerk.isLoaded,
+    isSignedIn: clerk.isSignedIn,
+    orgId: clerk.orgId,
+    has: ({ role }: { role: string }) => role === clerk.orgRole,
+  }),
   useClerk: () => ({ signOut: clerk.signOut }),
   useOrganizationList: () => ({
     isLoaded: true,
@@ -71,6 +77,7 @@ beforeEach(() => {
     isLoaded: true,
     isSignedIn: true,
     orgId: 'org_piccolo',
+    orgRole: 'org:member',
     memberships: [{ organization: { id: 'org_piccolo' } }],
   });
   vi.stubEnv('VITE_CLERK_ORG_ID', 'org_piccolo');
@@ -210,6 +217,70 @@ describe('signed in as staff', () => {
       `${window.location.origin}${paths.weeklyMenu}`,
     );
     expect(screen.queryByText(`${strings.errors.codeLabel}: unauthenticated`)).toBeNull();
+  });
+});
+
+describe('statistics', () => {
+  const statsPaths = [
+    paths.stats.overview,
+    paths.stats.dishes,
+    '/statisztika/fogasok/rantott-csirke',
+    paths.stats.customers,
+    '/statisztika/vevok/abc123',
+  ];
+
+  it('hides the Statisztika group from an org:member', async () => {
+    renderAt(paths.orders);
+
+    await screen.findByRole('navigation', { name: strings.nav.label });
+    expect(screen.queryByRole('navigation', { name: strings.nav.stats.label })).toBeNull();
+    expect(screen.queryByText(strings.nav.stats.label)).toBeNull();
+  });
+
+  it.each(statsPaths)('shows no permission to an org:member on %s', async (path) => {
+    renderAt(path);
+
+    expect(await screen.findByText(strings.noPermission.title)).toBeTruthy();
+    expect(screen.queryByText(strings.placeholder.title)).toBeNull();
+    expect(screen.getByRole('link', { name: strings.noPermission.back }).getAttribute('href')).toBe(
+      paths.orders,
+    );
+  });
+
+  it('shows the Statisztika group to an org:admin', async () => {
+    clerk.orgRole = 'org:admin';
+    renderAt(paths.orders);
+
+    const nav = await screen.findByRole('navigation', { name: strings.nav.stats.label });
+    expect(
+      within(nav)
+        .getAllByRole('link')
+        .map((link) => [link.textContent, link.getAttribute('href')]),
+    ).toEqual([
+      [strings.nav.stats.overview, paths.stats.overview],
+      [strings.nav.stats.dishes, paths.stats.dishes],
+      [strings.nav.stats.customers, paths.stats.customers],
+    ]);
+  });
+
+  it.each(statsPaths)('opens %s for an org:admin', async (path) => {
+    clerk.orgRole = 'org:admin';
+    renderAt(path);
+
+    expect(await screen.findByText(strings.placeholder.title)).toBeTruthy();
+    expect(screen.queryByText(strings.noPermission.title)).toBeNull();
+  });
+
+  it('marks only the open stats page as active', async () => {
+    clerk.orgRole = 'org:admin';
+    renderAt('/statisztika/vevok/abc123');
+
+    const nav = await screen.findByRole('navigation', { name: strings.nav.stats.label });
+    const active = within(nav)
+      .getAllByRole('link')
+      .filter((link) => link.getAttribute('data-active') === 'true')
+      .map((link) => link.textContent);
+    expect(active).toEqual([strings.nav.stats.customers]);
   });
 });
 

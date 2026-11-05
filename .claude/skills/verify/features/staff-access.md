@@ -4,7 +4,10 @@ Staff sign in on the admin through Clerk and must be members of the restaurant's
 Signed out, every admin route sends them to `/login`. A signed-in non-member sees "Nincs
 hozzáférésed". Members get the shell: a sidebar with "Rendelések", "Napi összesítő", "Heti
 menü" and "Étlap", the restaurant name in the top bar, and the API version in the sidebar
-footer. The API enforces the same rule on `/api/admin/*`.
+footer. The API enforces the same rule on `/api/admin/*`. The organization's `org:admin` role
+also gets a "Statisztika" sidebar group ("Áttekintés", "Fogások", "Vevők"); any other member does
+not see it, gets "Nincs jogosultságod" on a `/statisztika…` URL, and 403 from
+`/api/admin/stats/*`.
 
 ## Sub-features
 
@@ -13,6 +16,10 @@ footer. The API enforces the same rule on `/api/admin/*`.
 - `api-403`: a valid session outside `CLERK_ORG_ID` returns 403 `{ error: 'forbidden' }`.
 - `api-200`: a member's token returns 200. `GET /api/admin/ping` gives `{ userId }`, and
   `GET /api/admin/config` gives `{ name }`.
+- `stats-access`: `GET /api/admin/stats/access` is 204 for `org:admin`, 403 `{ error:
+  'forbidden' }` for any other role, 401 without a session. The admin's "Statisztika" group and
+  its routes (`/statisztika`, `/statisztika/fogasok[/:dishKey]`, `/statisztika/vevok[/:ref]`)
+  follow the same rule.
 - `shell`: the signed-in layout, its navigation links, `/` redirecting to `/rendelesek`, and
   "Ez az oldal nem létezik" for unknown paths.
 - `sign-in`: Clerk's hosted sign-in at `/login`, with `redirect_url` back to the page you came
@@ -42,6 +49,14 @@ Preconditions:
   "Rendelések" shows with "Ez a képernyő még készül". Click each sidebar link and check its
   `heading`. Navigate to `$ADMIN_URL/nincs-ilyen` and expect "Ez az oldal nem létezik". The
   sidebar footer reads "API-verzió" with the version from `/api/health`.
+- **Statistics, admin.** A default run is `org:admin`. Run
+  `api.sh --save staff-access.stats-204 GET /api/admin/stats/access` and expect 204. In the pane,
+  the sidebar has the "Statisztika" navigation; each of its three links opens "Ez a képernyő még
+  készül".
+- **Statistics, member.** Launch a second run with `VERIFY_ORG_ROLE=member up.sh` (it prints
+  `staff: org:member`). Its token carries `org:member` and the stub's `has` agrees. Expect 403
+  from `api.sh GET /api/admin/stats/access`, 200 from `/api/admin/ping`, no "Statisztika" in the
+  sidebar, and "Nincs jogosultságod" at `$ADMIN_URL/statisztika`.
 - **Real sign-in.** Hand Dávid the steps:
   - run `pnpm dev`, open <http://localhost:5173/heti-menu> signed out;
   - expect `/login?redirect_url=…`, sign in, and land back on `/heti-menu`;
