@@ -807,8 +807,11 @@
 .sheet-close:active {
   transform: scale(0.9);
 }
+/* Content-sized, shrinking to scroll once the sheet hits its max-height. Not `flex: 1`: its 0%
+   basis collapses the list to nothing in iOS 26 Safari, whose sheet has no definite height. */
 .sheet-body {
-  flex: 1;
+  flex: 0 1 auto;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
