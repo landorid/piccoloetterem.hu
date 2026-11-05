@@ -40,7 +40,9 @@ Until it lands, no public page shows the menu outside the order form. Decided by
 featured and permanent sections, prices as core computes them, allergens per dish, and the
 delivery and ordering info from the public config. It takes no orders; it links to
 `/megrendeles`. `/galeria`, `/elerhetoseg` and `/adatkezeles` stay in the backlog (#46).
-Decided by Dávid; it reverses the 2026-10-09 decision recorded on #58.
+Decided by Dávid; it reverses the 2026-10-09 decision recorded on #58. Revised 2026-11-02: staff
+statistics are planned as milestone M5, after release 1 (§2 "Statistics", §5). The cookie-free web
+analytics of #48 is a different thing and stays in the backlog.
 
 ## 2. Decisions (from the planning interview, 2026-09-06)
 
@@ -171,11 +173,66 @@ Every item below was an explicit decision. Do not reopen them inside an issue; o
 - Emails: exactly one, the confirmation to the customer immediately after submission, with the full
   contents, days, totals, address. Sender `rendeles@piccoloetterem.hu`, reply-to `info@`.
 - One staff role: membership of the Clerk organization.
+  Revised 2026-11-02: the statistics section (below) is for the Clerk organization's `org:admin`
+  role only. Every other admin page stays open to every member. Decided by Dávid.
 
 **Customers**
 
 - `customers` table keyed by normalised email (`email_key` UNIQUE), upserted on every order with
   the last used name / phone / address. Customers never enter Clerk. No verification in release 1.
+
+**Statistics** (decided 2026-11-02, milestone M5)
+
+The admin gets a statistics section that supports deciding what the restaurant sells and when,
+and shows every orderer's history so staff can see who is slipping away. The old system's
+history (May 2017 onwards) is part of it. Mockup (ST0, reviewed by Dávid):
+[Piccolo statisztika mockup](https://claude.ai/artifact/Ry5nqJwkHy69d77H82mQM9).
+
+- **Views.** A separate `Statisztika` group in the admin sidebar with four pages: *Áttekintés*
+  (revenue, order days, active and new customers, weekdays, seasonality, basket, group share, what
+  goes with the main), *Fogások* (top lists per category, seasonal dishes, good sellers not on the
+  menu for a while) with a page per dish, and *Vevők* (status cards, an inactivity × value scatter,
+  a searchable list) with a page per customer (contact, rhythm, totals, a 26-week calendar, monthly
+  timeline, typical weekdays, favourite dishes, last orders). Nothing goes into the weekly menu
+  editor: the menu is always imported from the Word card.
+- **Access.** `org:admin` only, enforced by the API (`/api/admin/stats/*` answers 403 to other
+  members) and by the admin, which hides the group from them.
+- **The old data is a source, not an import.** Nothing is written into Neon. An offline script,
+  `scripts/legacy-stats/`, reads the **whole** old MySQL database (no cutoff date: the old site stops
+  taking orders when the new one goes live, with no parallel period) and writes one pre-aggregated
+  file, the *legacy stats file*, to a private R2 bucket per environment (no custom domain, no
+  `r2.dev` URL). It is re-runnable and overwrites the file. It is **not anonymised**: every
+  environment holds the real data, so only the `org:admin` routes read the bucket. The script takes
+  its MySQL credentials from the environment; no running code depends on MySQL. Dávid keeps a dump
+  of the old database to rebuild the file from if the old host goes away.
+- **A customer is an orderer**: the normalised email (`normaliseEmailKey` in `packages/core`), the
+  same key on both sides, so a customer's old and new orders form one timeline. A shared office
+  email is one customer. Old submissions without a valid email count in the totals and are left
+  out of the customer views.
+- **A dish is a normalised name**: `dishKey(name)` in `packages/core` (lower case, accents and
+  whitespace removed), applied to the old order lines and to `order_items.name`. Weekly items are new
+  rows every week, so the key, not `menu_item_id`, joins a dish across weeks and across the two
+  systems. No manual merging of near-duplicate names.
+- **Measures.** Revenue is the food subtotal: no delivery fee, no cancelled orders (the old data has
+  no cancellations; its `orders.price` is food only). An *order day* is one customer's order for one
+  delivery date. Nominal forints only, no inflation adjustment.
+- **Rhythm and status**, computed by a pure function in `packages/core` from a customer's order
+  dates, `today` and the closed days: a customer is *regular* with at least 8 order days in the last
+  6 months, and a regular customer is *slipping* (`kimaradó`) when the open days since their last
+  order exceed max(3 × their median gap, 14). Everyone else falls into fixed bands by time since the
+  last order: active, 1–3 months (`lassuló`), 3–12 months (`elhalványult`), 12 months+
+  (`elveszett`). Closed days are `closed_dates` for new data and, for old data, days on which nobody
+  ordered. The parameters live in `RestaurantConfig.statistics`.
+- **Period and comparison.** One selector for the section: 3 months, 12 months, this year, last
+  year, all, custom range. Comparison defaults to the same period a year earlier; the previous
+  period of the same length is selectable for 3 months, 12 months and custom ranges. Revenue and
+  order-day deltas are compared per open day; the headline figure stays the total.
+- **Where the numbers are computed.** Postgres aggregates the new data (STACK.md §6 rule 5). The
+  legacy stats file is already aggregated in the same shapes, and the API only adds the two
+  together. It never scans order rows in the Worker.
+- **Charts**: shadcn/ui's chart component (Recharts), the admin's existing look, light and dark.
+- **Out of scope**: offers, discount codes, marketing e-mail, consent capture, call logging, CSV
+  export. Offers to slipping customers are made off-platform.
 
 ## 3. Domain model
 
@@ -192,9 +249,18 @@ orders               id, submission_id, customer_id, delivery_date, fulfilment (
 order_menus          id, order_id, position, price
 order_items          id, order_menu_id, slot (soup|main|side|pickle|dessert), menu_item_id,
                      name, variation, unit_price          -- snapshot, never joined for display
+                     dish_key                             -- dishKey(name), for statistics (M5)
 order_extras         id, order_id, extra_key, name, quantity, unit_price
 closed_dates         date (PK, YYYY-MM-DD), created_at    -- set by staff, no ordering that day
 ```
+
+The **legacy stats file** (M5) is not a table: it is one gzipped JSON object in the environment's
+private statistics R2 bucket, written by `scripts/legacy-stats/` and read by the statistics API.
+Its TypeScript type, `LegacyStatsFile`, lives in `packages/core` and carries a `formatVersion`. It
+holds aggregates only, in the shapes the API returns for new data: daily totals, per-dish daily
+portions and variations, monthly active customers, the closed days (operating days on which nobody
+ordered), and per customer the contact snapshot, the
+order dates, monthly spend, weekday counts, top dishes and the last ten orders.
 
 `RestaurantConfig` (TypeScript, one instance per deployment; the type is
 `packages/core/src/config/types.ts`):
@@ -208,7 +274,9 @@ closed_dates         date (PK, YYYY-MM-DD), created_at    -- set by staff, no or
   pickupEnabled: false,
   email: { from: 'rendeles@…', replyTo: 'info@…' },
   contact: { address, phone, openingHours,
-             intakeWindow: { from: '07:30', until: '09:30' } }   // until must equal cutoff
+             intakeWindow: { from: '07:30', until: '09:30' } },  // until must equal cutoff
+  statistics: { regularMinOrderDays: 8, regularWindowMonths: 6,      // M5
+                slippingGapMultiplier: 3, slippingMinDays: 14 }
 }
 ```
 
@@ -289,6 +357,25 @@ Strict order. Each issue is one agent session. `→` marks blockers. Issues live
 | P3 [#41](https://github.com/landorid/piccoloetterem.hu/issues/41) | Piccolo `RestaurantConfig` values confirmed with the restaurant | manual core |
 | P4 [#42](https://github.com/landorid/piccoloetterem.hu/issues/42) | Enter the permanent items and allergens into the admin | manual |
 | P5 [#43](https://github.com/landorid/piccoloetterem.hu/issues/43) | Connect SendOps to the AWS account | manual email |
+
+### M5 Statistics
+
+Decisions in §2 "Statistics". ST0, the mockup, is done (linked there). ST1 and ST3 can start at
+once and run in parallel; ST2-P is Dávid's. After ST4, the dish (ST5) and customer (ST6) APIs run
+in parallel, and so do their pages (ST8, ST9) after ST7.
+
+| # | Issue | Area |
+|---|---|---|
+| ST1 [#149](https://github.com/landorid/piccoloetterem.hu/issues/149) | `core`: `dishKey`, `customerRef`, `LegacyStatsFile`, rhythm and status, periods, `RestaurantConfig.statistics` | core |
+| ST2-P [#150](https://github.com/landorid/piccoloetterem.hu/issues/150) | Private statistics R2 buckets per environment, read-only access to the old database | manual infra |
+| ST2 [#152](https://github.com/landorid/piccoloetterem.hu/issues/152) | `scripts/legacy-stats`: old MySQL → legacy stats file → R2 → ST1 ST2-P | infra |
+| ST3 [#151](https://github.com/landorid/piccoloetterem.hu/issues/151) | `org:admin` role: API middleware for `/api/admin/stats/*`, admin-only nav group and routes | api admin |
+| ST4 [#153](https://github.com/landorid/piccoloetterem.hu/issues/153) | Statistics API foundation: `STATS_BUCKET`, legacy file loader, `GET /api/admin/stats/overview` → ST1 ST2-P ST3 | api |
+| ST5 [#154](https://github.com/landorid/piccoloetterem.hu/issues/154) | Dish statistics API: `order_items.dish_key`, `GET /api/admin/stats/dishes[/:dishKey]` → ST4 | api db |
+| ST6 [#155](https://github.com/landorid/piccoloetterem.hu/issues/155) | Customer statistics API: `GET /api/admin/stats/customers[/:ref]` → ST4 | api |
+| ST7 [#156](https://github.com/landorid/piccoloetterem.hu/issues/156) | Admin: Áttekintés page, period selector and comparison, shadcn charts → ST4 | admin |
+| ST8 [#157](https://github.com/landorid/piccoloetterem.hu/issues/157) | Admin: Fogások page and the dish page → ST5 ST7 | admin |
+| ST9 [#158](https://github.com/landorid/piccoloetterem.hu/issues/158) | Admin: Vevők page and the customer page → ST6 ST7 | admin |
 
 ## 6. How an agent issue is written and closed
 

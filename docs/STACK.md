@@ -240,6 +240,10 @@ Másold ügyfelenként, és pipáld végig.
       — ünnepnaptár nincs benne: azokat a napokat, amelyekre nem lehet rendelni, a személyzet
       jelöli be az adminban (`closed_dates` tábla), deploy nélkül (2026-09-13-i döntés, #60)
 - [ ] SendOps csatlakoztatása az AWS fiókhoz
+- [ ] Privát R2 bucket a statisztikához: `wrangler r2 bucket create piccolo-stats-<környezet>`,
+      nyilvános domain és `r2.dev` URL nélkül, az API `STATS_BUCKET` bindingjába; ha volt régi
+      rendszer, a `scripts/legacy-stats` feltölti bele a régi adatok statisztikai fájlját
+      — valódi személyes adat van benne minden környezetben, csak az `org:admin` route-ok olvassák
 
 ---
 
@@ -261,6 +265,8 @@ Másold ügyfelenként, és pipáld végig.
    5 perces cache pont kioltaná. Legjobb: lejárat nélküli cache, amit a menüfeltöltés ürít.
 
 5. **Az elemzéseket Postgres aggregálja**, nem a Worker. 418 007 sort nem viszünk át a hálózaton.
+   A régi rendszer statisztikai fájlja (PLAN.md §2, „Statistics”) eleve aggregált, a Worker csak
+   összeadja az új adat aggregátumaival — rendelési sorokat ott sem pásztáz.
 
 6. **A domain logika nem szivárog a controllerekbe.** Ez a szabály fontosabb, mint maga a
    keretrendszer — ettől maradt olcsó a NestJS→Hono és a Coolify→Neon fordulat is.
@@ -268,8 +274,12 @@ Másold ügyfelenként, és pipáld végig.
 7. **A SendOps kimarad a küldési útvonalból.** A tranzakciós levelek közvetlenül az SES API-n
    mennek, hogy egy fiatal szolgáltató kiesése dashboardot vigyen, ne kézbesítést.
 
-8. **Nincs örökölt adatimport.** Az élő MySQL csak olvasható referencia az elemzésekhez; semmilyen
-   kód nem függ tőle, és nem kerül a repóba.
+8. **Nincs örökölt adatimport.** A régi MySQL-ből semmi nem kerül a Neonba, és a futó kód nem
+   függ tőle. Egyetlen offline script olvassa (`scripts/legacy-stats/`, a hozzáférés env-ből,
+   soha nem a repóból), és csak a származtatott statisztikai fájlt írja a privát R2 bucketbe.
+   Módosítva 2026-11-02-án (Dávid): korábban a MySQL-t olvasó kód sem kerülhetett a repóba; a
+   statisztikához (M5) a két rendszernek ugyanazokon a `core`-beli kulcsfüggvényeken kell
+   átmennie, ezért a script a repóban él.
 
 ---
 
